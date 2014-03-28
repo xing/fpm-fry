@@ -5,5 +5,6 @@ $: << File.join(File.dirname(__FILE__), "..", "lib")
 require "fpm"
 require "fpm/command"
 require "fpm/package/docker"
+require "fpm/dockery/command"
 
-exit(FPM::Command.run || 0)
+exit(FPM::Dockery::Command.run || 0)
