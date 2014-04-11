@@ -18,7 +18,7 @@ class FPM::Dockery::Client
   end
 
   def self.docker_url
-    ENV.fetch('DOCKER_URL'.freeze, 'unix:///var/run/docker.sock')
+    ENV.fetch('DOCKER_HOST'.freeze, 'unix:///var/run/docker.sock')
   end
 
   def request(*path)
