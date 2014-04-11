@@ -3,6 +3,17 @@ module FPM; module Dockery
 
   module Detector
 
+    class String < Struct.new(:value)
+      attr :distribution
+      attr :version
+
+      def detect!
+        @distribution, @version = value.split('-',2)
+        return true
+      end
+
+    end
+
     class Container < Struct.new(:client,:container)
       attr :distribution
       attr :version
@@ -27,12 +38,12 @@ module FPM; module Dockery
       attr :version
 
       def detect!
-        req = client.request('containers','create')
-        req.method = 'POST'
-        req.body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-        req.headers.set('Content-Type','application/json')
-        req.headers.set('Content-Length',req.body.bytesize)
-        res = client.agent.execute(req)
+        res = client.request('containers','create') do |req|
+          req.method = 'POST'
+          req.body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
+          req.headers.set('Content-Type','application/json')
+          req.headers.set('Content-Length',req.body.bytesize)
+        end
         raise res.status.to_s if res.status != 201
         body = JSON.parse(res.read_body)
         container = body['Id']
@@ -46,11 +57,13 @@ module FPM; module Dockery
             return false
           end
         ensure
-          req = client.request('containers',container)
-          req.method = 'DELETE'
-          client.agent.execute(req)
+          client.request('containers',container) do |req|
+            req.method = 'DELETE'
+          end
         end
       end
     end
+
+
   end
 end ; end

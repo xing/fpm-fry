@@ -27,6 +27,11 @@ class FPM::Dockery::Client
     req.headers.set('Host',host)
     req.method = 'GET'
     req.port = port if port
+    if block_given?
+      yield req
+      logger.debug("Sending request", path: req.path)
+      return agent.execute(req)
+    end
     return req
   end
 
