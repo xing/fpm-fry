@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/hannesg/ruby-ftw.git
+  revision: 69da0bc1b3b824d16bd0e10b33391c5ac006e30f
+  branch: fix_reading_body
+  specs:
+    ftw (0.0.39)
+      addressable
+      backports (>= 2.6.2)
+      cabin (> 0)
+      http_parser.rb (= 0.5.3)
+
 PATH
   remote: .
   specs:
@@ -26,11 +37,6 @@ GEM
       ffi
       ftw (~> 0.0.30)
       json (>= 1.7.7)
-    ftw (0.0.39)
-      addressable
-      backports (>= 2.6.2)
-      cabin (> 0)
-      http_parser.rb (= 0.5.3)
     http_parser.rb (0.5.3)
     json (1.8.1)
 
@@ -39,3 +45,4 @@ PLATFORMS
 
 DEPENDENCIES
   fpm-dockery!
+  ftw!

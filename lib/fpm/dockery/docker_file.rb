@@ -1,5 +1,8 @@
 require 'fiber'
+require 'shellwords'
 require 'rubygems/package'
+require 'fpm/dockery/os_db'
+require 'fpm/dockery/source'
 module FPM; module Dockery
   class DockerFile < Struct.new(:variables,:cache,:recipe)
 
@@ -25,34 +28,35 @@ module FPM; module Dockery
     end
 
     class JoinedIO
-      #FINAL = ("\0" * 1024).freeze
-
       def initialize(*ios)
         @ios = ios
+        @pos = 0
       end
 
-      def each
-        while io = @ios.shift
-          puts io.inspect
-          begin
-            io.each do |chunk|
-              #if chunk.end_with? FINAL
-              #  yield chunk[0..-1025]
-              #  puts "Found final"
-              #end
-              yield chunk
-            end
-          ensure
-            io.close
+      def read( *args )
+        while io = @ios[@pos]
+          if io.eof?
+            @pos = @pos + 1
+            next
           end
+          r = io.read( *args )
+          return r
         end
+        return nil
       end
 
       def close
-        while io = @ios.shift
-          io.close
-        end
+        @ios.each(&:close)
       end
+    end
+
+    def initialize(variables, cache = Source::Null::Cache, recipe)
+      variables = variables.dup
+      if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
+        variables[:flavour] = OsDb[variables[:distribution]][:flavour]
+      end
+      variables.freeze
+      super(variables, cache, recipe)
     end
 
     def dockerfile
@@ -60,30 +64,40 @@ module FPM; module Dockery
       df << "FROM #{variables[:image]}"
 
       df << "RUN mkdir /tmp/build"
+      df << "WORKDIR /tmp/build"
 
-      # if flavor == deb
-      deps = recipe.depends.select{|_,v| v.fetch(:install,true) }.map{|k,_| k }
+      deps = (recipe.build_depends.merge recipe.depends).select{|_,v| v.fetch(:install,true) }.map{|k,_| k }.sort
       if deps.any?
-        df << "RUN apt-get install --yes #{deps.join(' ')}"
+        case(variables[:flavour])
+        when 'debian'
+          df << "RUN apt-get install --yes #{Shellwords.join(deps)}"
+        when 'redhat'
+          df << "RUN yum install #{Shellwords.join(deps)}"
+        else
+          raise "Unknown flavour: #{variables[:flavour]}"
+        end
       end
-      # end
 
       cache.file_map.each do |from, to|
         df << "ADD #{from} #{map_dir(to)}"
       end
 
       df << "ADD .build.sh /tmp/build/"
-      df << "WORKDIR /tmp/build"
+
       df << "ENTRYPOINT /tmp/build/.build.sh"
+      df << ''
       return df.join("\n")
     end
 
     def build_sh
-      df = ['#!/bin/bash -e']
+      df = ['#!/bin/bash']
+      df << 'set -e'
+      df << 'set -x'
       recipe.steps.each do |k,v|
-        df << "echo ------> #{k}"
+        df << "echo '------> ' #{Shellwords.escape k}"
         df << v.to_s
       end
+      df << ''
       return df.join("\n")
     end
 

@@ -1,6 +1,8 @@
 require 'tmpdir'
 require 'fileutils'
 require 'clamp'
+require 'json'
+
 module FPM; module Dockery
 
   class Command < Clamp::Command
@@ -51,23 +53,29 @@ module FPM; module Dockery
     subcommand 'cook', 'Cooks a package' do
 
       option '--distribution', 'distribution', 'Distribution like ubuntu-12.04'
+      option '--keep', :flag, 'Keep the container after build'
+      option '--overwrite', :flag, 'Overwrite package', default: true
 
       parameter 'image', 'Docker image to build from'
       parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
-      attr :logger
+      attr :logger, :out, :tmpdir
 
       def initialize(*_)
         super
         @logger = Cabin::Channel.get
-        @logger.subscribe(STDOUT)
-        @logger.level = :debug
+        @logger.subscribe(STDERR)
+        @logger.level = :info
+        @out = STDOUT
+        @tmpdir = '/tmp/dockery'
+        FileUtils.mkdir_p( @tmpdir )
       end
 
       def execute
         require 'fpm/dockery/recipe'
         require 'fpm/dockery/detector'
         require 'fpm/dockery/docker_file'
+        require 'fpm/dockery/stream_parser'
         client = FPM::Dockery::Client.new(logger: logger)
         if distribution
           d = Detector::String.new(distribution)
@@ -86,57 +94,29 @@ module FPM; module Dockery
           return 1
         end
 
-        cache = b.recipe.source.build_cache('/tmp/dockery')
+        cache = b.recipe.source.build_cache(tmpdir)
         df = DockerFile.new(b.variables,cache,b.recipe)
         res = client.request('build?build=true') do |req|
           req.headers.set('Content-Tye','application/tar')
           req.method = 'POST'
           req.body = df.tar_io
         end
-        res.read_http_body{|chunk| puts chunk.inspect }
 
-        return 0
-      end
-
-    end
-
-    subcommand 'cook2', 'Cooks a package' do
-
-      option '--distribution', 'distribution', 'Distribution like ubuntu-12.04'
-
-      parameter 'image', 'Docker image to build from'
-      parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
-
-      attr :logger
-
-      def initialize(*_)
-        super
-        @logger = Cabin::Channel.get
-        @logger.subscribe(STDOUT)
-        @logger.level = :debug
-      end
-
-      def execute
-        require 'fpm/dockery/recipe'
-        require 'fpm/dockery/detector'
-        require 'fpm/dockery/docker_file'
-        client = FPM::Dockery::Client.new(logger: logger)
-        if distribution
-          d = Detector::String.new(distribution)
-        else
-          d = Detector::Image.new(client, image)
-          unless d.detect!
-            logger.error("Unable to detect distribution from given image")
-            return 101
-          end
+        stream = ""
+        res.read_http_body do |chunk|
+          json = JSON.parse(chunk)
+          stream = json['stream']
+          out << stream
         end
-        begin
-          b = Recipe::Builder.new(distribution: d.distribution, distribution_version: d.version, image: image)
-          b.load_file( recipe )
-        rescue Errno::ENOENT
-          logger.error("Recipe not found")
-          return 1
+
+        match = /\ASuccessfully built (\w+)\Z/.match(stream)
+        if !match
+          logger.error("Unable to detect build image")
+          return 100
         end
+
+        image = match[1]
+        logger.info("Detected build image #{image.inspect}", image: image)
 
         res = client.request('containers','create') do |req|
           req.method = 'POST'
@@ -150,20 +130,6 @@ module FPM; module Dockery
         body = JSON.parse(res.read_body)
         container = body['Id']
         begin
-          th = Thread.new do
-            res = client.request('containers',container,'attach?stderr=1&stdout=1&stream=1') do |req|
-              req.method = 'POST'
-            end
-            puts res.body.inspect
-            begin
-              while rd = res.body.read
-                puts rd.inspect
-              end
-            rescue EOFError
-              logger.error("eof")
-            end
-          end
-
           res = client.request('containers',container,'start') do |req|
             req.method = 'POST'
             req.body = JSON.generate({})
@@ -171,17 +137,63 @@ module FPM; module Dockery
             req.headers.set('Content-Length',req.body.bytesize)
           end
 
+          res = client.request('containers',container,'attach?stderr=1&stdout=1&stream=1') do |req|
+            req.method = 'POST'
+          end
+          sp = StreamParser.new(STDOUT, STDERR)
+          begin
+            while rd = res.body.read
+              sp << rd
+            end
+          rescue EOFError
+            logger.debug("eof")
+          end
+
           res = client.request('containers',container,'wait') do |req|
             req.method = 'POST'
             req.body = ''
             req.headers.set('Content-Length',0)
           end
+          json = JSON.parse(res.read_body)
+          if json["StatusCode"] != 0
+            logger.error("Build failed", status_code: json['StatusCode'])
+            return 102
+          end
 
-          puts res.read_body.inspect
-          th.join(5) || Thread.kill(th)
+          #TODO: check exit code
+
+          input = FPM::Package::Docker.new(logger: logger, client: client)
+          input.input(container)
+
+          output = input.convert(FPM::Package::Deb)
+
+          b.recipe.apply(output)
+
+          package_file = output.to_s(nil)
+          FileUtils.mkdir_p(File.dirname(package_file))
+
+          tmp_package_file = package_file + '.tmp'
+          begin
+            File.unlink tmp_package_file
+          rescue Errno::ENOENT
+          end
+
+          output.output(tmp_package_file)
+
+          begin
+            File.unlink package_file
+          rescue Errno::ENOENT
+          end
+          File.rename tmp_package_file, package_file
+
+          logger.log("Created package", :path => package_file)
+          return 0
+
         ensure
-          client.request('containers',container) do |req|
-            req.method = 'DELETE'
+          unless keep?
+            client.request('containers',container) do |req|
+              req.method = 'DELETE'
+            end
           end
         end
 
@@ -189,8 +201,6 @@ module FPM; module Dockery
       end
 
     end
-
-
 
   end
 

@@ -5,6 +5,16 @@ require 'fpm/dockery/client'
 
 class FPM::Package::Docker < FPM::Package
 
+  def initialize( options = {} )
+    super()
+    if options[:logger]
+      @logger = options[:logger]
+    end
+    if options[:client]
+      @client = options[:client]
+    end
+  end
+
   def input(name)
     leaves = changes(name)
     leaves.each do |chg|
@@ -34,9 +44,10 @@ private
 
   def ignore?(chg)
     [
-      '/dev','/dev/**/*', '/tmp','/tmp/**/*','/**/.bash_history'
-    ].any?{|pattern| File.fnmatch?(pattern, chg, ::File::FNM_PATHNAME) }
+      %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history'
+    ].any?{|pattern| pattern === chg }
   end
+
   class Node < Struct.new(:children)
 
     def initialize
