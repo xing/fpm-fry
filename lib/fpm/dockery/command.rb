@@ -199,8 +199,6 @@ module FPM; module Dockery
             return 102
           end
 
-          #TODO: check exit code
-
           input = FPM::Package::Docker.new(logger: logger, client: client)
           input.input(container)
 

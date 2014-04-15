@@ -9,7 +9,7 @@ Gem::Specification.new do |gem|
 
   gem.authors  = ['Hannes Georg']
   gem.email    = 'hannes.georg@xing.com'
-  gem.homepage = 'https://github.com/hannesg/fpm-dockery'
+  gem.homepage = 'https://github.com/xing/fpm-dockery'
 
   gem.license  = 'MIT'
 
