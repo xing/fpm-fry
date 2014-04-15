@@ -72,7 +72,7 @@ module FPM; module Dockery
         when 'debian'
           df << "RUN apt-get install --yes #{Shellwords.join(deps)}"
         when 'redhat'
-          df << "RUN yum install #{Shellwords.join(deps)}"
+          df << "RUN yum -y install #{Shellwords.join(deps)}"
         else
           raise "Unknown flavour: #{variables[:flavour]}"
         end

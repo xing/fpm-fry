@@ -14,6 +14,10 @@ module FPM; module Dockery
         'precise'.freeze => '12.04'.freeze
       },
       flavour: 'debian'.freeze
+    },
+    'centos'.freeze => {
+      codenames: {},
+      flavour: 'redhat'.freeze
     }
   }
 

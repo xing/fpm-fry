@@ -37,7 +37,8 @@ module FPM; module Dockery
         end
 
         if d.detect!
-          puts "Found #{d.distribution}/#{d.version}"
+          puts "Distribution: #{d.distribution}"
+          puts "Version: #{d.version}"
           if i = OsDb[d.distribution]
             puts "Flavour: #{i[:flavour]}"
           else
@@ -55,6 +56,18 @@ module FPM; module Dockery
       option '--distribution', 'distribution', 'Distribution like ubuntu-12.04'
       option '--keep', :flag, 'Keep the container after build'
       option '--overwrite', :flag, 'Overwrite package', default: true
+      option ['-t','--target'], 'target', 'Target package type (deb, rpm, ... )', default: 'auto' do |x|
+        if x != 'auto' && /\A[a-z]+\z/ =~ x
+          begin
+            require File.join('fpm/package',x)
+          rescue LoadError => e
+            raise "Unknown target type: #{x}\n#{e.message}"
+          end
+        else
+          raise "Unknown target type: #{x}"
+        end
+        x
+      end
 
       parameter 'image', 'Docker image to build from'
       parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
@@ -76,6 +89,7 @@ module FPM; module Dockery
         require 'fpm/dockery/detector'
         require 'fpm/dockery/docker_file'
         require 'fpm/dockery/stream_parser'
+        require 'fpm/dockery/os_db'
         client = FPM::Dockery::Client.new(logger: logger)
         if distribution
           d = Detector::String.new(distribution)
@@ -86,8 +100,33 @@ module FPM; module Dockery
             return 101
           end
         end
+
+        flavour = OsDb.fetch(d.distribution,{flavour: "unknown"})[:flavour]
+        if target == 'auto'
+          logger.info("Autodetecting package type",flavour: flavour)
+          case(flavour)
+          when 'debian'
+            require 'fpm/package/deb'
+            output_class = FPM::Package::Deb
+          when 'redhat'
+            require 'fpm/package/rpm'
+            output_class = FPM::Package::RPM
+          else
+            logger.error("Cannot auto-detect package type. Please supply -t")
+            return 10
+          end
+        else
+          output_class = FPM::Package.types.fetch(target)
+        end
+
         begin
-          b = Recipe::Builder.new(distribution: d.distribution, distribution_version: d.version, image: image)
+          vars = {
+            distribution: d.distribution,
+            distribution_version: d.version,
+            flavour: flavour
+          }
+          logger.info("Loading recipe",variables: vars, recipe: recipe)
+          b = Recipe::Builder.new(vars)
           b.load_file( recipe )
         rescue Errno::ENOENT
           logger.error("Recipe not found")
@@ -95,7 +134,7 @@ module FPM; module Dockery
         end
 
         cache = b.recipe.source.build_cache(tmpdir)
-        df = DockerFile.new(b.variables,cache,b.recipe)
+        df = DockerFile.new(b.variables.merge(image: image),cache,b.recipe)
         res = client.request('build?build=true') do |req|
           req.headers.set('Content-Tye','application/tar')
           req.method = 'POST'
@@ -165,7 +204,7 @@ module FPM; module Dockery
           input = FPM::Package::Docker.new(logger: logger, client: client)
           input.input(container)
 
-          output = input.convert(FPM::Package::Deb)
+          output = input.convert(output_class)
 
           b.recipe.apply(output)
 

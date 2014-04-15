@@ -19,17 +19,43 @@ module FPM; module Dockery
       attr :version
 
       def detect!
-        client.read(container,'/etc/lsb-release') do |file|
-          file.read.each_line do |line|
-            case(line)
-            when /\ADISTRIB_ID=/ then
-              @distribution = $'.strip.downcase
-            when /\ADISTRIB_RELEASE=/ then
-              @version = $'.strip
+        begin
+          client.read(container,'/etc/lsb-release') do |file|
+            file.read.each_line do |line|
+              case(line)
+              when /\ADISTRIB_ID=/ then
+                @distribution = $'.strip.downcase
+              when /\ADISTRIB_RELEASE=/ then
+                @version = $'.strip
+              end
             end
           end
+          return (@distribution and @version)
+        rescue Client::FileNotFound
         end
-        return (@distribution and @version)
+        begin
+          client.read(container,'/etc/redhat-release') do |file|
+            if file.header.typeflag == "2" # centos links this file
+              client.read(container,File.absolute_path(file.header.linkname,'/etc')) do |file|
+                detect_redhat_release(file)
+              end
+            else
+              detect_redhat_release(file)
+            end
+          end
+          return (@distribution and @version)
+        rescue Client::FileNotFound
+        end
+      end
+
+      def detect_redhat_release(file)
+        file.read.each_line do |line|
+          case(line)
+          when /\A(\w+) release ([\d\.]+)/ then
+            @distribution = $1.strip.downcase
+            @version = $2.strip
+          end
+        end
       end
     end
 
@@ -44,7 +70,9 @@ module FPM; module Dockery
           req.headers.set('Content-Type','application/json')
           req.headers.set('Content-Length',req.body.bytesize)
         end
-        raise res.status.to_s if res.status != 201
+        if res.status != 201
+          raise "#{res.status}: #{res.read_body}"
+        end
         body = JSON.parse(res.read_body)
         container = body['Id']
         begin

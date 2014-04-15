@@ -9,6 +9,10 @@ module FPM; module Dockery
 
     class Builder < Struct.new(:variables, :recipe)
 
+      def flavour
+        variables[:flavour]
+      end
+
       def distribution
         variables[:distribution]
       end

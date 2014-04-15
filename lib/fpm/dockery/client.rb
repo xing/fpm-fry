@@ -10,6 +10,9 @@ module FPM; module Dockery; end ; end
 
 class FPM::Dockery::Client
 
+  class FileNotFound < StandardError
+  end
+
   attr :docker_url, :logger
 
   def initialize(options = {})
@@ -29,7 +32,7 @@ class FPM::Dockery::Client
     req.port = port if port
     if block_given?
       yield req
-      logger.debug("Sending request", path: req.path)
+      logger.debug("Sending request", path: req.path, req: req)
       return agent.execute(req)
     end
     return req
@@ -45,7 +48,11 @@ class FPM::Dockery::Client
     req.headers.set('Content-Length',body.bytesize)
     req.body = body
     res = agent.execute(req)
-    raise res.status.to_s if res.status != 200
+    if res.status == 500
+      raise FileNotFound
+    elsif res.status != 200
+      raise res.status.to_s
+    end
     sio = StringIO.new(res.read_body)
     tar = ::Gem::Package::TarReader.new( sio )
     tar.each do |entry|
