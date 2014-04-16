@@ -145,7 +145,7 @@ module FPM; module Dockery
       package.maintainer = maintainer if maintainer
       package.vendor = vendor if vendor
       scripts.each do |type, scripts|
-        package.scripts[type] = scripts.join("\n")
+        package.scripts[type] = scripts.join("\n") if scrips.any?
       end
       depends.each do |name, options|
         package.dependencies << "#{name}#{options[:version]}"
