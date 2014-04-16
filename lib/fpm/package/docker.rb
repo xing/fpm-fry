@@ -34,17 +34,15 @@ private
   end
 
   def changes(name)
-    req = client.request('containers',name,'changes')
-    req.method = 'GET'
-    res = client.agent.execute(req)
-    raise res.status.to_s if res.status != 200
-    changes = JSON.parse(res.read_body)
+    res = client.agent.get(client.url('containers',name,'changes'))
+    raise res.reason if res.status != 200
+    changes = res.parse_body
     return change_leaves(changes)
   end
 
   def ignore?(chg)
     [
-      %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history'
+      %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history','/.bash_history'
     ].any?{|pattern| pattern === chg }
   end
 

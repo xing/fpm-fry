@@ -1,7 +1,4 @@
-require 'ftw/request'
-require 'ftw/connection'
-require 'ftw/socket_connection'
-require 'ftw/socket_agent'
+require 'http'
 require 'rubygems/package'
 require 'json'
 require 'fileutils'
@@ -24,7 +21,12 @@ class FPM::Dockery::Client
     ENV.fetch('DOCKER_HOST'.freeze, 'unix:///var/run/docker.sock')
   end
 
-  def request(*path)
+  def url(*path)
+    [url_base, 'v1.9',*path].join('/')
+  end
+
+=begin
+  def request(verb, *path)
     req = FTW::Request.new
     req.request_uri = ['', 'v1.9',*path].join('/')
     req.headers.set('Host',host)
@@ -37,23 +39,20 @@ class FPM::Dockery::Client
     end
     return req
   end
-
+=end
   def read(name, resource)
     return to_enum(:read, name, resource) unless block_given?
     body = JSON.generate({'Resource' => resource})
-    @logger.debug("Send", body: body)
-    req = request('containers',name,'copy')
-    req.method = 'POST'
-    req.headers.set('Content-Type','application/json')
-    req.headers.set('Content-Length',body.bytesize)
-    req.body = body
-    res = agent.execute(req)
+    res = agent.with(
+      'Content-Type'=>  'application/json',
+      'Content-Length' => body.bytesize
+    ).post(url('containers',name,'copy'), body: body)
     if res.status == 500
       raise FileNotFound
     elsif res.status != 200
       raise res.status.to_s
     end
-    sio = StringIO.new(res.read_body)
+    sio = StringIO.new(res.body)
     tar = ::Gem::Package::TarReader.new( sio )
     tar.each do |entry|
       yield entry
@@ -121,10 +120,16 @@ class FPM::Dockery::Client
     return gid
   end
 
-
-
   def agent
     @agent ||= agent_for(docker_url)
+  end
+
+  def url_base
+    if host != ''
+      "http://#{host}:#{port}"
+    else
+      'http://docker.sock'
+    end
   end
 
   def host
@@ -136,15 +141,20 @@ class FPM::Dockery::Client
     @port
   end
 
+  class UNIXSocketFactory < Struct.new(:file)
+    def open( *_ )
+      UNIXSocket.new( file )
+    end
+  end
+
   def agent_for( uri )
     proto, address = uri.split('://',2)
     case(proto)
     when 'unix'
-      return FTW::SocketAgent.new(address)
-    when 'tcp'
-      return agent_for('http://' + address)
-    when 'http', 'https'
-      return FTW::Agent.new
+      return HTTP::Client.new(socket_class: UNIXSocketFactory.new(address), response: :object)
+    when 'tcp', 'http', 'https'
+      puts host_for(uri).inspect
+      return HTTP::Client.new(response: :object).with('Host'=> host_for(uri)).on(:request){|req| puts req.inspect }
     end
   end
 
@@ -152,9 +162,9 @@ class FPM::Dockery::Client
     proto, address = uri.split('://',2)
     case (proto)
     when 'unix'
-      return address
+      return ''#, address
     else
-      Addressable::URI.parse(uri).host
+      URI.parse(uri).host
     end
   end
 
@@ -164,7 +174,7 @@ class FPM::Dockery::Client
     when 'unix'
       return nil
     else
-      Addressable::URI.parse(uri).port
+      URI.parse(uri).port
     end
   end
 

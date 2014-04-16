@@ -27,7 +27,10 @@ module FPM; module Dockery
       end
     end
 
+
     class JoinedIO
+      include Enumerable
+
       def initialize(*ios)
         @ios = ios
         @pos = 0
@@ -43,6 +46,12 @@ module FPM; module Dockery
           return r
         end
         return nil
+      end
+
+      def each(&block)
+        @ios.each do |io|
+          io.each(&block)
+        end
       end
 
       def close

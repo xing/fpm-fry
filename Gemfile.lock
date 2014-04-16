@@ -1,25 +1,35 @@
 GIT
-  remote: https://github.com/hannesg/ruby-ftw.git
-  revision: 69da0bc1b3b824d16bd0e10b33391c5ac006e30f
-  branch: fix_reading_body
+  remote: https://github.com/hannesg/fpm.git
+  revision: f937f1cdf6e3747ae295e87e397211f112f2bba1
+  branch: remove_ftw
   specs:
-    ftw (0.0.39)
-      addressable
+    fpm (1.1.0)
+      arr-pm (~> 0.0.9)
       backports (>= 2.6.2)
-      cabin (> 0)
-      http_parser.rb (= 0.5.3)
+      cabin (>= 0.6.0)
+      childprocess
+      clamp (~> 0.6)
+      ffi
+      json (>= 1.7.7)
+
+GIT
+  remote: https://github.com/hannesg/http.git
+  revision: c1f8e45427bfb0fb52ee11db18e17bcc10ebef50
+  branch: fixes
+  specs:
+    http (0.6.0)
+      http_parser.rb (~> 0.6.0)
 
 PATH
   remote: .
   specs:
     fpm-dockery (0.1.0)
       fpm (~> 1.0)
-      ftw (~> 0.0)
+      http (~> 0.5)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.3.6)
     arr-pm (0.0.9)
       cabin (> 0)
     backports (3.6.0)
@@ -28,21 +38,13 @@ GEM
       ffi (~> 1.0, >= 1.0.11)
     clamp (0.6.3)
     ffi (1.9.3)
-    fpm (1.0.2)
-      arr-pm (~> 0.0.8)
-      backports (>= 2.6.2)
-      cabin (>= 0.6.0)
-      childprocess
-      clamp (~> 0.6)
-      ffi
-      ftw (~> 0.0.30)
-      json (>= 1.7.7)
-    http_parser.rb (0.5.3)
+    http_parser.rb (0.6.0)
     json (1.8.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  fpm!
   fpm-dockery!
-  ftw!
+  http!

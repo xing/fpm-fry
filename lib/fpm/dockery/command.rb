@@ -78,7 +78,7 @@ module FPM; module Dockery
         super
         @logger = Cabin::Channel.get
         @logger.subscribe(STDERR)
-        @logger.level = :info
+        @logger.level = :debug
         @out = STDOUT
         @tmpdir = '/tmp/dockery'
         FileUtils.mkdir_p( @tmpdir )
@@ -90,6 +90,7 @@ module FPM; module Dockery
         require 'fpm/dockery/docker_file'
         require 'fpm/dockery/stream_parser'
         require 'fpm/dockery/os_db'
+        require 'fpm/dockery/block_enumerator'
         client = FPM::Dockery::Client.new(logger: logger)
         if distribution
           d = Detector::String.new(distribution)
@@ -135,14 +136,14 @@ module FPM; module Dockery
 
         cache = b.recipe.source.build_cache(tmpdir)
         df = DockerFile.new(b.variables.merge(image: image),cache,b.recipe)
-        res = client.request('build?build=true') do |req|
-          req.headers.set('Content-Tye','application/tar')
-          req.method = 'POST'
-          req.body = df.tar_io
-        end
+        res = client.agent.with(
+          'Content-Type'=>'application/tar',
+          'Transfer-Encoding'=>'chunked'
+        ).post(client.url('build?build=true'), body: df.tar_io)
 
         stream = ""
-        res.read_http_body do |chunk|
+        res.body.each do |chunk|
+          logger.debug('chunk', chunk: chunk)
           json = JSON.parse(chunk)
           stream = json['stream']
           out << stream
@@ -155,30 +156,22 @@ module FPM; module Dockery
         end
 
         image = match[1]
-        logger.info("Detected build image #{image.inspect}", image: image)
+        logger.info("Detected build image", image: image)
 
-        res = client.request('containers','create') do |req|
-          req.method = 'POST'
-          req.body = JSON.generate({"Image" => image})
-          req.headers.set('Content-Type','application/json')
-          req.headers.set('Content-Length',req.body.bytesize)
-        end
+        res = client.agent.with(
+          'Content-Type' => 'application/json'
+        ).post(client.url('containers','create'),body: JSON.generate({"Image" => image}))
 
         raise res.status.to_s if res.status != 201
 
-        body = JSON.parse(res.read_body)
+        body = JSON.parse(res.body)
         container = body['Id']
         begin
-          res = client.request('containers',container,'start') do |req|
-            req.method = 'POST'
-            req.body = JSON.generate({})
-            req.headers.set('Content-Type','application/json')
-            req.headers.set('Content-Length',req.body.bytesize)
-          end
-
-          res = client.request('containers',container,'attach?stderr=1&stdout=1&stream=1') do |req|
-            req.method = 'POST'
-          end
+          client.agent.with(
+            'Content-Type' => 'application/json'
+          ).post(client.url('containers',container,'start'),body: JSON.generate({}))
+=begin
+          res = client.agent.post(agent.url('containers',container,'attach?stderr=1&stdout=1&stream=1')) 
           sp = StreamParser.new(STDOUT, STDERR)
           begin
             while rd = res.body.read
@@ -187,13 +180,9 @@ module FPM; module Dockery
           rescue EOFError
             logger.debug("eof")
           end
-
-          res = client.request('containers',container,'wait') do |req|
-            req.method = 'POST'
-            req.body = ''
-            req.headers.set('Content-Length',0)
-          end
-          json = JSON.parse(res.read_body)
+=end
+          res = client.agent.post(client.url('containers',container,'wait'), body: '')
+          json = JSON.parse(res.body)
           if json["StatusCode"] != 0
             logger.error("Build failed", status_code: json['StatusCode'])
             return 102
@@ -228,9 +217,7 @@ module FPM; module Dockery
 
         ensure
           unless keep?
-            client.request('containers',container) do |req|
-              req.method = 'DELETE'
-            end
+            client.agent.delete(client.url('containers',container))
           end
         end
 

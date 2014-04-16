@@ -75,16 +75,14 @@ module FPM; module Dockery
       attr :version
 
       def detect!
-        res = client.request('containers','create') do |req|
-          req.method = 'POST'
-          req.body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-          req.headers.set('Content-Type','application/json')
-          req.headers.set('Content-Length',req.body.bytesize)
-        end
+        body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
+        res = client.agent.with('Content-Type' => 'application/json',
+                                'Content-Length' => body.bytesize
+                               ).post(client.url('containers','create'), body: body) 
         if res.status != 201
-          raise "#{res.status}: #{res.read_body}"
+          raise "#{res.status}: #{res.body}"
         end
-        body = JSON.parse(res.read_body)
+        body = JSON.parse(res.body)
         container = body['Id']
         begin
           d = Container.new(client,container)
@@ -96,9 +94,7 @@ module FPM; module Dockery
             return false
           end
         ensure
-          client.request('containers',container) do |req|
-            req.method = 'DELETE'
-          end
+          client.agent.delete(client.url('containers',container))
         end
       end
     end

@@ -1,6 +1,6 @@
 require 'uri'
 require 'digest'
-require 'ftw'
+require 'http'
 require 'forwardable'
 require 'zlib'
 module FPM; module Dockery ; module Source
@@ -30,12 +30,16 @@ module FPM; module Dockery ; module Source
 
       def update!
         d = Digest::SHA256.new
-        req = agent.request('GET',url, {})
-        resp = agent.execute(req)
-        if resp.status == 200
+        res = agent.stream.get(url.to_s)
+        # old http.rb versions can't do redirects
+        while res.status > 300 && res.status < 400
+          raise "Location missing" unless res.headers['Location']
+          res = agent.stream.get(res.headers['Location'])
+        end
+        if res.status == 200
           f = File.new(tempfile,'w')
           begin
-            resp.read_body do | chunk |
+            res.body do | chunk |
               d.update(chunk)
               f.write(chunk)
             end
@@ -43,7 +47,7 @@ module FPM; module Dockery ; module Source
             f.close
           end
         else
-          logger.error('update cache failed',http_status: resp.status)
+          logger.error('update cache failed',status: res.status, reason: res.reason)
           return false
         end
 
@@ -89,7 +93,7 @@ module FPM; module Dockery ; module Source
           @url.path.end_with?(ext)
         }
       }
-      @agent = options.fetch(:agent){ FTW::Agent.new }
+      @agent = options.fetch(:agent){ HTTP::Client.new }
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @checksum = options[:checksum]
       @file_map = options.fetch(:file_map){ {'' => ''} }
