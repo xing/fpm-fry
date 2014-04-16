@@ -34,6 +34,17 @@ module FPM; module Dockery
         rescue Client::FileNotFound
         end
         begin
+          client.read(container,'/etc/debian_version') do |file|
+            content = file.read
+            if /\A\d+(?:\.\d+)+\Z/ =~ content
+              @distribution = 'debian'
+              @version = content.strip
+            end
+          end
+          return (@distribution and @version)
+        rescue Client::FileNotFound
+        end
+        begin
           client.read(container,'/etc/redhat-release') do |file|
             if file.header.typeflag == "2" # centos links this file
               client.read(container,File.absolute_path(file.header.linkname,'/etc')) do |file|
