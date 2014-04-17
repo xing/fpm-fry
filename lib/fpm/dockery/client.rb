@@ -1,4 +1,4 @@
-require 'http'
+require 'excon'
 require 'rubygems/package'
 require 'json'
 require 'fileutils'
@@ -6,6 +6,29 @@ require 'fileutils'
 module FPM; module Dockery; end ; end
 
 class FPM::Dockery::Client
+
+  class LogInstrumentor < Struct.new(:logger)
+
+    def instrument(event, data = {})
+      if block_given?
+        logger.info(event+'.before', filtered(data))
+        r = yield
+        logger.info(event+'.after', filtered(data))
+        return r
+      else
+        logger.info(event, filtered(data))
+      end
+    end
+
+    def filtered(data)
+      filtered = {}
+      filtered[:path] = data[:path]
+      filtered[:verb] = data[:method]
+      filtered[:headers] = data[:headers] 
+      return filtered
+    end
+
+  end
 
   class FileNotFound < StandardError
   end
@@ -22,31 +45,16 @@ class FPM::Dockery::Client
   end
 
   def url(*path)
-    [url_base, 'v1.9',*path].join('/')
+    ['', 'v1.9',*path].join('/')
   end
 
-=begin
-  def request(verb, *path)
-    req = FTW::Request.new
-    req.request_uri = ['', 'v1.9',*path].join('/')
-    req.headers.set('Host',host)
-    req.method = 'GET'
-    req.port = port if port
-    if block_given?
-      yield req
-      logger.debug("Sending request", path: req.path, req: req)
-      return agent.execute(req)
-    end
-    return req
-  end
-=end
   def read(name, resource)
     return to_enum(:read, name, resource) unless block_given?
     body = JSON.generate({'Resource' => resource})
-    res = agent.with(
-      'Content-Type'=>  'application/json',
-      'Content-Length' => body.bytesize
-    ).post(url('containers',name,'copy'), body: body)
+    res = agent.post(
+      path: url('containers',name,'copy'),
+      headers: { 'Content-Type' => 'application/json' },
+      body: body)
     if res.status == 500
       raise FileNotFound
     elsif res.status != 200
@@ -151,10 +159,11 @@ class FPM::Dockery::Client
     proto, address = uri.split('://',2)
     case(proto)
     when 'unix'
-      return HTTP::Client.new(socket_class: UNIXSocketFactory.new(address), response: :object)
-    when 'tcp', 'http', 'https'
-      puts host_for(uri).inspect
-      return HTTP::Client.new(response: :object).with('Host'=> host_for(uri)).on(:request){|req| puts req.inspect }
+      return Excon.new("unix:///", socket: address, instrumentor: LogInstrumentor.new(logger))
+    when 'tcp'
+      return agent_for("http://#{address}")
+    when 'http', 'https'
+      return Excon.new(uri, instrumentor: LogInstrumentor.new(logger))
     end
   end
 

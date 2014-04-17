@@ -1,6 +1,6 @@
 require 'uri'
 require 'digest'
-require 'http'
+require 'net/http'
 require 'forwardable'
 require 'zlib'
 module FPM; module Dockery ; module Source
@@ -30,25 +30,20 @@ module FPM; module Dockery ; module Source
 
       def update!
         d = Digest::SHA256.new
-        res = agent.stream.get(url.to_s)
-        # old http.rb versions can't do redirects
-        while res.status > 300 && res.status < 400
-          raise "Location missing" unless res.headers['Location']
-          res = agent.stream.get(res.headers['Location'])
-        end
-        if res.status == 200
-          f = File.new(tempfile,'w')
+        f = nil
+        fetch_url(url) do |resp|
           begin
-            res.body do | chunk |
+            f = File.new(tempfile,'w')
+            resp.read_body do | chunk |
               d.update(chunk)
               f.write(chunk)
             end
+          rescue => e
+            logger.error('fetching source failed', reason: e)
+            return false
           ensure
             f.close
           end
-        else
-          logger.error('update cache failed',status: res.status, reason: res.reason)
-          return false
         end
 
         @observed_checksum = d.hexdigest
@@ -57,6 +52,20 @@ module FPM; module Dockery ; module Source
           return check_checksum(d)
         else
           return true
+        end
+      end
+
+      def fetch_url( url, redirs = 3, &block)
+        url = URI(url.to_s) unless url.kind_of? URI
+        Net::HTTP.get_response(url) do |resp|
+          case(resp)
+          when Net::HTTPRedirection
+            return fetch_url( resp['location'], redirs - 1, &block)
+          when Net::HTTPSuccess
+            return block.call(resp)
+          else
+            raise resp.message
+          end
         end
       end
 
@@ -93,7 +102,6 @@ module FPM; module Dockery ; module Source
           @url.path.end_with?(ext)
         }
       }
-      @agent = options.fetch(:agent){ HTTP::Client.new }
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @checksum = options[:checksum]
       @file_map = options.fetch(:file_map){ {'' => ''} }

@@ -12,20 +12,12 @@ GIT
       ffi
       json (>= 1.7.7)
 
-GIT
-  remote: https://github.com/hannesg/http.git
-  revision: c1f8e45427bfb0fb52ee11db18e17bcc10ebef50
-  branch: fixes
-  specs:
-    http (0.6.0)
-      http_parser.rb (~> 0.6.0)
-
 PATH
   remote: .
   specs:
     fpm-dockery (0.1.0)
+      excon (~> 0.30)
       fpm (~> 1.0)
-      http (~> 0.5)
 
 GEM
   remote: https://rubygems.org/
@@ -37,8 +29,8 @@ GEM
     childprocess (0.5.2)
       ffi (~> 1.0, >= 1.0.11)
     clamp (0.6.3)
+    excon (0.33.0)
     ffi (1.9.3)
-    http_parser.rb (0.6.0)
     json (1.8.1)
 
 PLATFORMS
@@ -47,4 +39,3 @@ PLATFORMS
 DEPENDENCIES
   fpm!
   fpm-dockery!
-  http!

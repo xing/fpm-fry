@@ -5,7 +5,3 @@ gemspec
 git 'https://github.com/hannesg/fpm.git', branch: 'remove_ftw' do
   gem 'fpm'
 end
-
-git 'https://github.com/hannesg/http.git', branch: 'fixes' do
-  gem 'http'
-end

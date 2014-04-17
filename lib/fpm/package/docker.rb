@@ -34,9 +34,9 @@ private
   end
 
   def changes(name)
-    res = client.agent.get(client.url('containers',name,'changes'))
+    res = client.agent.get(path: client.url('containers',name,'changes'))
     raise res.reason if res.status != 200
-    changes = res.parse_body
+    changes = JSON.parse(res.body)
     return change_leaves(changes)
   end
 

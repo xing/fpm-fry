@@ -78,7 +78,7 @@ module FPM; module Dockery
         super
         @logger = Cabin::Channel.get
         @logger.subscribe(STDERR)
-        @logger.level = :debug
+        @logger.level = :warn
         @out = STDOUT
         @tmpdir = '/tmp/dockery'
         FileUtils.mkdir_p( @tmpdir )
@@ -91,6 +91,7 @@ module FPM; module Dockery
         require 'fpm/dockery/stream_parser'
         require 'fpm/dockery/os_db'
         require 'fpm/dockery/block_enumerator'
+        require 'fpm/dockery/build_output_parser'
         client = FPM::Dockery::Client.new(logger: logger)
         if distribution
           d = Detector::String.new(distribution)
@@ -136,52 +137,62 @@ module FPM; module Dockery
 
         cache = b.recipe.source.build_cache(tmpdir)
         df = DockerFile.new(b.variables.merge(image: image),cache,b.recipe)
-        res = client.agent.with(
-          'Content-Type'=>'application/tar',
-          'Transfer-Encoding'=>'chunked'
-        ).post(client.url('build?build=true'), body: df.tar_io)
 
-        stream = ""
-        res.body.each do |chunk|
-          logger.debug('chunk', chunk: chunk)
-          json = JSON.parse(chunk)
-          stream = json['stream']
-          out << stream
-        end
+        parser = BuildOutputParser.new(out)
+        tar_io = df.tar_io
 
-        match = /\ASuccessfully built (\w+)\Z/.match(stream)
-        if !match
+        res = client.agent.post(
+          headers: {
+            'Content-Type'=>'application/tar'
+          },
+          path: client.url('build?build=true'),
+          request_block: BlockEnumerator.new(tar_io),
+          response_block: parser
+        )
+
+        if parser.images.none?
           logger.error("Unable to detect build image")
           return 100
         end
 
-        image = match[1]
+        image = parser.images.last
         logger.info("Detected build image", image: image)
 
-        res = client.agent.with(
-          'Content-Type' => 'application/json'
-        ).post(client.url('containers','create'),body: JSON.generate({"Image" => image}))
+        res = client.agent.post(
+           headers: {
+            'Content-Type' => 'application/json'
+           },
+           path: client.url('containers','create'),
+           body: JSON.generate({"Image" => image})
+        )
 
         raise res.status.to_s if res.status != 201
 
         body = JSON.parse(res.body)
         container = body['Id']
         begin
-          client.agent.with(
-            'Content-Type' => 'application/json'
-          ).post(client.url('containers',container,'start'),body: JSON.generate({}))
-=begin
-          res = client.agent.post(agent.url('containers',container,'attach?stderr=1&stdout=1&stream=1')) 
-          sp = StreamParser.new(STDOUT, STDERR)
-          begin
-            while rd = res.body.read
-              sp << rd
-            end
-          rescue EOFError
-            logger.debug("eof")
-          end
-=end
-          res = client.agent.post(client.url('containers',container,'wait'), body: '')
+          client.agent.post(
+            headers: {
+              'Content-Type' => 'application/json'
+            },
+            path: client.url('containers',container,'start'),
+            body: JSON.generate({})
+          )
+
+          res = client.agent.post(
+            path: client.url('containers',container,'attach?stderr=1&stdout=1&stream=1'),
+            body: '',
+            middlewares: [
+              StreamParser.new(STDOUT,STDERR),
+              Excon::Middleware::Expects,
+              Excon::Middleware::Instrumentor
+            ]
+          )
+
+          res = client.agent.post(
+            path: client.url('containers',container,'wait'),
+            body: ''
+          )
           json = JSON.parse(res.body)
           if json["StatusCode"] != 0
             logger.error("Build failed", status_code: json['StatusCode'])
@@ -217,7 +228,7 @@ module FPM; module Dockery
 
         ensure
           unless keep?
-            client.agent.delete(client.url('containers',container))
+            client.agent.delete(path: client.url('containers',container))
           end
         end
 

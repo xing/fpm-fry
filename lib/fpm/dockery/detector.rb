@@ -76,9 +76,9 @@ module FPM; module Dockery
 
       def detect!
         body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-        res = client.agent.with('Content-Type' => 'application/json',
-                                'Content-Length' => body.bytesize
-                               ).post(client.url('containers','create'), body: body) 
+        res = client.agent.post( path: client.url('containers','create'),
+                                 headers: {'Content-Type' => 'application/json'},
+                                 body: body) 
         if res.status != 201
           raise "#{res.status}: #{res.body}"
         end
@@ -94,7 +94,7 @@ module FPM; module Dockery
             return false
           end
         ensure
-          client.agent.delete(client.url('containers',container))
+          client.agent.delete(path: client.url('containers',container))
         end
       end
     end
