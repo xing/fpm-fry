@@ -6,28 +6,6 @@ require 'fpm/dockery/source'
 module FPM; module Dockery
   class DockerFile < Struct.new(:variables,:cache,:recipe)
 
-    class FiberIO
-      def initialize()
-        @buf = nil
-      end
-      def write( x )
-        raise "Buffer already set with #{@buf.inspect}" if @buf
-        @buf = [Fiber.current, x]
-        Fiber.yield
-      end
-      def each
-        while !@buf.nil?
-          fiber, x = @buf
-          @buf = nil
-          yield x
-          if fiber.alive?
-            fiber.resume
-          end
-        end
-      end
-    end
-
-
     class JoinedIO
       include Enumerable
 
