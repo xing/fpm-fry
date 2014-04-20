@@ -47,7 +47,7 @@ RECIPE
     end
 
     it 'support setting before_install' do
-      expect(package.scripts).to eq({before_install: "before install", after_install: "", before_remove: "", after_remove: "" })
+      expect(package.scripts).to eq({before_install: "before install"})
     end
   end
 

@@ -2,6 +2,9 @@ require 'excon/middlewares/base'
 module FPM; module Dockery
   class StreamParser
 
+    class ShortRead < EOFError
+    end
+
     class Instance < Excon::Middleware::Base
 
       def initialize(stack, parser)
@@ -47,19 +50,22 @@ module FPM; module Dockery
     def parse(socket)
       left  = 0
       streams = {1 => out, 2 => err}
-      begin
-        loop do
-          type = read_exactly(socket,4).ord
-          stream = streams.fetch(type)
-          len  = read_exactly(socket,4).unpack('I>')[0]
-          while len > 0
-            chunk = socket.read([64,len].min)
-            return if chunk.nil?
-            len -= chunk.bytesize
-            stream.write(chunk)
+      loop do
+        type = read_exactly(socket,4){|part| 
+          if part.bytesize == 0
+            return
+          else
+            raise ShortRead
           end
+        }.unpack("c".freeze)[0]
+        stream = streams.fetch(type){ raise ArgumentError, "Wrong stream type: #{type}"}
+        len  = read_exactly(socket,4).unpack('I>')[0]
+        while len > 0
+          chunk = socket.read([64,len].min)
+          raise ShortRead if chunk.nil?
+          len -= chunk.bytesize
+          stream.write(chunk)
         end
-      rescue EOFError
       end
     end
 
@@ -68,29 +74,17 @@ module FPM; module Dockery
       left = len
       while left != 0
         read = socket.read(left)
-        raise EOFError if read.nil?
+        if read.nil?
+          if block_given?
+            yield buf
+          else
+            raise ShortRead
+          end
+        end
         buf << read
         left = len - buf.bytesize
       end
       return buf
-    end
-
-    def <<(data)
-      return if data.bytesize == 0
-      # simple solution for now
-      case(@state)
-      when :null then
-        case(data.ord)
-        when 1
-          out << data.byteslice(8,data.bytesize)
-        when 2
-          err << data.byteslice(8,data.bytesize)
-        else
-          raise ArgumentError, "Bad formated docker stream"
-        end
-      end
-
-
     end
 
   end
