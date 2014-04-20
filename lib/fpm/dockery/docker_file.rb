@@ -3,39 +3,9 @@ require 'shellwords'
 require 'rubygems/package'
 require 'fpm/dockery/os_db'
 require 'fpm/dockery/source'
+require 'fpm/dockery/joined_io'
 module FPM; module Dockery
   class DockerFile < Struct.new(:variables,:cache,:recipe)
-
-    class JoinedIO
-      include Enumerable
-
-      def initialize(*ios)
-        @ios = ios
-        @pos = 0
-      end
-
-      def read( *args )
-        while io = @ios[@pos]
-          if io.eof?
-            @pos = @pos + 1
-            next
-          end
-          r = io.read( *args )
-          return r
-        end
-        return nil
-      end
-
-      def each(&block)
-        @ios.each do |io|
-          io.each(&block)
-        end
-      end
-
-      def close
-        @ios.each(&:close)
-      end
-    end
 
     def initialize(variables, cache = Source::Null::Cache, recipe)
       variables = variables.dup

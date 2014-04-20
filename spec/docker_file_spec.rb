@@ -71,7 +71,7 @@ SHELL
 
   describe 'docker_file' do
 
-    context 'simple case' do
+    context 'simple ubuntu' do
       include DockerFileParams
 
       variables(
@@ -94,6 +94,53 @@ RUN apt-get install --yes arg blub foo
 ADD .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
+      end
+    end
+
+    context 'simple centos' do
+      include DockerFileParams
+
+      variables(
+        image: 'centos:6.5',
+        distribution: 'centos'
+      )
+
+      recipe do |b|
+        b.build_depends 'blub'
+        b.depends 'foo'
+        b.depends 'arg'
+      end
+
+      it 'works' do
+        expect(subject.dockerfile).to eq(<<SHELL)
+FROM centos:6.5
+RUN mkdir /tmp/build
+WORKDIR /tmp/build
+RUN yum -y install arg blub foo
+ADD .build.sh /tmp/build/
+ENTRYPOINT /tmp/build/.build.sh
+SHELL
+      end
+    end
+  end
+
+  describe '#tar_io' do
+
+     context 'simple ubuntu' do
+      include DockerFileParams
+
+      variables(
+        image: 'ubuntu:precise',
+        distribution: 'ubuntu'
+      )
+
+      it 'works' do
+        io = subject.tar_io
+        entries = Gem::Package::TarReader.new(io).map{|e| e}
+        # XXX: when rspec 3 is released, use http://myronmars.to/n/dev-blog/2014/01/new-in-rspec-3-composable-matchers
+        expect( entries.size ).to eq(2)
+        expect( entries[0].header.name ).to eq(".build.sh")
+        expect( entries[1].header.name ).to eq("Dockerfile")
       end
     end
 

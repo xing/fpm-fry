@@ -3,7 +3,7 @@ module FPM; module Dockery ; module Source
 
     module Cache
       def self.tar_io
-        StringIO.new("")
+        StringIO.new("\x00"*1024)
       end
       def self.file_map
         return {}
