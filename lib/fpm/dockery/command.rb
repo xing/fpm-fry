@@ -155,11 +155,12 @@ module FPM; module Dockery
         parser = BuildOutputParser.new(out)
         tar_io = df.tar_io
 
-        res = client.agent.post(
+        res = client.post(
           headers: {
             'Content-Type'=>'application/tar'
           },
-          path: client.url('build?build=true'),
+          expects: [200],
+          path: client.url('build'),
           request_block: BlockEnumerator.new(tar_io),
           response_block: parser
         )
@@ -170,32 +171,33 @@ module FPM; module Dockery
         end
 
         image = parser.images.last
-        logger.info("Detected build image", image: image)
+        logger.debug("Detected build image", image: image)
 
-        res = client.agent.post(
+        res = client.post(
            headers: {
             'Content-Type' => 'application/json'
            },
            path: client.url('containers','create'),
+           expects: [201],
            body: JSON.generate({"Image" => image})
         )
-
-        raise res.status.to_s if res.status != 201
 
         body = JSON.parse(res.body)
         container = body['Id']
         begin
-          client.agent.post(
+          client.post(
             headers: {
               'Content-Type' => 'application/json'
             },
             path: client.url('containers',container,'start'),
+            expects: [204],
             body: JSON.generate({})
           )
 
-          res = client.agent.post(
+          client.post(
             path: client.url('containers',container,'attach?stderr=1&stdout=1&stream=1'),
             body: '',
+            expects: [200],
             middlewares: [
               StreamParser.new(STDOUT,STDERR),
               Excon::Middleware::Expects,
@@ -203,8 +205,9 @@ module FPM; module Dockery
             ]
           )
 
-          res = client.agent.post(
+          res = client.post(
             path: client.url('containers',container,'wait'),
+            expects: [200],
             body: ''
           )
           json = JSON.parse(res.body)
@@ -242,7 +245,7 @@ module FPM; module Dockery
 
         ensure
           unless keep?
-            client.agent.delete(path: client.url('containers',container))
+            client.delete(path: client.url('containers',container))
           end
         end
 
