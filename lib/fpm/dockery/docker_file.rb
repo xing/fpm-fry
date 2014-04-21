@@ -36,7 +36,7 @@ module FPM; module Dockery
       end
 
       cache.file_map.each do |from, to|
-        df << "ADD #{from} #{map_dir(to)}"
+        df << "ADD #{map_from(from)} #{map_to(to)}"
       end
 
       df << "ADD .build.sh /tmp/build/"
@@ -65,7 +65,15 @@ module FPM; module Dockery
       )
     end
 
-    def map_dir(dir)
+    def map_from(dir)
+      if dir == ''
+        return '.'
+      else
+        return dir
+      end
+    end
+
+    def map_to(dir)
       if ['','.'].include? dir
         return '/tmp/build'
       else

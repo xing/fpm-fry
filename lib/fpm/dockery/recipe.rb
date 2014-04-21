@@ -1,6 +1,8 @@
 require 'fpm/dockery/source'
 require 'fpm/dockery/source/package'
+require 'fpm/dockery/source/git'
 require 'shellwords'
+require 'cabin'
 module FPM; module Dockery
 
   class Recipe
@@ -8,6 +10,8 @@ module FPM; module Dockery
     Not = Module.new
 
     class Builder < Struct.new(:variables, :recipe)
+
+      attr :logger
 
       def flavour
         variables[:flavour]
@@ -21,9 +25,10 @@ module FPM; module Dockery
         variables[:distribution_version]
       end
 
-      def initialize( vars, recipe = Recipe.new)
+      def initialize( vars, recipe = Recipe.new, options = {})
         vars.freeze
-        super
+        super(vars, recipe)
+        @logger = options.fetch(:logger){ Cabin::Channel.get }
       end
 
       def load_file( file )
@@ -53,8 +58,7 @@ module FPM; module Dockery
       end
 
       def source( url , options = {} )
-        # super simple now
-        get_or_set('@source',Source::Package.new(url, options))
+        get_or_set('@source',guess_source(url,options).new(url, options.merge(logger: logger)))
       end
 
       def run(*args)
@@ -97,6 +101,27 @@ module FPM; module Dockery
       alias postuninstall after_remove
 
     protected
+
+      def guess_source( url, options = {} )
+        case options[:with]
+        when :git then return Source::Git
+        when :http, :tar then return Source::Package
+        when nil
+        else
+          raise "Unknown source type: #{options[:with]}"
+        end
+        if url =~ /\Ahttps?:/
+          if url =~ /\.git\z/
+            return Source::Git
+          else
+            return Source::Package
+          end
+        elsif url =~ /\Agit:/
+          return Source::Git
+        end
+        raise "Unknown source type: #{url}"
+      end
+
       def get_or_set(name, value = Not)
         if value == Not
           return recipe.instance_variable_get(name)

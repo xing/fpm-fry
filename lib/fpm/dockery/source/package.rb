@@ -21,6 +21,7 @@ module FPM; module Dockery ; module Source
         else
           update!
         end
+        return self
       end
 
       def cache_valid?
@@ -111,9 +112,7 @@ module FPM; module Dockery ; module Source
     end
 
     def build_cache(tempdir)
-      c = Cache.new(self, tempdir)
-      c.update
-      c
+      Cache.new(self, tempdir).update
     end
   end
 end end end

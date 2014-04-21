@@ -136,7 +136,7 @@ module FPM; module Dockery
             flavour: flavour
           }
           logger.info("Loading recipe",variables: vars, recipe: recipe)
-          b = Recipe::Builder.new(vars)
+          b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
           b.load_file( recipe )
         rescue Errno::ENOENT
           logger.error("Recipe not found")
