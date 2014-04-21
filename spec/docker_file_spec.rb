@@ -142,8 +142,8 @@ SHELL
         expect( entries[0].header.name ).to eq(".build.sh")
         expect( entries[1].header.name ).to eq("Dockerfile")
       end
-    end
 
+    end
   end
 end
 

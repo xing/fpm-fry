@@ -3,8 +3,12 @@ require 'digest'
 require 'net/http'
 require 'forwardable'
 require 'zlib'
+require 'fpm/dockery/source'
 module FPM; module Dockery ; module Source
   class Package
+
+    class RedirectError < CacheFailed
+    end
 
     class Cache < Struct.new(:package,:tempdir)
       extend Forwardable
@@ -22,7 +26,7 @@ module FPM; module Dockery ; module Source
       def cache_valid?
         c = @observed_checksum || checksum
         begin
-          check_checksum( Digest::SHA256.file(tempfile) , c )
+          Digest::SHA256.file(tempfile).hexdigest == c
         rescue Errno::ENOENT
           return false
         end
@@ -39,8 +43,7 @@ module FPM; module Dockery ; module Source
               f.write(chunk)
             end
           rescue => e
-            logger.error('fetching source failed', reason: e)
-            return false
+            raise CacheFailed, e
           ensure
             f.close
           end
@@ -49,7 +52,9 @@ module FPM; module Dockery ; module Source
         @observed_checksum = d.hexdigest
         logger.debug("got checksum", checksum: @observed_checksum)
         if checksum
-          return check_checksum(d)
+          if d.hexdigest == checksum
+            raise CacheFailed.new("Checksum failed",given: d.hexdigest, expected: checksum)
+          end
         else
           return true
         end
@@ -60,18 +65,16 @@ module FPM; module Dockery ; module Source
         Net::HTTP.get_response(url) do |resp|
           case(resp)
           when Net::HTTPRedirection
+            if redirs == 0
+              raise RedirectError, "Too many redirects"
+            end
             return fetch_url( resp['location'], redirs - 1, &block)
           when Net::HTTPSuccess
             return block.call(resp)
           else
-            raise resp.message
+            raise CacheFailed.new('Unable to fetch file',url: url.to_s, http_code: resp.code, http_message: resp.message)
           end
         end
-      end
-
-      def check_checksum( digest , c = checksum)
-        logger.info('comparing checksum', given: digest.hexdigest, expected: c)
-        digest.hexdigest == c
       end
 
       def tempfile

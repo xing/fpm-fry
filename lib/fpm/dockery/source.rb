@@ -1,4 +1,20 @@
 module FPM; module Dockery ; module Source
+
+  class CacheFailed < StandardError
+
+    attr :options
+
+    def initialize(e, opts = {})
+      if e.kind_of? Exception
+        @options = {reason: e}.merge opts
+        super(e.message)
+      else
+        @options = opts.dup
+        super(e.to_s)
+      end
+    end
+  end
+
   module Null
 
     module Cache
