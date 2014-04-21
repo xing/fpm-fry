@@ -69,6 +69,7 @@ module FPM; module Dockery ; module Source
             if redirs == 0
               raise RedirectError, "Too many redirects"
             end
+            logger.debug("Following redirect", url: url.to_s , location: resp['location'])
             return fetch_url( resp['location'], redirs - 1, &block)
           when Net::HTTPSuccess
             return block.call(resp)
