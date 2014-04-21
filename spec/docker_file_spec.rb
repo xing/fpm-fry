@@ -57,11 +57,10 @@ describe FPM::Dockery::DockerFile do
       end
 
       it 'works' do
-        expect(subject.build_sh).to eq(<<SHELL)
+        expect(subject.build_sh).to eq(<<'SHELL')
 #!/bin/bash
 set -e
-set -x
-echo '------> ' foo-bar
+echo -e '\e[1;32m====> foo-bar\e[0m'
 foo bar --baz
 SHELL
       end
