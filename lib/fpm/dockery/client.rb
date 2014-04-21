@@ -12,19 +12,19 @@ class FPM::Dockery::Client
 
     def instrument(event, data = {})
       if block_given?
-        logger.debug(event+'.before', filtered(data))
+        logger.debug('Requesting HTTP', filtered(data))
         r = yield
-        logger.debug(event+'.after', filtered(data))
         return r
       else
-        logger.debug(event, filtered(data))
+        logger.debug('Getting HTTP response', filtered(data))
       end
     end
 
     def filtered(data)
       filtered = {}
-      filtered[:path] = data[:path]
-      filtered[:verb] = data[:method]
+      filtered[:path] = data[:path] if data[:path]
+      filtered[:verb] = data[:method] if data[:method]
+      filtered[:status] = data[:status] if data[:status]
       filtered[:headers] = data[:headers] 
       return filtered
     end

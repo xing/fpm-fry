@@ -49,9 +49,8 @@ module FPM; module Dockery
     def build_sh
       df = ['#!/bin/bash']
       df << 'set -e'
-      df << 'set -x'
       recipe.steps.each do |k,v|
-        df << "echo '------> ' #{Shellwords.escape k}"
+        df << "echo -e '\\e[1;32m====> #{Shellwords.escape k}\\e[0m'"
         df << v.to_s
       end
       df << ''

@@ -38,7 +38,7 @@ module FPM; module Dockery ; module Source
 
       def git(*args)
         cmd = [package.git, "--git-dir=#{repodir}",*args]
-        logger.debug("Running git",cmd: cmd)
+        logger.debug("Running git",cmd: cmd.join(' '))
         Open3.popen3(*cmd) do |sin, out, err, thr|
           sin.close
           out.each_line do |line|

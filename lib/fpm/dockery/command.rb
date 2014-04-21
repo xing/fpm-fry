@@ -9,6 +9,8 @@ module FPM; module Dockery
 
   class Command < Clamp::Command
 
+    option '--debug', :flag, 'Turns on debugging'
+
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
 
     subcommand 'detect', 'Detects distribution from an image, a container or a given name' do
@@ -24,6 +26,9 @@ module FPM; module Dockery
       def initialize(*_)
         super
         @ui = UI.new()
+        if debug?
+          ui.logger.level = :debug
+        end
       end
 
       def execute
@@ -43,19 +48,21 @@ module FPM; module Dockery
 
         begin
           if d.detect!
-            puts "Distribution: #{d.distribution}"
-            puts "Version: #{d.version}"
+            data = {distribution: d.distribution, version: d.version}
             if i = OsDb[d.distribution]
-              puts "Flavour: #{i[:flavour]}"
+              data[:flavour] = i[:flavour]
             else
-              puts "Flavour: unknown"
+              data[:flavour] = "unknown"
             end
+            logger.info("Detected distribution",data)
+            return 0
           else
-            puts "Failed"
+            logger.error("Detection failed")
+            return 2
           end
         rescue => e
           logger.error(e)
-          return 1
+          return 3
         end
       end
 
@@ -82,7 +89,6 @@ module FPM; module Dockery
       parameter 'image', 'Docker image to build from'
       parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
-
       attr :ui
       extend Forwardable
       def_delegators :ui, :out, :err, :logger, :tmpdir
@@ -90,6 +96,9 @@ module FPM; module Dockery
       def initialize(*_)
         super
         @ui = UI.new
+        if debug?
+          ui.logger.level = :debug
+        end
       end
 
       def execute
@@ -105,8 +114,13 @@ module FPM; module Dockery
           d = Detector::String.new(distribution)
         else
           d = Detector::Image.new(client, image)
-          unless d.detect!
-            logger.error("Unable to detect distribution from given image")
+          begin
+            unless d.detect!
+              logger.error("Unable to detect distribution from given image")
+              return 101
+            end
+          rescue Excon::Errors::NotFound
+            logger.error("Image not found", image: image)
             return 101
           end
         end
@@ -139,7 +153,7 @@ module FPM; module Dockery
           b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
           b.load_file( recipe )
         rescue Errno::ENOENT
-          logger.error("Recipe not found")
+          logger.error("Recipe not found", recipe: recipe)
           return 1
         end
 
@@ -240,7 +254,7 @@ module FPM; module Dockery
           end
           File.rename tmp_package_file, package_file
 
-          logger.log("Created package", :path => package_file)
+          logger.info("Created package", :path => package_file)
           return 0
 
         ensure
@@ -250,6 +264,9 @@ module FPM; module Dockery
         end
 
         return 0
+      rescue => e
+        logger.error(e)
+        return 1
       end
 
     end
