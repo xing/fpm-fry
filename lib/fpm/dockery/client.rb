@@ -11,12 +11,12 @@ class FPM::Dockery::Client
 
     def instrument(event, data = {})
       if block_given?
-        logger.info(event+'.before', filtered(data))
+        logger.debug(event+'.before', filtered(data))
         r = yield
-        logger.info(event+'.after', filtered(data))
+        logger.debug(event+'.after', filtered(data))
         return r
       else
-        logger.info(event, filtered(data))
+        logger.debug(event, filtered(data))
       end
     end
 

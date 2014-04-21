@@ -2,6 +2,8 @@ require 'tmpdir'
 require 'fileutils'
 require 'clamp'
 require 'json'
+require 'forwardable'
+require 'fpm/dockery/ui'
 
 module FPM; module Dockery
 
@@ -15,13 +17,13 @@ module FPM; module Dockery
       option '--container', 'container', 'Docker container to detect'
       option '--distribution', 'distribution', 'Distribution name to detect'
 
-      attr :logger
+      attr :ui
+      extend Forwardable
+      def_delegators :ui, :logger
 
       def initialize(*_)
         super
-        @logger = Cabin::Channel.get
-        @logger.subscribe(STDOUT)
-        @logger.level = :debug
+        @ui = UI.new()
       end
 
       def execute
@@ -72,16 +74,14 @@ module FPM; module Dockery
       parameter 'image', 'Docker image to build from'
       parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
-      attr :logger, :out, :tmpdir
+
+      attr :ui
+      extend Forwardable
+      def_delegators :ui, :out, :err, :logger, :tmpdir
 
       def initialize(*_)
         super
-        @logger = Cabin::Channel.get
-        @logger.subscribe(STDERR)
-        @logger.level = :warn
-        @out = STDOUT
-        @tmpdir = '/tmp/dockery'
-        FileUtils.mkdir_p( @tmpdir )
+        @ui = UI.new
       end
 
       def execute
@@ -135,7 +135,13 @@ module FPM; module Dockery
           return 1
         end
 
-        cache = b.recipe.source.build_cache(tmpdir)
+        begin
+          cache = b.recipe.source.build_cache(tmpdir)
+        rescue Source::CacheFailed => e
+          logger.error(e.message, e.options)
+          return 100
+        end
+
         df = DockerFile.new(b.variables.merge(image: image),cache,b.recipe)
 
         parser = BuildOutputParser.new(out)
