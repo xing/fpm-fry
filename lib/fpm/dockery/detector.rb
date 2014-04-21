@@ -59,6 +59,7 @@ module FPM; module Dockery
         end
       end
 
+    private
       def detect_redhat_release(file)
         file.read.each_line do |line|
           case(line)
@@ -70,22 +71,25 @@ module FPM; module Dockery
       end
     end
 
-    class Image < Struct.new(:client,:image)
+    class Image < Struct.new(:client,:image,:factory)
       attr :distribution
       attr :version
 
+      def initialize(client, image, factory = Container)
+        super
+      end
+
       def detect!
         body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-        res = client.agent.post( path: client.url('containers','create'),
-                                 headers: {'Content-Type' => 'application/json'},
-                                 body: body) 
-        if res.status != 201
-          raise "#{res.status}: #{res.body}"
-        end
+        res = client.post( path: client.url('containers','create'),
+                           headers: {'Content-Type' => 'application/json'},
+                           body: body,
+                           expects: [201]
+                         )
         body = JSON.parse(res.body)
-        container = body['Id']
+        container = body.fetch('Id')
         begin
-          d = Container.new(client,container)
+          d = factory.new(client,container)
           if d.detect!
             @distribution = d.distribution
             @version = d.version
@@ -94,7 +98,7 @@ module FPM; module Dockery
             return false
           end
         ensure
-          client.agent.delete(path: client.url('containers',container))
+          client.delete(path: client.url('containers',container))
         end
       end
     end

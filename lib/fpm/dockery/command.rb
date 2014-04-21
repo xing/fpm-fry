@@ -11,7 +11,7 @@ module FPM; module Dockery
 
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
 
-    subcommand 'detect', 'Detects distribution from iamge' do
+    subcommand 'detect', 'Detects distribution from an image, a container or a given name' do
 
       option '--image', 'image', 'Docker image to detect'
       option '--container', 'container', 'Docker container to detect'
@@ -34,20 +34,28 @@ module FPM; module Dockery
           d = Detector::Image.new(client, image)
         elsif distribution
           d = Detector::String.new(distribution)
-        else
+        elsif container
           d = Detector::Container.new(client, container)
+        else
+          logger.error("Please supply either --image, --distribution or --container")
+          return 1
         end
 
-        if d.detect!
-          puts "Distribution: #{d.distribution}"
-          puts "Version: #{d.version}"
-          if i = OsDb[d.distribution]
-            puts "Flavour: #{i[:flavour]}"
+        begin
+          if d.detect!
+            puts "Distribution: #{d.distribution}"
+            puts "Version: #{d.version}"
+            if i = OsDb[d.distribution]
+              puts "Flavour: #{i[:flavour]}"
+            else
+              puts "Flavour: unknown"
+            end
           else
-            puts "Flavour: unknown"
+            puts "Failed"
           end
-        else
-          puts "Failed"
+        rescue => e
+          logger.error(e)
+          return 1
         end
       end
 

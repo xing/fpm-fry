@@ -2,6 +2,7 @@ require 'excon'
 require 'rubygems/package'
 require 'json'
 require 'fileutils'
+require 'forwardable'
 
 module FPM; module Dockery; end ; end
 
@@ -33,6 +34,9 @@ class FPM::Dockery::Client
   class FileNotFound < StandardError
   end
 
+  extend Forwardable
+  def_delegators :agent, :post, :get, :delete
+
   attr :docker_url, :logger
 
   def initialize(options = {})
@@ -54,11 +58,11 @@ class FPM::Dockery::Client
     res = agent.post(
       path: url('containers',name,'copy'),
       headers: { 'Content-Type' => 'application/json' },
-      body: body)
+      body: body,
+      expects: [200,500]
+    )
     if res.status == 500
       raise FileNotFound
-    elsif res.status != 200
-      raise res.status.to_s
     end
     sio = StringIO.new(res.body)
     tar = ::Gem::Package::TarReader.new( sio )
