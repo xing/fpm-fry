@@ -30,7 +30,7 @@ private
   end
 
   def copy(name, chg)
-    client.copy(name, chg, staging_path(chg))
+    client.copy(name, chg, staging_path(chg), chown: false)
   end
 
   def changes(name)

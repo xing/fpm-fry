@@ -71,14 +71,14 @@ class FPM::Dockery::Client
     end
   end
 
-  def copy(name, resource, to)
+  def copy(name, resource, to, options = {})
     dest = File.dirname(to)
     read(name, resource) do | entry |
-      extract_entry(dest, entry)
+      extract_entry(dest, entry, options)
     end
   end
 
-  def extract_entry(destdir, entry)
+  def extract_entry(destdir, entry, options)
     full_name = entry.full_name
     mode = entry.header.mode
 
@@ -111,17 +111,13 @@ class FPM::Dockery::Client
       return
     end
     FileUtils.chmod(entry.header.mode, dest)
-    chown( uid, gid, dest )
+    chown( uid, gid, dest ) if options.fetch(:chown,true)
   end
 
   def chown( uid, gid, path )
-    FileUtils.chown( uid, gid, path ) if chown?
+    FileUtils.chown( uid, gid, path )
   rescue Errno::EPERM
     @logger.warn('Unable to chown file', 'file' => path, 'uid' => uid, 'gid' => gid)
-  end
-
-  def chown?
-    return true
   end
 
   def map_user( uid, _ )
