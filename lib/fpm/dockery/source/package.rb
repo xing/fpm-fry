@@ -53,7 +53,7 @@ module FPM; module Dockery ; module Source
         @observed_checksum = d.hexdigest
         logger.debug("got checksum", checksum: @observed_checksum)
         if checksum
-          if d.hexdigest == checksum
+          if d.hexdigest != checksum
             raise CacheFailed.new("Checksum failed",given: d.hexdigest, expected: checksum)
           end
         else

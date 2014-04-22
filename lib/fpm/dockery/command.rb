@@ -231,32 +231,40 @@ module FPM; module Dockery
           end
 
           input = FPM::Package::Docker.new(logger: logger, client: client)
-          input.input(container)
-
-          output = input.convert(output_class)
-
-          b.recipe.apply(output)
-
-          package_file = output.to_s(nil)
-          FileUtils.mkdir_p(File.dirname(package_file))
-
-          tmp_package_file = package_file + '.tmp'
           begin
-            File.unlink tmp_package_file
-          rescue Errno::ENOENT
+            input.input(container)
+            output = input.convert(output_class)
+            output.instance_variable_set(:@logger,logger)
+            begin
+              b.recipe.apply(output)
+
+              package_file = output.to_s(nil)
+              FileUtils.mkdir_p(File.dirname(package_file))
+
+              tmp_package_file = package_file + '.tmp'
+              begin
+                File.unlink tmp_package_file
+              rescue Errno::ENOENT
+              end
+
+              output.output(tmp_package_file)
+
+              begin
+                File.unlink package_file
+              rescue Errno::ENOENT
+              end
+              File.rename tmp_package_file, package_file
+
+              logger.info("Created package", :path => package_file)
+              return 0
+            ensure
+              output.cleanup_staging
+              output.cleanup_build
+            end
+          ensure
+            input.cleanup_staging
+            input.cleanup_build
           end
-
-          output.output(tmp_package_file)
-
-          begin
-            File.unlink package_file
-          rescue Errno::ENOENT
-          end
-          File.rename tmp_package_file, package_file
-
-          logger.info("Created package", :path => package_file)
-          return 0
-
         ensure
           unless keep?
             client.delete(path: client.url('containers',container))
