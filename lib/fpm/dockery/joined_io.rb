@@ -37,10 +37,6 @@ module FPM; module Dockery
 
     def readpartial( len )
       while (io = @ios[@pos])
-        if io.eof?
-          @pos = @pos + 1
-          next
-        end
         r = io.read( len )
         if r.nil?
           @pos = @pos + 1
@@ -58,12 +54,6 @@ module FPM; module Dockery
 
     def eof?
       @pos == @ios.size
-    end
-
-    def each(&block)
-      @ios.each do |io|
-        io.each(&block)
-      end
     end
 
     def close
