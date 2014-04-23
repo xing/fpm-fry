@@ -21,10 +21,12 @@ module FPM; module Dockery
       def distribution
         variables[:distribution]
       end
+      alias platform distribution
 
       def distribution_version
         variables[:distribution_version]
       end
+      alias platform_version distribution_version
 
       def initialize( vars, recipe = Recipe.new, options = {})
         vars.freeze
