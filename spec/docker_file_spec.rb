@@ -121,6 +121,30 @@ ENTRYPOINT /tmp/build/.build.sh
 SHELL
       end
     end
+
+    context 'with cache files' do
+
+      let(:cache){
+        double(:cache)
+      }
+
+      subject do
+        FPM::Dockery::DockerFile.new({image: 'ubuntu:precise',distribution: 'ubuntu'},cache,FPM::Dockery::Recipe.new)
+      end
+
+      it 'maps files' do
+        expect(cache).to receive(:file_map).and_return({''=>''})
+        expect(subject.dockerfile).to eq(<<SHELL)
+FROM ubuntu:precise
+RUN mkdir /tmp/build
+WORKDIR /tmp/build
+ADD . /tmp/build
+ADD .build.sh /tmp/build/
+ENTRYPOINT /tmp/build/.build.sh
+SHELL
+      end
+
+    end
   end
 
   describe '#tar_io' do
