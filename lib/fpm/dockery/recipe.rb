@@ -1,6 +1,7 @@
 require 'fpm/dockery/source'
 require 'fpm/dockery/source/package'
 require 'fpm/dockery/source/git'
+require 'fpm/dockery/plugin'
 require 'shellwords'
 require 'cabin'
 module FPM; module Dockery
@@ -11,7 +12,7 @@ module FPM; module Dockery
 
     class Builder < Struct.new(:variables, :recipe)
 
-      attr :logger
+      attr :logger, :basedir
 
       def flavour
         variables[:flavour]
@@ -29,11 +30,22 @@ module FPM; module Dockery
         vars.freeze
         super(vars, recipe)
         @logger = options.fetch(:logger){ Cabin::Channel.get }
+        @basedir = Dir.pwd
       end
 
       def load_file( file )
-        instance_eval(IO.read(file),file,0)
+        begin
+          b, @basedir = @basedir, File.dirname(File.expand_path(file))
+          instance_eval(IO.read(file),file,0)
+        ensure
+          @basedir = b
+        end
       end
+
+      def iteration(value = Not)
+        get_or_set('@iteration',value)
+      end
+      alias revision iteration
 
       def version(value = Not)
         get_or_set('@version',value)
@@ -54,6 +66,7 @@ module FPM; module Dockery
         if options.kind_of? String
           options = {version: options}
         end
+
         recipe.depends[name] = options
       end
 
@@ -70,6 +83,21 @@ module FPM; module Dockery
         command = args.shift
         name = options.fetch(:name){ [command,*args].select{|c| c[0] != '-' }.join('-') }
         recipe.steps[name] = Shellwords.join([command, *args])
+      end
+
+      def plugin(name, *args, &block)
+        if name =~ /\A\./
+          require File.expand_path(name,basedir)
+        else
+          require File.join('fpm/dockery/plugin',name)
+        end
+        module_name = File.basename(name,'.rb').gsub(/(?:\A|_)([a-z])/){ $1.upcase }
+        mod = FPM::Dockery::Plugin.const_get(module_name)
+        if mod.respond_to? :apply
+          mod.apply(self, *args, &block)
+        else
+          extend(mod)
+        end
       end
 
       def script(type, value)
@@ -132,6 +160,7 @@ module FPM; module Dockery
     end
 
     attr :name,
+      :iteration,
       :version,
       :maintainer,
       :vendor,
@@ -146,6 +175,7 @@ module FPM; module Dockery
 
     def initialize
       @name = nil
+      @iteration = nil
       @source = Source::Null
       @version = '0.0.0'
       @maintainer = nil
@@ -167,6 +197,7 @@ module FPM; module Dockery
     def apply( package )
       package.name = name
       package.version = version
+      package.iteration = iteration
       package.maintainer = maintainer if maintainer
       package.vendor = vendor if vendor
       scripts.each do |type, scripts|

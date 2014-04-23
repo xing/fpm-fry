@@ -63,6 +63,28 @@ RECIPE
       expect(package.dependencies).to eq(['foo','bar>=0.0.1'])
     end
   end
+
+  context "plugins" do
+    subject do
+      build( {distribution: "ubuntu"}, <<RECIPE)
+plugin "platforms"
+
+platforms [:ubuntu] do
+  depends "ubuntu"
+end
+
+platforms [:centos] do
+  depends "centos"
+end
+RECIPE
+    end
+
+    it 'works' do
+      expect(package.dependencies).to eq(['ubuntu'])
+    end
+
+  end
+
 end
 
 
