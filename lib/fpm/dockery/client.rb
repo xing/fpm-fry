@@ -132,29 +132,6 @@ class FPM::Dockery::Client
     @agent ||= agent_for(docker_url)
   end
 
-  def url_base
-    if host != ''
-      "http://#{host}:#{port}"
-    else
-      'http://docker.sock'
-    end
-  end
-
-  def host
-    @host ||= host_for(docker_url)
-  end
-
-  def port
-    @port = port_for(docker_url) unless defined? @port
-    @port
-  end
-
-  class UNIXSocketFactory < Struct.new(:file)
-    def open( *_ )
-      UNIXSocket.new( file )
-    end
-  end
-
   def agent_for( uri )
     proto, address = uri.split('://',2)
     case(proto)
@@ -166,25 +143,4 @@ class FPM::Dockery::Client
       return Excon.new(uri, instrumentor: LogInstrumentor.new(logger))
     end
   end
-
-  def host_for( uri )
-    proto, address = uri.split('://',2)
-    case (proto)
-    when 'unix'
-      return ''#, address
-    else
-      URI.parse(uri).host
-    end
-  end
-
-  def port_for( uri )
-    proto, address = uri.split('://',2)
-    case (proto)
-    when 'unix'
-      return nil
-    else
-      URI.parse(uri).port
-    end
-  end
-
 end
