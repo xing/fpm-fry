@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require "rubygems"
-$: << File.join(File.dirname(__FILE__), "..", "lib")
+$: << File.expand_path(File.join( "..", "lib"),File.dirname(__FILE__))
 require "fpm"
 require "fpm/command"
 require "fpm/package/docker"

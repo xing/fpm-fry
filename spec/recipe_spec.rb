@@ -85,6 +85,25 @@ RECIPE
 
   end
 
-end
+  describe '#load_file' do
+    let(:tmpdir){
+      Dir.mktmpdir("fpm-dockery")
+    }
+    after(:each) do
+      FileUtils.rm_rf(tmpdir)
+    end
 
+    context 'working directory' do
+
+      it "is switched to the recipes basedir" do
+        IO.write(File.join(tmpdir,'recipe.rb'),'variables[:probe] << Dir.pwd')
+        builder = FPM::Dockery::Recipe::Builder.new(probe: [])
+        builder.load_file(File.join(tmpdir,'recipe.rb'))
+        expect(builder.variables[:probe][0]).to eq(tmpdir)
+      end
+
+    end
+
+  end
+end
 

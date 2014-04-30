@@ -10,9 +10,12 @@ module FPM; module Dockery
 
     Not = Module.new
 
+    class NotFound < StandardError
+    end
+
     class Builder < Struct.new(:variables, :recipe)
 
-      attr :logger, :basedir
+      attr :logger
 
       def flavour
         variables[:flavour]
@@ -32,15 +35,18 @@ module FPM; module Dockery
         vars.freeze
         super(vars, recipe)
         @logger = options.fetch(:logger){ Cabin::Channel.get }
-        @basedir = Dir.pwd
       end
 
       def load_file( file )
+        file = File.expand_path(file)
         begin
-          b, @basedir = @basedir, File.dirname(File.expand_path(file))
-          instance_eval(IO.read(file),file,0)
-        ensure
-          @basedir = b
+          content = IO.read(file)
+        rescue Errno::ENOENT => e
+          raise NotFound, e
+        end
+        basedir = File.dirname(file)
+        Dir.chdir(basedir) do
+          instance_eval(content,file,0)
         end
       end
 
@@ -88,8 +94,9 @@ module FPM; module Dockery
       end
 
       def plugin(name, *args, &block)
+        logger.debug('Loading Plugin', name: name, args: args, block: block, load_path: $LOAD_PATH)
         if name =~ /\A\./
-          require File.expand_path(name,basedir)
+          require name
         else
           require File.join('fpm/dockery/plugin',name)
         end

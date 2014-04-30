@@ -152,8 +152,8 @@ module FPM; module Dockery
           logger.info("Loading recipe",variables: vars, recipe: recipe)
           b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
           b.load_file( recipe )
-        rescue Errno::ENOENT
-          logger.error("Recipe not found", recipe: recipe)
+        rescue Recipe::NotFound => e
+          logger.error("Recipe not found", recipe: recipe, exeception: e)
           return 1
         end
 
