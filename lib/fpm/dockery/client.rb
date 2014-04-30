@@ -136,11 +136,11 @@ class FPM::Dockery::Client
     proto, address = uri.split('://',2)
     case(proto)
     when 'unix'
-      return Excon.new("unix:///", socket: address, instrumentor: LogInstrumentor.new(logger))
+      return Excon.new("unix:///", socket: address, instrumentor: LogInstrumentor.new(logger), read_timeout: 10000)
     when 'tcp'
       return agent_for("http://#{address}")
     when 'http', 'https'
-      return Excon.new(uri, instrumentor: LogInstrumentor.new(logger))
+      return Excon.new(uri, instrumentor: LogInstrumentor.new(logger), read_timeout: 10000)
     end
   end
 end
