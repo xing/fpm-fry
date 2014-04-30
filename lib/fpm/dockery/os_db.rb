@@ -9,23 +9,26 @@ module FPM; module Dockery
   #   flavour: <flavour>
   # }
   OsDb = {
-    'centos'.freeze => {
+    'centos' => {
       codenames: {},
-      flavour: 'redhat'.freeze
+      flavour: 'redhat'
     },
 
-    'debian'.freeze => {
+    'debian' => {
       codenames: {
-        'squeeze'.freeze => '6.0'.freeze
+        'lenny'   => '5.0',
+        'squeeze' => '6.0',
+        'wheezy'  => '7.0'
       },
-      flavour: 'debian'.freeze
+      flavour: 'debian'
     },
 
-    'ubuntu'.freeze => {
+    'ubuntu' => {
       codenames: {
-        'precise'.freeze => '12.04'.freeze
+        'precise' => '12.04',
+        'trusty'  => '14.04'
       },
-      flavour: 'debian'.freeze
+      flavour: 'debian'
     }
   }
 
