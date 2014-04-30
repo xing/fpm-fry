@@ -173,7 +173,8 @@ module FPM; module Dockery
       :provides,
       :conflicts,
       :steps,
-      :scripts
+      :scripts,
+      :hooks
 
     def initialize
       @name = nil
@@ -194,6 +195,7 @@ module FPM; module Dockery
         before_remove:  [],
         after_remove:   []
       }
+      @hooks = []
     end
 
     def apply( package )
@@ -208,6 +210,7 @@ module FPM; module Dockery
       depends.each do |name, options|
         package.dependencies << "#{name}#{options[:version]}"
       end
+      hooks.each{|h| h.call(self, package) }
       return package
     end
 
