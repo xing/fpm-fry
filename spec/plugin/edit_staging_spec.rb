@@ -16,11 +16,9 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
     package.cleanup_staging
     package.cleanup_build
   end
-
+  
   describe '#add_file' do
-
     context 'with an IO' do
-
       before(:each) do
         builder.plugin('edit_staging') do
           add_file '/etc/init.d/foo', StringIO.new('#!foo')
@@ -31,7 +29,22 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
       it "contains the given file" do
         expect(File.read package.staging_path('/etc/init.d/foo') ).to eq '#!foo'
       end
-
     end
   end
+
+  describe '#ln_s' do
+    context 'simple case' do
+      before(:each) do
+        builder.plugin('edit_staging') do
+          ln_s '/lib/init/upstart-job', '/etc/init.d/foo'
+        end
+        recipe.apply(package)
+      end
+
+      it "contains the given file" do
+       expect(File.readlink package.staging_path('/etc/init.d/foo') ).to eq '/lib/init/upstart-job'
+      end
+    end
+  end
+
 end
