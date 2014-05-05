@@ -77,6 +77,10 @@ module FPM; module Dockery
         get_or_set('@name',value)
       end
 
+      def vendor(value = Not)
+        get_or_set('@vendor',value)
+      end
+
       def build_depends( name , options = {} )
         if options.kind_of? String
           options = {version: options}
