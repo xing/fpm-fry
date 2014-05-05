@@ -12,7 +12,7 @@ module FPM::Dockery::Plugin::Init
         return 'systemd'
       end
     when 'ubuntu'
-      if v[0] < 14 && v[1] < 10
+      if v[0] <= 14 && v[1] < 10
         return 'upstart'
       else
         return 'systemd'
