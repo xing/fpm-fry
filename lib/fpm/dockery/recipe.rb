@@ -44,7 +44,7 @@ module FPM; module Dockery
         end
         if !variables[:codename] && OsDb[variables[:distribution]] && variables[:distribution_version]
           codename = OsDb[variables[:distribution]][:codenames].find{|name,version| variables[:distribution_version].start_with? version }
-          variables[:codename] = codename if codename
+          variables[:codename] = codename[0] if codename
         end
         variables.freeze
         super(variables, recipe)
