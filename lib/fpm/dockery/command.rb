@@ -157,6 +157,14 @@ module FPM; module Dockery
           return 1
         end
 
+        problems = b.recipe.lint
+        if problems.any?
+          problems.each do |p|
+            logger.error(p)
+          end
+          return 1
+        end
+
         begin
           cache = b.recipe.source.build_cache(tmpdir)
         rescue Source::CacheFailed => e

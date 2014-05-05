@@ -4,6 +4,7 @@ require 'fpm/dockery/source/git'
 require 'fpm/dockery/plugin'
 require 'shellwords'
 require 'cabin'
+require 'open3'
 module FPM; module Dockery
 
   class Recipe
@@ -219,6 +220,28 @@ module FPM; module Dockery
       end
       hooks.each{|h| h.call(self, package) }
       return package
+    end
+
+    def lint
+      problems = []
+      problems << "Name is empty." if name.to_s == ''
+      scripts.each do |type,scripts|
+        next if scripts.none?
+        s = scripts.join("\n")
+        if s == ''
+          problems << "#{type} script is empty. This will produce broken packages."
+        else
+          sin, sout, serr, th = Open3.popen3('bash','-n')
+          sin.write(s)
+          sin.close
+          if th.value.exitstatus != 0
+            problems << "#{type} script is not valid bash code: #{serr.read.chomp}"
+          end
+          serr.close
+          sout.close
+        end
+      end
+      return problems
     end
 
   end

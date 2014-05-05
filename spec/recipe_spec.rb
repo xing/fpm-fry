@@ -103,7 +103,25 @@ RECIPE
       end
 
     end
+  end
 
+  describe '#lint' do
+
+    context 'with broken scripts' do
+      subject do
+        build( {distribution: "ubuntu"}, <<RECIPE)
+name 'foo'
+after_install '#!/bin/bash
+if [ $1 = "configure" ] ; then
+  broken'
+RECIPE
+      end
+
+      it 'reports the scripts' do
+        expect(subject.lint).to eq ["after_install script is not valid bash code: bash: line 4: syntax error: unexpected end of file"]
+      end
+
+    end
   end
 end
 
