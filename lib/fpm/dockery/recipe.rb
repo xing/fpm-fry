@@ -2,6 +2,7 @@ require 'fpm/dockery/source'
 require 'fpm/dockery/source/package'
 require 'fpm/dockery/source/git'
 require 'fpm/dockery/plugin'
+require 'fpm/dockery/os_db'
 require 'shellwords'
 require 'cabin'
 require 'open3'
@@ -32,9 +33,21 @@ module FPM; module Dockery
       end
       alias platform_version distribution_version
 
-      def initialize( vars, recipe = Recipe.new, options = {})
-        vars.freeze
-        super(vars, recipe)
+      def codename
+        variables[:codename]
+      end
+
+      def initialize( variables, recipe = Recipe.new, options = {})
+        variables = variables.dup
+        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
+          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
+        end
+        if !variables[:codename] && OsDb[variables[:distribution]] && variables[:distribution_version]
+          codename = OsDb[variables[:distribution]][:codenames].find{|name,version| variables[:distribution_version].start_with? version }
+          variables[:codename] = codename if codename
+        end
+        variables.freeze
+        super(variables, recipe)
         @logger = options.fetch(:logger){ Cabin::Channel.get }
       end
 
