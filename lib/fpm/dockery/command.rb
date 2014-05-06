@@ -182,7 +182,7 @@ module FPM; module Dockery
             'Content-Type'=>'application/tar'
           },
           expects: [200],
-          path: client.url('build'),
+          path: client.url('build?rm=1'),
           request_block: BlockEnumerator.new(tar_io),
           response_block: parser
         )
