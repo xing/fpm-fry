@@ -16,9 +16,9 @@ module FPM; module Dockery
 
     'debian' => {
       codenames: {
-        'lenny'   => '5.0',
-        'squeeze' => '6.0',
-        'wheezy'  => '7.0'
+        'lenny'   => '5',
+        'squeeze' => '6',
+        'wheezy'  => '7'
       },
       flavour: 'debian'
     },
