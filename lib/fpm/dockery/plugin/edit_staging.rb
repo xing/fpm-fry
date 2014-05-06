@@ -2,12 +2,15 @@ require 'fpm/dockery/plugin'
 require 'fileutils'
 module FPM::Dockery::Plugin::EditStaging
 
-  class AddFile < Struct.new(:path, :io)
+  class AddFile < Struct.new(:path, :io, :options)
     def call(_ , package)
       file = package.staging_path(path)
       FileUtils.mkdir_p(File.dirname(file))
       File.open(file,'w') do | f |
         IO.copy_stream(io, f)
+        if options[:chmod]
+          f.chmod(options[:chmod])
+        end
       end
       io.close if io.respond_to? :close
     end
@@ -22,14 +25,30 @@ module FPM::Dockery::Plugin::EditStaging
   end
 
   class DSL < Struct.new(:recipe)
-    def add_file(path, io)
+    def add_file(path, io, options = {})
+      options = options.dup
+      options[:chmod] = convert_chmod(options[:chmod]) if options[:chmod]
+      options.freeze
       io.rewind if io.respond_to? :rewind
-      recipe.hooks << AddFile.new(path, io)
+      recipe.hooks << AddFile.new(path, io, options)
     end
 
     def ln_s(src, dest)
       recipe.hooks << LnS.new(src,dest)
     end
+  private
+
+    def convert_chmod(chmod)
+      if chmod.kind_of? Numeric
+        num = chmod
+      elsif chmod.kind_of? String
+        num = chmod.to_i(8)
+      else
+        raise ArgumentError, "Invalid chmod format: #{chmod}"
+      end
+      return num
+    end
+
   end
 
   def self.apply(builder, &block)
