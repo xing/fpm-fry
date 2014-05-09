@@ -146,12 +146,14 @@ module FPM; module Dockery
       def before_remove(*args)
         script(:before_remove, *args)
       end
+      alias before_uninstall before_remove
       alias pre_uninstall before_remove
       alias preuninstall before_remove
 
       def after_remove(*args)
         script(:after_remove, *args)
       end
+      alias after_uninstall after_remove
       alias post_uninstall after_remove
       alias postuninstall after_remove
 

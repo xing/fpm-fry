@@ -1,0 +1,5 @@
+description <%= description.inspect %>
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+exec <%= Shellwords.shelljoin(command) %>

@@ -1,7 +1,10 @@
 require 'fpm/dockery/plugin'
 module FPM::Dockery::Plugin::Init
 
-  def detect_init
+  def self.detect_init(variables)
+    if variables[:init]
+      return variables[:init]
+    end
     d = variables[:distribution]
     v = variables[:distribution_version].split('.').map(&:to_i)
     case(d)
@@ -32,7 +35,7 @@ module FPM::Dockery::Plugin::Init
 
   def init(*inits)
     inits = inits.flatten.map(&:to_s)
-    actual = detect_init
+    actual = FPM::Dockery::Plugin::Init.detect_init(variables)
     if inits.none?
       return actual
     elsif inits.include? actual

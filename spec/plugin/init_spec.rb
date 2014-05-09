@@ -27,7 +27,7 @@ TESTS = [
       let(:version){v}
 
       it "reports #{expected}" do
-        expect(subject.detect_init).to eq expected
+        expect(subject.init).to eq expected
       end
     end
 end
