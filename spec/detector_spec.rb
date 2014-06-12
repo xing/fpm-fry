@@ -31,7 +31,7 @@ DISTRIB_ID=foo
 Random trash
 DISTRIB_RELEASE=1234
 LSB
-    expect(subject.detect!).to be_true
+    expect(subject.detect!).to be true
     expect(subject.distribution).to eq('foo')
     expect(subject.version).to eq('1234')
   end
@@ -42,7 +42,7 @@ LSB
                       ).and_yield(TarEntryMock.new(<<LSB))
 6.0.5
 LSB
-    expect(subject.detect!).to be_true
+    expect(subject.detect!).to be true
     expect(subject.distribution).to eq('debian')
     expect(subject.version).to eq('6.0.5')
   end
@@ -53,7 +53,7 @@ LSB
                       ).and_yield(TarEntryMock.new(<<LSB))
 Foobar release 1.33.7
 LSB
-    expect(subject.detect!).to be_true
+    expect(subject.detect!).to be true
     expect(subject.distribution).to eq('foobar')
     expect(subject.version).to eq('1.33.7')
   end
@@ -67,7 +67,7 @@ LSB
                       ).and_yield(TarEntryMock.new(<<LSB))
 Foobar release 1.33.7
 LSB
-    expect(subject.detect!).to be_true
+    expect(subject.detect!).to be true
     expect(subject.distribution).to eq('foobar')
     expect(subject.version).to eq('1.33.7')
   end
@@ -101,7 +101,7 @@ describe FPM::Dockery::Detector::Image do
     expect(container_detector).to receive(:detect!).and_return(true)
     expect(container_detector).to receive(:distribution).and_return("foo")
     expect(container_detector).to receive(:version).and_return("1.2.3")
-    expect( subject.detect! ).to be_true
+    expect( subject.detect! ).to be true
   end
 
 end

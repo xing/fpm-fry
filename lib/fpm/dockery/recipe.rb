@@ -1,5 +1,7 @@
 require 'fpm/dockery/source'
 require 'fpm/dockery/source/package'
+require 'fpm/dockery/source/dir'
+require 'fpm/dockery/source/patched'
 require 'fpm/dockery/source/git'
 require 'fpm/dockery/plugin'
 require 'fpm/dockery/os_db'
@@ -97,7 +99,12 @@ module FPM; module Dockery
       end
 
       def source( url , options = {} )
-        get_or_set('@source',guess_source(url,options).new(url, options.merge(logger: logger)))
+        options = options.merge(logger: logger)
+        source = guess_source(url,options).new(url, options)
+        if options.key? :patches
+          source = Source::Patched.new(source, options)
+        end
+        get_or_set('@source',source)
       end
 
       def run(*args)
@@ -163,6 +170,7 @@ module FPM; module Dockery
         case options[:with]
         when :git then return Source::Git
         when :http, :tar then return Source::Package
+        when :dir then return Source::Dir
         when nil
         else
           raise "Unknown source type: #{options[:with]}"
@@ -175,6 +183,8 @@ module FPM; module Dockery
           end
         elsif url =~ /\Agit:/
           return Source::Git
+        elsif url =~ /\A(?:file:|\/|\.\/)/ 
+          return Source::Dir
         end
         raise "Unknown source type: #{url}"
       end

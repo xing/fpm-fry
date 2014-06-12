@@ -30,7 +30,7 @@ module FPM; module Dockery
               end
             end
           end
-          return (@distribution and @version)
+          return !!(@distribution and @version)
         rescue Client::FileNotFound
         end
         begin
@@ -41,7 +41,7 @@ module FPM; module Dockery
               @version = content.strip
             end
           end
-          return (@distribution and @version)
+          return !!(@distribution and @version)
         rescue Client::FileNotFound
         end
         begin
@@ -54,9 +54,10 @@ module FPM; module Dockery
               detect_redhat_release(file)
             end
           end
-          return (@distribution and @version)
+          return !!(@distribution and @version)
         rescue Client::FileNotFound
         end
+        return false
       end
 
     private

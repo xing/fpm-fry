@@ -47,7 +47,7 @@ describe FPM::Dockery::Plugin::Service do
       it_behaves_like 'adds script to restart services' 
 
       it 'generates an init.d script' do
-        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be_true
+        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
       end
     end
 
@@ -57,11 +57,11 @@ describe FPM::Dockery::Plugin::Service do
       it_behaves_like 'adds script to restart services'
 
       it 'generates an init.d script' do
-        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be_true
+        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
       end
 
       it 'generates an init config' do
-        expect(File.exists? package.staging_path('/etc/init/foo.conf') ).to be_true
+        expect(File.exists? package.staging_path('/etc/init/foo.conf') ).to be true
       end
     end
 

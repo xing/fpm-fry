@@ -20,20 +20,6 @@ describe FPM::Dockery::Source::Git do
       FileUtils.rm_rf(source)
     end
 
-    class IOFilter < Struct.new(:io)
-      def pos
-        0
-      end
-
-      def read(*args)
-        return io.read(*args)
-      end
-
-      def eof?
-        io.eof?
-      end
-    end
-
     it "clones a repo" do
       src = FPM::Dockery::Source::Git.new(source)
       cache = src.build_cache(tmpdir)

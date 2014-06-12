@@ -159,11 +159,8 @@ SHELL
 
       it 'works' do
         io = subject.tar_io
-        entries = Gem::Package::TarReader.new(io).map{|e| e}
-        # XXX: when rspec 3 is released, use http://myronmars.to/n/dev-blog/2014/01/new-in-rspec-3-composable-matchers
-        expect( entries.size ).to eq(2)
-        expect( entries[0].header.name ).to eq(".build.sh")
-        expect( entries[1].header.name ).to eq("Dockerfile")
+        entries = Gem::Package::TarReader.new(io).map{|e| e.header.name }
+        expect( entries ).to eq ['.build.sh','Dockerfile']
       end
 
     end
