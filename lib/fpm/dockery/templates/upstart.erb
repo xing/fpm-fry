@@ -1,4 +1,4 @@
-description <%= description.inspect %>
+description <%= description == "" ? '"a service"' : description.inspect %>
 start on runlevel [2345]
 stop on runlevel [!2345]
 
