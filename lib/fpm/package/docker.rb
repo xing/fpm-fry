@@ -16,10 +16,10 @@ class FPM::Package::Docker < FPM::Package
   end
 
   def input(name)
-    leaves = changes(name)
-    leaves.each do |chg|
-      next if ignore? chg
-      copy(name, chg)
+    leaves = change_leaves(client.changes(name))
+    leaves.each do |chg, is_dir|
+      next false if ignore? chg
+      copy(name, chg) if !is_dir
     end
   end
 
@@ -33,17 +33,18 @@ private
     client.copy(name, chg, staging_path(chg), chown: false)
   end
 
-  def changes(name)
-    res = client.agent.get(path: client.url('containers',name,'changes'))
-    raise res.reason if res.status != 200
-    changes = JSON.parse(res.body)
-    return change_leaves(changes)
-  end
+  IGNORED_PATTERNS = [
+    %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history','/.bash_history'
+  ]
 
   def ignore?(chg)
-    [
-      %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history','/.bash_history'
-    ].any?{|pattern| pattern === chg }
+    return true if IGNORED_PATTERNS.any?{|pattern| pattern === chg }
+    Array(attributes[:excludes]).each do |wildcard|
+      if File.fnmatch(wildcard, chg) || File.fnmatch(wildcard, chg[1..-1])
+        return true
+      end
+    end
+    return false
   end
 
   class Node < Struct.new(:children)
@@ -63,10 +64,13 @@ private
     def leaves( prefix = '/', &block )
       return to_enum(:leaves, prefix) unless block
       if leaf?
-        yield prefix
+        yield prefix, false
       else
-        children.each do |name, cld|
-          cld.leaves( File.join(prefix,name), &block )
+        c = yield prefix, true
+        if c != false
+          children.each do |name, cld|
+            cld.leaves( File.join(prefix,name), &block )
+          end
         end
       end
       return self

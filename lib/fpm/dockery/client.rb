@@ -80,6 +80,12 @@ class FPM::Dockery::Client
     end
   end
 
+  def changes(name)
+    res = agent.get(path: client.url('containers',name,'changes'))
+    raise res.reason if res.status != 200
+    return JSON.parse(res.body)
+  end
+
   def agent
     @agent ||= agent_for(docker_url)
   end
