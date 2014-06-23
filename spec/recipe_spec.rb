@@ -51,16 +51,31 @@ RECIPE
     end
   end
 
-  context "dependencies" do
+  context "relations" do
     subject do
       build <<RECIPE
 depends "foo"
 depends "bar", ">=0.0.1"
+conflicts "zub"
+provides "fub"
+replaces "zof"
 RECIPE
     end
 
-    it 'works' do
+    it 'has correct dependencies' do
       expect(package.dependencies).to eq(['foo','bar>=0.0.1'])
+    end
+
+    it 'has correct conflicts' do
+      expect(package.conflicts).to eq(['zub'])
+    end
+
+    it 'has correct provides' do
+      expect(package.provides).to eq(['fub'])
+    end
+
+    it 'has correct replaces' do
+      expect(package.replaces).to eq(['zof'])
     end
   end
 

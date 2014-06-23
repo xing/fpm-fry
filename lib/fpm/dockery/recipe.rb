@@ -84,18 +84,28 @@ module FPM; module Dockery
       end
 
       def build_depends( name , options = {} )
-        if options.kind_of? String
-          options = {version: options}
-        end
+        name, options = parse_package(name, options)
         recipe.build_depends[name] = options
       end
 
-      def depends( name, options = {} )
-        if options.kind_of? String
-          options = {version: options}
-        end
-
+      def depends( name , options = {} )
+        name, options = parse_package(name, options)
         recipe.depends[name] = options
+      end
+
+      def conflicts( name , options = {} )
+        name, options = parse_package(name, options)
+        recipe.conflicts[name] = options
+      end
+
+      def provides( name , options = {} )
+        name, options = parse_package(name, options)
+        recipe.provides[name] = options
+      end
+
+      def replaces( name , options = {} )
+        name, options = parse_package(name, options)
+        recipe.replaces[name] = options
       end
 
       def source( url , options = {} )
@@ -166,6 +176,13 @@ module FPM; module Dockery
 
     protected
 
+      def parse_package( name, options = {} )
+        if options.kind_of? String
+          options = {version: options}
+        end
+        return name, options
+      end
+
       def guess_source( url, options = {} )
         case options[:with]
         when :git then return Source::Git
@@ -206,12 +223,14 @@ module FPM; module Dockery
       :source,
       :build_depends,
       :depends,
-      :suggests,
       :provides,
       :conflicts,
+      :replaces,
       :steps,
       :scripts,
       :hooks
+
+    alias dependencies depends
 
     def initialize
       @name = nil
@@ -222,9 +241,9 @@ module FPM; module Dockery
       @vendor = nil
       @build_depends = {}
       @depends = {}
-      @suggests = {}
       @provides = {}
       @conflicts = {}
+      @replaces = {}
       @steps = {}
       @scripts = {
         before_install: [],
@@ -244,8 +263,10 @@ module FPM; module Dockery
       scripts.each do |type, scripts|
         package.scripts[type] = scripts.join("\n") if scripts.any?
       end
-      depends.each do |name, options|
-        package.dependencies << "#{name}#{options[:version]}"
+      [:dependencies, :conflicts, :replaces, :provides].each do |sym|
+        send(sym).each do |name, options|
+          package.send(sym) << "#{name}#{options[:version]}"
+        end
       end
       hooks.each{|h| h.call(self, package) }
       return package
