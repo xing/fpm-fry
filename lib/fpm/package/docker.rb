@@ -34,7 +34,7 @@ private
   end
 
   IGNORED_PATTERNS = [
-    %r!\A/dev[/\z]!,%r!\A/tmp[/\z]!,'/root/.bash_history','/.bash_history'
+    %r!\A/dev(/|\z)!,%r!\A/tmp(/|\z)!,'/root/.bash_history','/.bash_history'
   ]
 
   def ignore?(chg)

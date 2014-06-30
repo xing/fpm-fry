@@ -239,12 +239,13 @@ module FPM; module Dockery
           end
 
           input = FPM::Package::Docker.new(logger: logger, client: client)
+          b.recipe.apply_input(input)
           begin
             input.input(container)
             output = input.convert(output_class)
             output.instance_variable_set(:@logger,logger)
             begin
-              b.recipe.apply(output)
+              b.recipe.apply_output(output)
 
               package_file = output.to_s(nil)
               FileUtils.mkdir_p(File.dirname(package_file))

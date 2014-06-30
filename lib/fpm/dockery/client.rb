@@ -26,6 +26,7 @@ class FPM::Dockery::Client
       filtered[:path] = data[:path] if data[:path]
       filtered[:verb] = data[:method] if data[:method]
       filtered[:status] = data[:status] if data[:status]
+      filtered[:body] = data[:body][0..500] if data[:body]
       filtered[:headers] = data[:headers] 
       return filtered
     end
@@ -63,7 +64,7 @@ class FPM::Dockery::Client
       expects: [200,500]
     )
     if res.status == 500
-      raise FileNotFound
+      raise FileNotFound, "File #{resource.inspect} not found: #{res.body}"
     end
     sio = StringIO.new(res.body)
     tar = ::Gem::Package::TarReader.new( sio )
@@ -81,7 +82,7 @@ class FPM::Dockery::Client
   end
 
   def changes(name)
-    res = agent.get(path: client.url('containers',name,'changes'))
+    res = agent.get(path: url('containers',name,'changes'))
     raise res.reason if res.status != 200
     return JSON.parse(res.body)
   end

@@ -16,7 +16,7 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
     package.cleanup_staging
     package.cleanup_build
   end
-  
+
   describe '#add_file' do
     context 'with an IO' do
       before(:each) do

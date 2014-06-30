@@ -228,7 +228,10 @@ module FPM; module Dockery
       :replaces,
       :steps,
       :scripts,
-      :hooks
+      :input_hooks,
+      :output_hooks
+
+    alias hooks output_hooks
 
     alias dependencies depends
 
@@ -251,10 +254,16 @@ module FPM; module Dockery
         before_remove:  [],
         after_remove:   []
       }
-      @hooks = []
+      @input_hooks = []
+      @output_hooks = []
     end
 
-    def apply( package )
+    def apply_input( package )
+      input_hooks.each{|h| h.call(self, package) }
+      return package
+    end
+
+    def apply_output( package )
       package.name = name
       package.version = version
       package.iteration = iteration
@@ -268,9 +277,11 @@ module FPM; module Dockery
           package.send(sym) << "#{name}#{options[:version]}"
         end
       end
-      hooks.each{|h| h.call(self, package) }
+      output_hooks.each{|h| h.call(self, package) }
       return package
     end
+
+    alias apply apply_output
 
     def lint
       problems = []
