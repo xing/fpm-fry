@@ -76,7 +76,17 @@ class FPM::Dockery::Client
   def copy(name, resource, to, options = {})
     dest = File.dirname(to)
     ex = FPM::Dockery::Tar::Extractor.new(logger: @logger)
+    case(options[:only])
+    when Hash
+      only = options[:only]
+    when Array
+      only = Hash[ options[:only].map{|k| [k,true] } ]
+    else
+      only = Hash.new{ true }
+    end
+    base = File.dirname(resource)
     read(name, resource) do | entry |
+      next unless only[ File.join(base, entry.full_name) ]
       ex.extract_entry(dest, entry, options)
     end
   end
@@ -89,6 +99,10 @@ class FPM::Dockery::Client
 
   def agent
     @agent ||= agent_for(docker_url)
+  end
+
+  def broken_symlinks?
+    return true
   end
 
   def agent_for( uri )

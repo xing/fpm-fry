@@ -16,10 +16,20 @@ class FPM::Package::Docker < FPM::Package
   end
 
   def input(name)
-    leaves = change_leaves(client.changes(name))
-    leaves.each do |chg, is_dir|
-      next false if ignore? chg
-      copy(name, chg) if !is_dir
+    if client.broken_symlinks?
+      changes = changes(name)
+      leaves = Hash[ changes.leaves.map{|k| [k,true] } ]
+      exclude_non_leaves = lambda{|x|
+        !leaves.key?(x) }
+      directories = changes.smallest_superset
+      directories.each do |chg|
+        copy(name, chg, only: leaves)
+      end
+    else
+      leaves = changes(name).leaves
+      leaves.each do |chg|
+        copy(name, chg)
+      end
     end
   end
 
@@ -29,8 +39,14 @@ private
     @client ||= FPM::Dockery::Client.new(logger: @logger)
   end
 
-  def copy(name, chg)
-    client.copy(name, chg, staging_path(chg), chown: false)
+  def changes(name)
+    fs = Node.read(client.changes(name))
+    fs.reject!(&method(:ignore?))
+    return fs
+  end
+
+  def copy(name, chg, options = {})
+    client.copy(name, chg, staging_path(chg), {chown: false}.merge(options))
   end
 
   IGNORED_PATTERNS = [
@@ -66,27 +82,52 @@ private
       if leaf?
         yield prefix, false
       else
-        c = yield prefix, true
-        if c != false
-          children.each do |name, cld|
-            cld.leaves( File.join(prefix,name), &block )
-          end
+        children.each do |name, cld|
+          cld.leaves( File.join(prefix,name), &block )
         end
       end
       return self
     end
 
-  end
+    def contains_leaves?
+      children.any?{|_,c| c.leaf? }
+    end
 
-  def change_leaves( changes, &block )
-    fs = Node.new
-    changes.each do |ch|
-      n = fs
-      ch['Path'].split('/').each do |part|
-        n = n[part]
+    def smallest_superset( prefix = '/', &block )
+      return to_enum(:smallest_superset, prefix) unless block
+      if leaf?
+        return
+      elsif contains_leaves?
+        yield prefix
+      else
+        children.each do |name, cld|
+          cld.smallest_superset( File.join(prefix,name), &block)
+        end
       end
     end
-    return fs.leaves(&block)
+
+    def reject!( prefix = '/',&block )
+      children.reject! do |name, cld| 
+        p = File.join(prefix,name)
+        if yield p
+          true
+        else
+          cld.reject!(p,&block)
+          false
+        end
+      end
+    end
+
+    def self.read(enum)
+      fs = Node.new
+      enum.each do |ch|
+        n = fs
+        ch['Path'].split('/').each do |part|
+          n = n[part]
+        end
+      end
+      return fs
+    end
   end
 
 end
