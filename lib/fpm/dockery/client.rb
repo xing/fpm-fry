@@ -86,7 +86,7 @@ class FPM::Dockery::Client
     end
     base = File.dirname(resource)
     read(name, resource) do | entry |
-      next unless only[ File.join(base, entry.full_name) ]
+      next unless only[ File.join(base, entry.full_name).chomp('/') ]
       ex.extract_entry(dest, entry, options)
     end
   end
