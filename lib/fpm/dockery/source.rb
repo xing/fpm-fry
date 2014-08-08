@@ -31,4 +31,14 @@ module FPM; module Dockery ; module Source
     end
 
   end
+
+  class << self
+
+    def guess_regex(rx, url)
+      if m = rx.match(url.to_s)
+        return m[0].size
+      end
+    end
+
+  end
 end ; end ; end

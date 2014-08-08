@@ -183,27 +183,40 @@ module FPM; module Dockery
         return name, options
       end
 
+      def source_types
+        @source_types  ||= {
+          git:  Source::Git,
+          http: Source::Package,
+          tar:  Source::Package,
+          dir:  Source::Dir
+        }
+      end
+
+      def register_source_type( name, klass )
+        if !klass.respond_to? :new
+          raise ArgumentError.new("Expected something that responds to :new, got #{klass.inspect}")
+        end
+        source_types[name] = klass
+      end
+
+      NEG_INF = (-1.0/0.0)
+
       def guess_source( url, options = {} )
-        case options[:with]
-        when :git then return Source::Git
-        when :http, :tar then return Source::Package
-        when :dir then return Source::Dir
-        when nil
-        else
-          raise "Unknown source type: #{options[:with]}"
+        if w = options[:with]
+          return source_types.fetch(w){ raise ArgumentError.new("Unknown source type: #{w}") }
         end
-        if url =~ /\Ahttps?:/
-          if url =~ /\.git\z/
-            return Source::Git
-          else
-            return Source::Package
-          end
-        elsif url =~ /\Agit:/
-          return Source::Git
-        elsif url =~ /\A(?:file:|\/|\.\/)/ 
-          return Source::Dir
+        scores = source_types.values.uniq\
+          .select{|klass| klass.respond_to? :guess }\
+          .group_by{|klass| klass.guess(url) }\
+          .sort_by{|score,_| score.nil? ? NEG_INF : score }
+        score, klasses = scores.last
+        if score == nil
+          raise ArgumentError.new("No source provide found for #{url}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
         end
-        raise "Unknown source type: #{url}"
+        if klasses.size != 1
+          raise ArgumentError.new("Multiple possible source providers found for #{url}: #{klasses.join(', ')}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
+        end
+        return klasses.first
       end
 
       def get_or_set(name, value = Not)
@@ -226,6 +239,8 @@ module FPM; module Dockery
       :provides,
       :conflicts,
       :replaces,
+      :suggests,
+      :recommends,
       :steps,
       :scripts,
       :input_hooks,

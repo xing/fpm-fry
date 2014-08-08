@@ -97,7 +97,23 @@ RECIPE
     it 'works' do
       expect(package.dependencies).to eq(['ubuntu'])
     end
+  end
 
+  context 'source type guessing' do
+
+    {
+      'http://foo.bar/baz.tar.gz' => FPM::Dockery::Source::Package,
+      'http://foo.bar/baz.git'    => FPM::Dockery::Source::Git,
+      'git@foo.bar:baz/baz.git'   => FPM::Dockery::Source::Git,
+      '/foo/bar'                  => FPM::Dockery::Source::Dir,
+      './foo/bar'                 => FPM::Dockery::Source::Dir,
+      'file://foo/bar'            => FPM::Dockery::Source::Dir
+    }.each do |url, klass|
+      it "map #{url} to #{klass}" do
+        b = FPM::Dockery::Recipe::Builder.new({})
+        expect( b.send(:guess_source,url) ).to eq klass
+      end
+    end
   end
 
   describe '#load_file' do

@@ -7,6 +7,12 @@ require 'fpm/dockery/source'
 module FPM; module Dockery ; module Source
   class Package
 
+    REGEX = %r!\Ahttps?:!
+
+    def self.guess( url )
+      Source::guess_regex(REGEX, url)
+    end
+
     class RedirectError < CacheFailed
     end
 

@@ -1,6 +1,12 @@
 module FPM; module Dockery ; module Source
   class Dir
 
+    REGEX = %r!\A(?:file:|/|\./)!
+
+    def self.guess( url )
+      Source::guess_regex(REGEX, url)
+    end
+
     class Cache < Struct.new(:package, :dir)
       extend Forwardable
 

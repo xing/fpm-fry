@@ -5,6 +5,12 @@ require 'fpm/dockery/source'
 module FPM; module Dockery ; module Source
   class Git
 
+    REGEX = %r!\A(?:git:|git@|https?:.*\.git\z)!
+
+    def self.guess( url )
+      Source::guess_regex(REGEX, url)
+    end
+
     class Cache < Struct.new(:package, :tempdir)
       extend Forwardable
 
