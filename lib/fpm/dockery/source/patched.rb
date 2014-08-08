@@ -8,13 +8,17 @@ module FPM; module Dockery ; module Source
       def_delegators :package, :logger, :file_map
 
       def update
-        ex = Tar::Extractor.new(logger: logger)
         inner = package.inner.build_cache(tmpdir)
-        tio = inner.tar_io
-        begin
-          ex.extract(tmpdir, ::Gem::Package::TarReader.new(tio))
-        ensure
-          tio.close
+        if inner.respond_to? :copy_to
+          inner.copy_to(tmpdir)
+        else
+          ex = Tar::Extractor.new(logger: logger)
+          tio = inner.tar_io
+          begin
+            ex.extract(tmpdir, ::Gem::Package::TarReader.new(tio))
+          ensure
+            tio.close
+          end
         end
         package.patches.each do |patch|
           cmd = ['patch','-p1','-i',patch]

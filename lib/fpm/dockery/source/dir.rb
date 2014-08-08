@@ -1,3 +1,5 @@
+require 'fpm/dockery/source'
+require 'fileutils'
 module FPM; module Dockery ; module Source
   class Dir
 
@@ -16,6 +18,11 @@ module FPM; module Dockery ; module Source
         cmd = ['tar','-c','.']
         logger.debug("Running tar",cmd: cmd, dir: dir)
         IO.popen(cmd, chdir: dir)
+      end
+
+      def copy_to(dst)
+        children = ::Dir.new(dir).select{|x| x[0...1] != "." }.map{|x| File.join(dir,x) }
+        FileUtils.cp_r(children, dst)
       end
     end
 

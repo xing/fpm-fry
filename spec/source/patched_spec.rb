@@ -59,6 +59,33 @@ describe FPM::Dockery::Source::Patched do
         io.close
       end
     end
+
+    context 'with #copy_to' do
+      before do
+        allow(cache).to receive(:copy_to) do |dst|
+          File.open(File.join(dst,'World'),'w',0755) do |f|
+            f.write("Hello\n")
+          end
+        end
+        expect(cache).not_to receive(:tar_io)
+      end
+
+      it "applies given patches" do
+        src = FPM::Dockery::Source::Patched.new(source, patches: [ File.join(File.dirname(__FILE__),'..','data','patch.diff')] )
+        cache = src.build_cache(tmpdir)
+        io = cache.tar_io
+        begin
+          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
+          expect(files.size).to eq(2)
+          expect(files['./World']).to eq "Olla\n"
+        ensure
+          io.close
+        end
+      end
+
+    end
+
   end
 
   context '#decorate' do

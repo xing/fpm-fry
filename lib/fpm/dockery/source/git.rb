@@ -37,6 +37,12 @@ module FPM; module Dockery ; module Source
         logger.debug("Running git",cmd: cmd)
         IO.popen(cmd)
       end
+
+      def copy_to(dst)
+        cmd = [package.git, "--git-dir=#{repodir}", "--work-tree=#{dst}",'checkout','FETCH_HEAD','--','*']
+        logger.debug("Running git",cmd: cmd)
+        system(*cmd, chdir: dst)
+      end
     private
       def repodir
         File.join(tempdir,File.basename(url.path))
