@@ -31,19 +31,28 @@ module FPM; module Dockery ; module Source
       end
     end
 
-    attr :inner, :logger, :file_map, :patches
+    attr :inner, :patches
+
+    extend Forwardable
+
+    def_delegators :inner, :logger, :file_map
 
     def initialize( inner , options = {})
       @inner = inner
-      @logger = options.fetch(:logger){ 
-        inner.respond_to?(:logger) ? inner.logger : Cabin::Channel.get
-      }
       @patches = Array(options[:patches])
-      @file_map = options.fetch(:file_map,{''=>''})
     end
 
     def build_cache(tmpdir)
       Cache.new(self,tmpdir).update
+    end
+
+    def self.decorate(options)
+      if options.key?(:patches) && Array(options[:patches]).size > 0
+        p = options.delete(:patches)
+        return new( yield options, patches: p )
+      else
+        return yield options
+      end
     end
   end
 

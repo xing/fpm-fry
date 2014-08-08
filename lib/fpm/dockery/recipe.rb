@@ -110,9 +110,8 @@ module FPM; module Dockery
 
       def source( url , options = {} )
         options = options.merge(logger: logger)
-        source = guess_source(url,options).new(url, options)
-        if options.key? :patches
-          source = Source::Patched.new(source, options)
+        source = Source::Patched.decorate(options) do |options|
+          guess_source(url,options).new(url, options)
         end
         get_or_set('@source',source)
       end

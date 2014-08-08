@@ -23,6 +23,7 @@ describe FPM::Dockery::Source::Patched do
 
     let(:source){
       s = double('source')
+      allow(s).to receive(:logger){ Cabin::Channel.get }
       allow(s).to receive(:build_cache){|_| cache }
       s
     }
@@ -58,8 +59,22 @@ describe FPM::Dockery::Source::Patched do
         io.close
       end
     end
-
-
   end
 
+  context '#decorate' do
+
+    let(:source){ double("source") }
+
+    it 'just passes if nothing is configured' do
+      expect(FPM::Dockery::Source::Patched.decorate({}){source}).to be source
+    end
+
+    it 'just passes if the patches list is empty' do
+      expect(FPM::Dockery::Source::Patched.decorate(patches: []){source}).to be source
+    end
+
+    it 'decorates if the list is not empty' do
+      expect(FPM::Dockery::Source::Patched.decorate(patches: ["foo"]){source}).to be_a FPM::Dockery::Source::Patched
+    end
+  end
 end
