@@ -15,7 +15,7 @@ module FPM; module Dockery ; module Source
           ex = Tar::Extractor.new(logger: logger)
           tio = inner.tar_io
           begin
-            ex.extract(tmpdir, ::Gem::Package::TarReader.new(tio))
+            ex.extract(tmpdir, ::Gem::Package::TarReader.new(tio), chown: false)
           ensure
             tio.close
           end
