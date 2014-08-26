@@ -12,14 +12,14 @@ describe FPM::Dockery::DockerFile do
         @recipe
       end
 
-      def cache( x = nil )
-        @cache = x if x
-        @cache || FPM::Dockery::Source::Null::Cache
-      end
-
       def variables( x = nil )
         @variables = x if x
         @variables || {}
+      end
+
+      def base( x = nil )
+        @base = x if x
+        @base || "<base>"
       end
     end
 
@@ -27,10 +27,13 @@ describe FPM::Dockery::DockerFile do
       self.class.variables
     end
     def cache
-      self.class.cache
+      FPM::Dockery::Source::Null::Cache
     end
     def recipe
       self.class.recipe
+    end
+    def base
+      self.class.base
     end
 
     def self.included(base)
@@ -38,132 +41,146 @@ describe FPM::Dockery::DockerFile do
     end
   end
 
-  subject do
-    FPM::Dockery::DockerFile.new(variables,cache,recipe)
-  end
+  describe 'Build' do
 
-  describe 'build_sh' do
+    subject do
+      FPM::Dockery::DockerFile::Build.new(base, variables,recipe)
+    end
 
-    context 'simple case' do
-      include DockerFileParams
+    describe '#build_sh' do
 
-      variables(
-        image: 'ubuntu:precise',
-        distribution: 'ubuntu'
-      )
+      context 'simple case' do
+        include DockerFileParams
 
-      recipe do |b|
-        b.run "foo", "bar", "--baz"
-      end
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
 
-      it 'works' do
-        expect(subject.build_sh).to eq(<<'SHELL')
+        recipe do |b|
+          b.run "foo", "bar", "--baz"
+        end
+
+        it 'works' do
+          expect(subject.build_sh).to eq(<<'SHELL')
 #!/bin/bash
 set -e
 echo -e '\e[1;32m====> foo-bar\e[0m'
 foo bar --baz
 SHELL
+        end
       end
+
     end
 
-  end
+    describe '#docker_file' do
 
-  describe 'docker_file' do
+      context 'simple ubuntu' do
+        include DockerFileParams
 
-    context 'simple ubuntu' do
-      include DockerFileParams
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
 
-      variables(
-        image: 'ubuntu:precise',
-        distribution: 'ubuntu'
-      )
+        recipe do |b|
+          b.build_depends 'blub'
+          b.depends 'foo'
+          b.depends 'arg'
+        end
 
-      recipe do |b|
-        b.build_depends 'blub'
-        b.depends 'foo'
-        b.depends 'arg'
-      end
-
-      it 'works' do
-        expect(subject.dockerfile).to eq(<<SHELL)
-FROM ubuntu:precise
-RUN mkdir /tmp/build
+        it 'works' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes arg blub foo
 ADD .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
-      end
-    end
-
-    context 'simple centos' do
-      include DockerFileParams
-
-      variables(
-        image: 'centos:6.5',
-        distribution: 'centos'
-      )
-
-      recipe do |b|
-        b.build_depends 'blub'
-        b.depends 'foo'
-        b.depends 'arg'
+        end
       end
 
-      it 'works' do
-        expect(subject.dockerfile).to eq(<<SHELL)
-FROM centos:6.5
-RUN mkdir /tmp/build
+      context 'simple centos' do
+        include DockerFileParams
+
+        variables(
+          image: 'centos:6.5',
+          distribution: 'centos'
+        )
+
+        recipe do |b|
+          b.build_depends 'blub'
+          b.depends 'foo'
+          b.depends 'arg'
+        end
+
+        it 'works' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
 WORKDIR /tmp/build
 RUN yum -y install arg blub foo
 ADD .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
+        end
       end
+
     end
 
-    context 'with cache files' do
+    describe '#tar_io' do
 
-      let(:cache){
-        double(:cache)
-      }
+       context 'simple ubuntu' do
+        include DockerFileParams
 
-      subject do
-        FPM::Dockery::DockerFile.new({image: 'ubuntu:precise',distribution: 'ubuntu'},cache,FPM::Dockery::Recipe.new)
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
+
+        it 'works' do
+          io = subject.tar_io
+          entries = Gem::Package::TarReader.new(io).map{|e| e.header.name }
+          expect( entries ).to eq ['.build.sh','Dockerfile']
+        end
+
       end
+    end
+  end
 
-      it 'maps files' do
-        expect(cache).to receive(:file_map).and_return({''=>''})
-        expect(subject.dockerfile).to eq(<<SHELL)
+  describe 'Source' do
+    subject do
+      FPM::Dockery::DockerFile::Source.new(variables,cache)
+    end
+
+    describe '#docker_file' do
+
+      context 'simple case' do
+        include DockerFileParams
+        let(:cache){
+          c = double('cache')
+          allow(c).to receive(:file_map){ {'' => '' } }
+          c
+        }
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
+
+        it "map the files" do
+          expect(subject.dockerfile).to eq(<<DOCKERFILE)
 FROM ubuntu:precise
 RUN mkdir /tmp/build
-WORKDIR /tmp/build
 ADD . /tmp/build
-ADD .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
-SHELL
+DOCKERFILE
+        end
       end
-
     end
+
   end
 
-  describe '#tar_io' do
+=begin
 
-     context 'simple ubuntu' do
-      include DockerFileParams
-
-      variables(
-        image: 'ubuntu:precise',
-        distribution: 'ubuntu'
-      )
-
-      it 'works' do
-        io = subject.tar_io
-        entries = Gem::Package::TarReader.new(io).map{|e| e.header.name }
-        expect( entries ).to eq ['.build.sh','Dockerfile']
-      end
-
-    end
-  end
+=end
 end
 

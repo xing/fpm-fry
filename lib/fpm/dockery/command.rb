@@ -172,26 +172,39 @@ module FPM; module Dockery
           return 100
         end
 
-        df = DockerFile.new(b.variables.merge(image: image),cache,b.recipe)
+        cachetag = "fpm-dockery:#{cache.cachekey}"
 
+        res = client.get(
+          expects: [200,404],
+          path: client.url("images/#{cachetag}/json")
+        )
+        if res.status == 404
+          df = DockerFile::Source.new(b.variables.merge(image: image),cache)
+          client.post(
+            headers: {
+              'Content-Type'=>'application/tar'
+            },
+            expects: [200],
+            path: client.url("build?rm=1&t=#{cachetag}"),
+            request_block: BlockEnumerator.new(df.tar_io)
+          )
+        end
+
+        df = DockerFile::Build.new(cachetag, b.variables.merge(image: image),b.recipe)
         parser = BuildOutputParser.new(out)
-        tar_io = df.tar_io
-
         res = client.post(
           headers: {
             'Content-Type'=>'application/tar'
           },
           expects: [200],
           path: client.url('build?rm=1'),
-          request_block: BlockEnumerator.new(tar_io),
+          request_block: BlockEnumerator.new(df.tar_io),
           response_block: parser
         )
-
         if parser.images.none?
           logger.error("Unable to detect build image")
           return 100
         end
-
         image = parser.images.last
         logger.debug("Detected build image", image: image)
 
