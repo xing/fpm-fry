@@ -28,6 +28,14 @@ describe FPM::Dockery::Source::Dir do
 
   end
 
+  context '#cachekey' do
+    it "works somewhat" do
+      src = FPM::Dockery::Source::Dir.new(source)
+      cache = src.build_cache(double('tmpdir'))
+      expect(cache.cachekey).to eq(Digest::SHA2.hexdigest(cache.tar_io.read))
+    end
+  end
+
   context '#copy_to' do
 
     let(:target){

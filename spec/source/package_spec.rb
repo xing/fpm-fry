@@ -46,5 +46,18 @@ describe FPM::Dockery::Source::Package do
       }.to raise_error(FPM::Dockery::Source::CacheFailed, "Unable to fetch file")
     end
 
+    it "returns checksum as cachekey if present" do
+      src = FPM::Dockery::Source::Package.new("http://example/file.tar", checksum: "12345")
+      cache = src.build_cache(tmpdir)
+      expect( cache.cachekey ).to eq("12345")
+    end
+
+    it "fetches file for cachekey if no checksum present" do
+      stub_request(:get,'http://example/file.tar').to_return(body: "doesn't matter", status: 200)
+      src = FPM::Dockery::Source::Package.new("http://example/file.tar")
+      cache = src.build_cache(tmpdir)
+      expect( cache.cachekey ).to eq("477c34d98f9e090a4441cf82d2f1f03e64c8eb730e8c1ef39a8595e685d4df65")
+    end
+
   end
 end

@@ -21,13 +21,11 @@ module FPM; module Dockery ; module Source
 
       def_delegators :package, :url, :checksum, :agent, :extension, :logger, :file_map
 
-      def update
-        if cache_valid?
-          logger.debug("Found valid cache", url: url, tempfile: tempfile)
-        else
+      def initialize(*_)
+        super
+        if !checksum
           update!
         end
-        return self
       end
 
       def cache_valid?
@@ -40,6 +38,10 @@ module FPM; module Dockery ; module Source
       end
 
       def update!
+        if cache_valid?
+          logger.debug("Found valid cache", url: url, tempfile: tempfile)
+          return
+        end
         d = Digest::SHA256.new
         f = nil
         fetch_url(url) do |resp|
@@ -90,8 +92,14 @@ module FPM; module Dockery ; module Source
       end
 
       def tar_io
+        update!
         IO_CLASSES.fetch(extension).open(tempfile)
       end
+
+      def cachekey
+        @observed_checksum || checksum
+      end
+
     end
 
     KNOWN_EXTENSION = ['.tar','.tar.gz', '.tgz'
@@ -119,7 +127,7 @@ module FPM; module Dockery ; module Source
     end
 
     def build_cache(tempdir)
-      Cache.new(self, tempdir).update
+      Cache.new(self, tempdir)
     end
   end
 end end end

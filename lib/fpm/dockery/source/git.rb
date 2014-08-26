@@ -43,6 +43,12 @@ module FPM; module Dockery ; module Source
         logger.debug("Running git",cmd: cmd)
         system(*cmd, chdir: dst)
       end
+
+      def cachekey
+        cmd = [package.git, "--git-dir=#{repodir}",'rev-parse','FETCH_HEAD^{tree}']
+        logger.debug("Running git",cmd: cmd)
+        return IO.popen(cmd).read.chomp
+      end
     private
       def repodir
         File.join(tempdir,File.basename(url.path))

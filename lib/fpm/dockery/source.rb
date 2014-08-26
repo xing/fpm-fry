@@ -24,6 +24,9 @@ module FPM; module Dockery ; module Source
       def self.file_map
         return {}
       end
+      def self.cachekey
+        return '0' * 32
+      end
     end
 
     def self.build_cache(*_)

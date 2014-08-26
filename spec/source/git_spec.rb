@@ -10,7 +10,8 @@ describe FPM::Dockery::Source::Git do
 
   let!(:source){
     s = Dir.mktmpdir("fpm-dockery")
-    `cd #{s} ; git init ; echo "Hello" > "World" ; git add . ; git -c user.name=Example -c user.email=example@dockery.git commit -m test "--date=2000-01-01T00:00:00 +0000"`
+    `cd #{s} ; git init ; echo "Hello" > "World" ; git add . ;
+    git -c user.name=Example -c user.email=example@dockery.git commit -m test "--date=2000-01-01T00:00:00 +0000"`
     s
   }
 
@@ -60,6 +61,14 @@ describe FPM::Dockery::Source::Git do
       expect(IO.read(File.join(target,"World"))).to eq "Hello\n"
     end
 
+  end
+
+  context '#cachekey' do
+    it "works" do
+      src = FPM::Dockery::Source::Git.new(source)
+      cache = src.build_cache(tmpdir)
+      expect(cache.cachekey).to eq("21f88b4ce08684ba5f9d58eb48b8bad1dfda8f9c")
+    end
   end
 
 end

@@ -1,4 +1,5 @@
 require 'fpm/dockery/source/patched'
+require 'digest'
 describe FPM::Dockery::Source::Patched do
 
   context '#build_cache' do
@@ -17,6 +18,9 @@ describe FPM::Dockery::Source::Patched do
         end
         sio.rewind
         sio
+      }
+      allow(c).to receive(:cachekey){
+        Digest::SHA1.hexdigest("World\x00Hello\n")
       }
       c
     }
@@ -58,6 +62,12 @@ describe FPM::Dockery::Source::Patched do
       ensure
         io.close
       end
+    end
+
+    it "returns the correct cachekey" do
+      src = FPM::Dockery::Source::Patched.new(source, patches: [ File.join(File.dirname(__FILE__),'..','data','patch.diff')] )
+      cache = src.build_cache(tmpdir)
+      expect( cache.cachekey ).to eq Digest::SHA2.hexdigest(cache.inner.cachekey + "\x00" + IO.read(src.patches[0]) + "\x00")
     end
 
     context 'with #copy_to' do
