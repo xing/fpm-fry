@@ -172,14 +172,20 @@ module FPM; module Dockery
           return 100
         end
 
-        cachetag = "fpm-dockery:#{cache.cachekey}"
+        res = client.get(
+          expects: [200],
+          path: client.url("images/#{image}/json")
+        )
+        image_id = JSON.parse(res.body).fetch('id')
+
+        cachetag = "fpm-dockery:#{image_id}_#{cache.cachekey}"
 
         res = client.get(
           expects: [200,404],
           path: client.url("images/#{cachetag}/json")
         )
         if res.status == 404
-          df = DockerFile::Source.new(b.variables.merge(image: image),cache)
+          df = DockerFile::Source.new(b.variables.merge(image: image_id),cache)
           client.post(
             headers: {
               'Content-Type'=>'application/tar'
@@ -190,7 +196,7 @@ module FPM; module Dockery
           )
         end
 
-        df = DockerFile::Build.new(cachetag, b.variables.merge(image: image),b.recipe)
+        df = DockerFile::Build.new(cachetag, b.variables.dup,b.recipe)
         parser = BuildOutputParser.new(out)
         res = client.post(
           headers: {
