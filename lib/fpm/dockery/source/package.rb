@@ -96,6 +96,13 @@ module FPM; module Dockery ; module Source
         IO_CLASSES.fetch(extension).open(tempfile)
       end
 
+      def copy_to(dst)
+        update!
+        cmd = ['tar','-xf',tempfile,'-C',dst]
+        logger.debug("Running tar",cmd: cmd)
+        system(*cmd)
+      end
+
       def cachekey
         @observed_checksum || checksum
       end

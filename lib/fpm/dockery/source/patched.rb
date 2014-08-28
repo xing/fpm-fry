@@ -66,7 +66,13 @@ module FPM; module Dockery ; module Source
 
     def initialize( inner , options = {})
       @inner = inner
-      @patches = Array(options[:patches])
+      @patches = Array(options[:patches]).map do |file|
+        file = File.expand_path(file)
+        if !File.exists?(file)
+          raise ArgumentError, "File doesn't exist: #{file}"
+        end
+        file
+      end
     end
 
     def build_cache(tmpdir)
@@ -76,7 +82,7 @@ module FPM; module Dockery ; module Source
     def self.decorate(options)
       if options.key?(:patches) && Array(options[:patches]).size > 0
         p = options.delete(:patches)
-        return new( yield options, patches: p )
+        return new( yield(options), patches: p )
       else
         return yield options
       end

@@ -4,15 +4,24 @@ require 'fileutils'
 require 'webmock/rspec'
 describe FPM::Dockery::Source::Package do
 
-  context '#build_cache' do
+  let(:tmpdir){
+    Dir.mktmpdir("fpm-dockery")
+  }
 
-    let(:tmpdir){
-      Dir.mktmpdir("fpm-dockery")
-    }
-
-    after do
-      FileUtils.rm_rf(tmpdir)
+  let(:body){
+    body = StringIO.new
+    tar = Gem::Package::TarWriter.new(body)
+    tar.add_file('foo','0777') do |io|
+      io.write("bar")
     end
+    body.string
+  }
+
+  after do
+    FileUtils.rm_rf(tmpdir)
+  end
+
+  context '#build_cache' do
 
     it "fetches a file" do
       stub_request(:get,'http://example/file.tar').to_return(body: "doesn't matter", status: 200)
@@ -59,5 +68,33 @@ describe FPM::Dockery::Source::Package do
       expect( cache.cachekey ).to eq("477c34d98f9e090a4441cf82d2f1f03e64c8eb730e8c1ef39a8595e685d4df65")
     end
 
+  end
+
+  context '#copy_to' do
+    let(:destdir){
+      Dir.mktmpdir("fpm-dockery")
+    }
+
+    after do
+      FileUtils.rm_rf(destdir)
+    end
+
+    it "untars a file" do
+      stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+      src = FPM::Dockery::Source::Package.new("http://example/file.tar")
+      cache = src.build_cache(tmpdir)
+      cache.copy_to(destdir)
+      expect( Dir.new(destdir).each.to_a ).to eq ['.','..','foo']
+    end
+
+  end
+
+  context '#tar_io' do
+    it "untars a file" do
+      stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+      src = FPM::Dockery::Source::Package.new("http://example/file.tar")
+      cache = src.build_cache(tmpdir)
+      expect( cache.tar_io.read ).to eq body
+    end
   end
 end

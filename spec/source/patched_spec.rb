@@ -101,6 +101,7 @@ describe FPM::Dockery::Source::Patched do
   context '#decorate' do
 
     let(:source){ double("source") }
+    let(:patches){ [File.expand_path(File.join(File.dirname(__FILE__),'..','data','patch.diff'))] }
 
     it 'just passes if nothing is configured' do
       expect(FPM::Dockery::Source::Patched.decorate({}){source}).to be source
@@ -109,9 +110,11 @@ describe FPM::Dockery::Source::Patched do
     it 'just passes if the patches list is empty' do
       expect(FPM::Dockery::Source::Patched.decorate(patches: []){source}).to be source
     end
-
     it 'decorates if the list is not empty' do
-      expect(FPM::Dockery::Source::Patched.decorate(patches: ["foo"]){source}).to be_a FPM::Dockery::Source::Patched
+      expect(FPM::Dockery::Source::Patched.decorate(patches: patches){source}).to be_a FPM::Dockery::Source::Patched
+    end
+    it 'passes the patch file list' do
+      expect(FPM::Dockery::Source::Patched.decorate(patches: patches){source}.patches).to eq patches
     end
   end
 end
