@@ -54,7 +54,10 @@ module FPM; module Dockery ; module Source
         update!
         cmd = ['tar','-c','.']
         logger.debug("Running tar",cmd: cmd, dir: unpacked_tmpdir)
-        IO.popen(cmd, chdir: unpacked_tmpdir)
+        # IO.popen( ..., chdir: ... ) doesn't work on older ruby
+        ::Dir.chdir(unpacked_tmpdir) do
+          return IO.popen(cmd)
+        end
       end
 
       def cachekey

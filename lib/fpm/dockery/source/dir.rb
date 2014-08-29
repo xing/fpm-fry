@@ -18,7 +18,9 @@ module FPM; module Dockery ; module Source
       def tar_io
         cmd = ['tar','-c','.']
         logger.debug("Running tar",cmd: cmd, dir: dir)
-        IO.popen(cmd, chdir: dir)
+        ::Dir.chdir(dir) do
+          return IO.popen(cmd)
+        end
       end
 
       def copy_to(dst)
