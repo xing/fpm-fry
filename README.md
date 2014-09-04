@@ -108,7 +108,6 @@ depends "mock-package", install: false
 source "https://example.com/path/source.tar.gz",
   checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is sha256
 ```
-
     - **git**: Understands any url that git understands. Requires git on your system.
 
 ```ruby
@@ -116,7 +115,6 @@ source "http://github.com/user/repo.git" # Use HEAD
 source "http://github.com/user/repo.git", branch: "foo" # Use branch foo
 source "http://github.com/user/repo.git", tag: "0.1.0" # Use tag 0.1.0
 ```
-
     - **dir**: Uses a directory on _your_ machine.
 
 ```ruby
