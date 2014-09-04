@@ -103,14 +103,14 @@ depends "mock-package", install: false
 
 - `source Url, Options = {}`: Sets the source url to use for this package. Out-of-the-box the following types are supported:
 
-    **tar file**: Just pass an url to a tar file.
+**tar file**: Just pass an url to a tar file.
 
 ```ruby
 source "https://example.com/path/source.tar.gz",
   checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is sha256
 ```
 
-    **git**: Understands any url that git understands. Requires git on your system.
+**git**: Understands any url that git understands. Requires git on your system.
 
 ```ruby
 source "http://github.com/user/repo.git" # Use HEAD
@@ -118,7 +118,7 @@ source "http://github.com/user/repo.git", branch: "foo" # Use branch foo
 source "http://github.com/user/repo.git", tag: "0.1.0" # Use tag 0.1.0
 ```
 
-    **dir**: Uses a directory on _your_ machine.
+**dir**: Uses a directory on _your_ machine.
 
 ```ruby
 source "./src" # Relative to recipe file
