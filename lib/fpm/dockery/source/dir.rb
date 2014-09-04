@@ -4,7 +4,7 @@ require 'digest'
 module FPM; module Dockery ; module Source
   class Dir
 
-    REGEX = %r!\A(?:file:|/|\./)!
+    REGEX = %r!\A(?:file:|/|\.)!
 
     def self.guess( url )
       Source::guess_regex(REGEX, url)
@@ -41,6 +41,9 @@ module FPM; module Dockery ; module Source
 
     def initialize( url, options = {} )
       @url = URI(url)
+      if @url.relative?
+        @url.path = File.expand_path(@url.path)
+      end
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @file_map = options.fetch(:file_map){ {'' => ''} }
     end
