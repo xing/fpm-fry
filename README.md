@@ -102,20 +102,23 @@ depends "mock-package", install: false
 ```
 
 - `source Url, Options = {}`: Sets the source url to use for this package. Out-of-the-box the following types are supported:
-    - **tar file**: Just pass an url to a tar file.
+
+    **tar file**: Just pass an url to a tar file.
 
 ```ruby
 source "https://example.com/path/source.tar.gz",
   checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is sha256
 ```
-    - **git**: Understands any url that git understands. Requires git on your system.
+
+    **git**: Understands any url that git understands. Requires git on your system.
 
 ```ruby
 source "http://github.com/user/repo.git" # Use HEAD
 source "http://github.com/user/repo.git", branch: "foo" # Use branch foo
 source "http://github.com/user/repo.git", tag: "0.1.0" # Use tag 0.1.0
 ```
-    - **dir**: Uses a directory on _your_ machine.
+
+    **dir**: Uses a directory on _your_ machine.
 
 ```ruby
 source "./src" # Relative to recipe file
@@ -144,6 +147,47 @@ BASH
 - `distribution`: Returns the linux distribution like "ubuntu" or "centos"
 - `distribution_version`: The distribution version as a string like "12.04" or "6.0.7"
 - `codename`: The release codename like "squeeze" or "trusty"
+
+### Plugins
+
+fpm-dockery has a tiny but powerful plugin architecture.
+
+- `plugin String, *Args`: loads and enables the given plugin with the given arguments.
+
+fpm-dockery ships with these plugins:
+
+#### exclude
+
+Allows you to exclude files present after build from the final package.
+
+```ruby
+
+plugin "exclude", "foo/**/bar"
+```
+
+#### platforms
+
+Adds a syntactic sugar for platform filters.
+
+```ruby
+plugin "platforms"
+platforms :ubuntu do
+  # ubuntu stuff here
+end
+```
+
+#### service
+
+Adds a service inluding an init script, an upstart script and the correct install hooks.
+
+```ruby
+plugin "service" do
+  name "my-service"
+  command "/usr/bin/my-service","-f" # command is expected to stay in foreground
+end
+```
+
+
 
 Building on remote hosts
 -------------------------
