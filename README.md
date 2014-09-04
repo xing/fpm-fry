@@ -79,43 +79,65 @@ Recipe syntax
 Recipe are ordinary ruby code. They are evaled inside an FPM::Dockery::Recipe::Builder which gives you the following methods:
 
 - `name String`: Sets the package name. This is one the few mandatory settings.
+
 ```ruby
 name "my-awesome-package"
 ```
+
 - `version String`: Sets the package version.
+
 ```ruby
 version "1.2.3"
 ```
+
 - `depends String, Options = {}`: Adds a dependency. Available options are:
     - `install: true|false|String`: Sets if this package is installed during build. You can override the package actually installed by passing a string. This way you can depend on virtual packages but install a real package for building.
+
 ```ruby
 depends "other-package"
 depends "virtual-package", install: "real-package"
 depends "mock-package", install: false
 ```
+
 - `source Url, Options = {}`: Sets the source url to use for this package. Out-of-the-box the following types are supported:
     - **tar file**: Just pass an url to a tar file.
+
 ```ruby
 source "https://example.com/path/source.tar.gz",
   checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is sha256
 ```
+
     - **git**: Understands any url that git understands. Requires git on your system.
+
 ```ruby
 source "http://github.com/user/repo.git" # Use HEAD
 source "http://github.com/user/repo.git", branch: "foo" # Use branch foo
 source "http://github.com/user/repo.git", tag: "0.1.0" # Use tag 0.1.0
 ```
+
     - **dir**: Uses a directory on _your_ machine.
+
 ```ruby
 source "./src" # Relative to recipe file
 ```
+
 - `run String, *String`: Run the given command during build. All parts are automatically shellescaped.
+
 ```ruby
 run "./configure","--prefix=/foo/bar"
 run "make"
 run "make", "INSTALL"
 ```
+
 - `after_install String`: adds a script that gets run after installation of this package.
+
+```ruby
+after_install <<BASH
+#!/bin/bash
+echo "lol"
+BASH
+```
+
 
 Building on remote hosts
 -------------------------
