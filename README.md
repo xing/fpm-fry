@@ -78,7 +78,9 @@ Recipe syntax
 
 Recipe are ordinary ruby code. They are evaled inside an FPM::Dockery::Recipe::Builder which gives you the following methods:
 
-- `name String`: Sets the package name. This is one the few mandatory settings.
+### General stuff
+
+- `name String`: Sets the package name. This is the only mandatory setting.
 
 ```ruby
 name "my-awesome-package"
@@ -138,6 +140,12 @@ echo "lol"
 BASH
 ```
 
+### Target info
+
+- `flavour`: Returns the linux family like "redhat" or "debian"
+- `distribution`: Returns the linux distribution like "ubuntu" or "centos"
+- `distribution_version`: The distribution version as a string like "12.04" or "6.0.7"
+- `codename`: The release codename like "squeeze" or "trusty"
 
 Building on remote hosts
 -------------------------
