@@ -56,5 +56,22 @@ describe FPM::Dockery::Source::Dir do
 
   end
 
+  context 'with relative paths' do
+    it "works somewhat" do
+      base = File.dirname(source)
+      src = Dir.chdir base do
+        FPM::Dockery::Source::Dir.new(File.basename(source))
+      end
+      cache = src.build_cache(double('tmpdir'))
+      io = cache.tar_io
+      begin
+        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        files = rd.each.select{|e| e.header.name == "./World" }
+        expect(files.size).to eq(1)
+      ensure
+        io.close
+      end
+    end
+  end
 
 end
