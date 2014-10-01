@@ -84,7 +84,16 @@ module FPM; module Dockery
         df << "FROM #{base}"
         df << "WORKDIR /tmp/build"
 
-        deps = (recipe.build_depends.merge recipe.depends).select{|_,v| v.fetch(:install,true) }.map{|k,_| k }.sort
+        deps = (recipe.build_depends.merge recipe.depends)\
+          .select{|_,v| v.fetch(:install,true) }\
+          .map do |k,v|
+            i = v.fetch(:install,true)
+            if i == true then
+              k
+            else
+              i
+            end
+          end.sort
         if deps.any?
           case(variables[:flavour])
           when 'debian'

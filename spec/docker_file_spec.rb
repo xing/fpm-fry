@@ -125,6 +125,35 @@ SHELL
         end
       end
 
+      context 'install overrides' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
+
+        recipe do |b|
+          b.depends 'a'
+          b.depends 'b', install: true
+          b.depends 'c', install: false
+          b.depends 'd', install: 'D'
+          b.depends 'e', install: 'e=1.0.0'
+        end
+
+        it 'works' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build
+RUN apt-get install --yes D a b e\\=1.0.0
+ADD .build.sh /tmp/build/
+ENTRYPOINT /tmp/build/.build.sh
+SHELL
+        end
+      end
+
+
+
     end
 
     describe '#tar_io' do
