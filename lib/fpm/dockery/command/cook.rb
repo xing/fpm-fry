@@ -109,13 +109,17 @@ module FPM; module Dockery
 
     end
 
+    def lint_recipe_file!
+      File.exists?(recipe) || raise(Recipe::NotFound)
+    end
+
     def lint_recipe!
       problems = builder.recipe.lint
       if problems.any?
         problems.each do |p|
           logger.error(p)
         end
-        return 1
+        raise
       end
     end
 
@@ -256,6 +260,7 @@ module FPM; module Dockery
 
     def execute
       # force some eager loading
+      lint_recipe_file!
       detector
       flavour
       output_class
