@@ -56,9 +56,9 @@ describe FPM::Dockery::Source::Package do
     end
 
     it "returns checksum as cachekey if present" do
-      src = FPM::Dockery::Source::Package.new("http://example/file.tar", checksum: "12345")
+      src = FPM::Dockery::Source::Package.new("http://example/file.tar", checksum: "477c34d98f9e090a4441cf82d2f1f03e64c8eb730e8c1ef39a8595e685d4df65")
       cache = src.build_cache(tmpdir)
-      expect( cache.cachekey ).to eq("12345")
+      expect( cache.cachekey ).to eq("477c34d98f9e090a4441cf82d2f1f03e64c8eb730e8c1ef39a8595e685d4df65")
     end
 
     it "fetches file for cachekey if no checksum present" do

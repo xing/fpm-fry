@@ -19,7 +19,7 @@ module FPM; module Dockery ; module Source
     class Cache < Struct.new(:package,:tempdir)
       extend Forwardable
 
-      def_delegators :package, :url, :checksum, :agent, :extension, :logger, :file_map
+      def_delegators :package, :url, :checksum, :checksum_algorithm, :agent, :extension, :logger, :file_map
 
       def initialize(*_)
         super
@@ -31,7 +31,7 @@ module FPM; module Dockery ; module Source
       def cache_valid?
         c = @observed_checksum || checksum
         begin
-          Digest::SHA256.file(tempfile).hexdigest == c
+          checksum_algorithm.file(tempfile).hexdigest == c
         rescue Errno::ENOENT
           return false
         end
@@ -42,7 +42,7 @@ module FPM; module Dockery ; module Source
           logger.debug("Found valid cache", url: url, tempfile: tempfile)
           return
         end
-        d = Digest::SHA256.new
+        d = checksum_algorithm.new
         f = nil
         fetch_url(url) do |resp|
           begin
@@ -119,7 +119,7 @@ module FPM; module Dockery ; module Source
       '.tgz' => Zlib::GzipReader
     }
 
-    attr :file_map, :data, :url, :extension, :checksum, :agent, :logger
+    attr :file_map, :data, :url, :extension, :checksum, :checksum_algorithm, :agent, :logger
 
     def initialize( url, options = {} )
       @url = URI(url)
@@ -130,11 +130,27 @@ module FPM; module Dockery ; module Source
       }
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @checksum = options[:checksum]
+      @checksum_algorithm = guess_checksum_algorithm(options[:checksum])
       @file_map = options.fetch(:file_map){ {'' => ''} }
     end
 
     def build_cache(tempdir)
       Cache.new(self, tempdir)
     end
+  private
+
+    def guess_checksum_algorithm( checksum )
+      case(checksum)
+      when nil
+        return Digest::SHA256
+      when /\A(sha256:)?[0-9a-f]{64}\z/ then
+        return Digest::SHA256
+      when /\A(sha1:)?[0-9a-f]{40}\z/ then
+        return Digest::SHA1
+      else
+        raise "Unknown checksum algorithm"
+      end
+    end
+
   end
 end end end
