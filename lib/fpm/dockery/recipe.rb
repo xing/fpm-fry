@@ -297,6 +297,8 @@ module FPM; module Dockery
 
     alias apply apply_output
 
+    SYNTAX_CHECK_SHELLS = ['/bin/sh','/bin/bash', '/bin/dash']
+
     def lint
       problems = []
       problems << "Name is empty." if name.to_s == ''
@@ -305,12 +307,24 @@ module FPM; module Dockery
         s = scripts.join("\n")
         if s == ''
           problems << "#{type} script is empty. This will produce broken packages."
-        else
-          sin, sout, serr, th = Open3.popen3('bash','-n')
+          next
+        end
+        m = /\A#!([^\n]+)\n/.match(s)
+        if !m
+          problems << "#{type} script doesn't have a valid shebang"
+          next
+        end
+        begin
+          args = m[0].shellsplit
+        rescue ArgumentError => e
+          problems << "#{type} script doesn't have a valid command in shebang"
+        end
+        if SYNTAX_CHECK_SHELLS.include? args[0]
+          sin, sout, serr, th = Open3.popen3(args[0],'-n')
           sin.write(s)
           sin.close
           if th.value.exitstatus != 0
-            problems << "#{type} script is not valid bash code: #{serr.read.chomp}"
+            problems << "#{type} script is not valid #{args[0]} code: #{serr.read.chomp}"
           end
           serr.close
           sout.close
