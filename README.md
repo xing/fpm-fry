@@ -162,7 +162,9 @@ Allows you to exclude files present after build from the final package.
 
 ```ruby
 
-plugin "exclude", "foo/**/bar"
+plugin "exclude"
+
+exclude "foo/**/bar"
 ```
 
 #### platforms
