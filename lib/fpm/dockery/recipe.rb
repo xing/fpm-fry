@@ -315,7 +315,7 @@ module FPM; module Dockery
           next
         end
         begin
-          args = m[0].shellsplit
+          args = m[1].shellsplit
         rescue ArgumentError => e
           problems << "#{type} script doesn't have a valid command in shebang"
         end

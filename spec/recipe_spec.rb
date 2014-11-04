@@ -149,7 +149,7 @@ RECIPE
       end
 
       it 'reports the scripts' do
-        expect(subject.lint).to eq ["after_install script is not valid bash code: bash: line 4: syntax error: unexpected end of file"]
+        expect(subject.lint).to eq ["after_install script is not valid /bin/bash code: /bin/bash: line 4: syntax error: unexpected end of file"]
       end
 
     end
