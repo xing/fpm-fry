@@ -133,7 +133,7 @@ module FPM; module Dockery
 
     def build_image
       @build_image ||= begin
-        cachetag = "fpm-dockery:#{image_id}_#{cache.cachekey}"
+        cachetag = "fpm-dockery:#{image_id[0..14]}_#{cache.cachekey[0..13]}"
         res = client.get(
           expects: [200,404],
           path: client.url("images/#{cachetag}/json")
