@@ -39,16 +39,41 @@ class FPM::Dockery::Client
   extend Forwardable
   def_delegators :agent, :post, :get, :delete
 
-  attr :docker_url, :logger
+  attr :docker_url, :logger, :tls
 
   def initialize(options = {})
     @docker_url = options.fetch(:docker_url){ self.class.docker_url }
     @logger = options.fetch(:logger){ Cabin::Channel.get }
+    if options[:tls].nil? ? docker_url =~ %r!(\Ahttps://|:2376\z)! : options[:tls]
+      # enable tls
+      @tls = {
+        client_cert: File.join(self.class.docker_cert_path,'cert.pem'),
+        client_key: File.join(self.class.docker_cert_path, 'key.pem'),
+        ssl_ca_file: File.join(self.class.docker_cert_path, 'ca.pem'),
+        ssl_verify_peer: options.fetch(:tlsverify){ false }
+      }
+      [:client_cert, :client_key, :ssl_ca_file].each do |k|
+        if !File.exists?(@tls[k])
+          raise ArgumentError.new("#{k} #{@tls[k]} doesn't exist. Did you set DOCKER_CERT_PATH correctly?")
+        end
+      end
+    else
+      @tls = {}
+    end
+  end
+
+  def self.docker_cert_path
+    ENV.fetch('DOCKER_CERT_PATH',File.join(Dir.home, '.docker'))
   end
 
   def self.docker_url
     ENV.fetch('DOCKER_HOST'.freeze, 'unix:///var/run/docker.sock')
   end
+
+  def tls?
+    tls.any?
+  end
+
 
   def url(*path)
     ['', 'v1.9',*path].join('/')
@@ -98,22 +123,32 @@ class FPM::Dockery::Client
   end
 
   def agent
-    @agent ||= agent_for(docker_url)
+    @agent ||= agent_for(docker_url, tls)
   end
 
   def broken_symlinks?
     return true
   end
 
-  def agent_for( uri )
+  def agent_for( uri, tls )
     proto, address = uri.split('://',2)
+    options = {
+      instrumentor: LogInstrumentor.new(logger),
+      read_timeout: 10000
+    }.merge( tls )
     case(proto)
     when 'unix'
-      return Excon.new("unix:///", socket: address, instrumentor: LogInstrumentor.new(logger), read_timeout: 10000)
+      uri = "unix:///"
+      options[:socket] = address
     when 'tcp'
-      return agent_for("http://#{address}")
+      if tls.any?
+        return agent_for("https://#{address}", tls)
+      else
+        return agent_for("http://#{adddress}", tls)
+      end
     when 'http', 'https'
-      return Excon.new(uri, instrumentor: LogInstrumentor.new(logger), read_timeout: 10000)
     end
+    logger.debug("Creating Agent", options.dup)
+    return Excon.new(uri, options)
   end
 end

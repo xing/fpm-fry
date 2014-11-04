@@ -11,8 +11,17 @@ module FPM; module Dockery
   class Command < Clamp::Command
 
     option '--debug', :flag, 'Turns on debugging'
+    option '--tls', :flag, 'Turns on tls ( default is false for schema unix, tcp and http and true for https )'
+    option '--[no-]tlsverify', :flag, 'Turns off tls peer verification', default:true, environment_variable: 'DOCKER_TLS_VERIFY'
 
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
+
+    def client
+      @client ||= FPM::Dockery::Client.new(
+        logger: logger,
+        tls: tls?, tlsverify: tlsverify?
+      )
+    end
 
     subcommand 'detect', 'Detects distribution from an image, a container or a given name' do
 
@@ -35,7 +44,7 @@ module FPM; module Dockery
       def execute
         require 'fpm/dockery/os_db'
         require 'fpm/dockery/detector'
-        client = FPM::Dockery::Client.new(logger: logger)
+
         if image
           d = Detector::Image.new(client, image)
         elsif distribution

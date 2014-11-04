@@ -26,6 +26,7 @@ module FPM; module Dockery
     def_delegators :ui, :out, :err, :logger, :tmpdir
 
     def initialize(*_)
+      @tls = nil
       require 'fpm/dockery/recipe'
       require 'fpm/dockery/detector'
       require 'fpm/dockery/docker_file'
@@ -38,12 +39,9 @@ module FPM; module Dockery
       if debug?
         ui.logger.level = :debug
       end
-      @client = FPM::Dockery::Client.new(logger: logger)
     end
 
   private
-
-    attr :client
 
     def detector
       @detector ||= begin
