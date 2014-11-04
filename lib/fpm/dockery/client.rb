@@ -144,11 +144,11 @@ class FPM::Dockery::Client
       if tls.any?
         return agent_for("https://#{address}", tls)
       else
-        return agent_for("http://#{adddress}", tls)
+        return agent_for("http://#{address}", tls)
       end
     when 'http', 'https'
     end
-    logger.debug("Creating Agent", options.dup)
+    logger.debug("Creating Agent", options.merge(uri: uri))
     return Excon.new(uri, options)
   end
 end

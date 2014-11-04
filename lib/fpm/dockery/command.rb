@@ -11,7 +11,7 @@ module FPM; module Dockery
   class Command < Clamp::Command
 
     option '--debug', :flag, 'Turns on debugging'
-    option '--tls', :flag, 'Turns on tls ( default is false for schema unix, tcp and http and true for https )'
+    option '--[no-]tls', :flag, 'Turns on tls ( default is false for schema unix, tcp and http and true for https )'
     option '--[no-]tlsverify', :flag, 'Turns off tls peer verification', default:true, environment_variable: 'DOCKER_TLS_VERIFY'
 
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
