@@ -1,6 +1,6 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-dockery'
-  gem.version = '0.1.1'
+  gem.version = '0.1.2'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Dockery"
