@@ -2,6 +2,14 @@ description <%= description == "" ? '"a service"' : description.inspect %>
 start on runlevel [2345]
 stop on runlevel [!2345]
 
+env DESC=<%= name.inspect %>
+env NAME=<%= name.inspect %>
+env DAEMON=<%= command[0].inspect %>
+env DAEMON_ARGS=<%= Shellwords.shelljoin(command[1..-1]).inspect %>
+
 respawn
 
-exec <%= Shellwords.shelljoin(command) %>
+script
+  [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+  exec "$DAEMON" $DAEMON_ARGS
+end script
