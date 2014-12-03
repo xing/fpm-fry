@@ -13,22 +13,31 @@ module FPM; module Dockery
       end
 
       def response_call(datum)
-        socket = datum[:connection].send(:socket)
+        if datum[:response]
+          # probably mocked
+          if datum[:response][:body]
+            @parser.parse(StringIO.new(datum[:response][:body]))
+          end
+          return @stack.response_call(datum)
+        else
+          socket = datum[:connection].send(:socket)
+          begin
+            line = socket.readline
+            match = /^HTTP\/\d+\.\d+\s(\d{3})\s/.match(line)
+          end while !match
+          status = match[1].to_i
 
-        until match = /^HTTP\/\d+\.\d+\s(\d{3})\s/.match(socket.readline); end
-        status = match[1].to_i
+          datum[:response] = {
+            :body          => '',
+            :headers       => Excon::Headers.new,
+            :status        => status,
+            :remote_ip     => socket.respond_to?(:remote_ip) && socket.remote_ip,
+          }
+          Excon::Response.parse_headers(socket, datum)
 
-        datum[:response] = {
-          :body          => '',
-          :headers       => Excon::Headers.new,
-          :status        => status,
-          :remote_ip     => socket.respond_to?(:remote_ip) && socket.remote_ip,
-        }
-        Excon::Response.parse_headers(socket, datum)
-        
-        @parser.parse(socket)
-        
-        return @stack.response_call(datum)
+          @parser.parse(socket)
+          return @stack.response_call(datum)
+        end
       end
 
     end
@@ -49,7 +58,7 @@ module FPM; module Dockery
       left  = 0
       streams = {1 => out, 2 => err}
       loop do
-        type = read_exactly(socket,4){|part| 
+        type = read_exactly(socket,4){|part|
           if part.bytesize == 0
             return
           else

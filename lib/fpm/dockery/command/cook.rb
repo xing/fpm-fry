@@ -5,18 +5,6 @@ module FPM; module Dockery
     option '--distribution', 'distribution', 'Distribution like ubuntu-12.04'
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
-    option ['-t','--target'], 'target', 'Target package type (deb, rpm, ... )', default: 'auto' do |x|
-      if x != 'auto' && /\A[a-z]+\z/ =~ x
-        begin
-          require File.join('fpm/package',x)
-        rescue LoadError => e
-          raise "Unknown target type: #{x}\n#{e.message}"
-        end
-      else
-        raise "Unknown target type: #{x}"
-      end
-      x
-    end
 
     parameter 'image', 'Docker image to build from'
     parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
@@ -25,8 +13,9 @@ module FPM; module Dockery
     extend Forwardable
     def_delegators :ui, :out, :err, :logger, :tmpdir
 
-    def initialize(*_)
+    def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
       @tls = nil
+      require 'digest'
       require 'fpm/dockery/recipe'
       require 'fpm/dockery/detector'
       require 'fpm/dockery/docker_file'
@@ -35,55 +24,55 @@ module FPM; module Dockery
       require 'fpm/dockery/block_enumerator'
       require 'fpm/dockery/build_output_parser'
       super
-      @ui = UI.new
+      @ui = ctx.fetch(:ui){ UI.new }
       if debug?
         ui.logger.level = :debug
       end
     end
 
-  private
-
     def detector
-      @detector ||= begin
+      @detector || begin
         if distribution
-          Detector::String.new(distribution)
+          d = Detector::String.new(distribution)
         else
           d = Detector::Image.new(client, image)
-          begin
-            unless d.detect!
-              raise "Unable to detect distribution from given image"
-            end
-          rescue Excon::Errors::NotFound
-            raise "Image not found"
-          end
-          d
         end
+        self.detector=d
       end
+    end
+
+    def detector=(d)
+      begin
+        unless d.detect!
+          raise "Unable to detect distribution from given image"
+        end
+      rescue Excon::Errors::NotFound
+        raise "Image not found"
+      end
+      @detector = d
     end
 
     def flavour
       @flavour ||= OsDb.fetch(detector.distribution,{flavour: "unknown"})[:flavour]
     end
+    attr_writer :flavour
 
     def output_class
       @output_class ||= begin
-        if target == 'auto'
-          logger.info("Autodetecting package type",flavour: flavour)
-          case(flavour)
-          when 'debian'
-            require 'fpm/package/deb'
-            FPM::Package::Deb
-          when 'redhat'
-            require 'fpm/package/rpm'
-            FPM::Package::RPM
-          else
-            raise "Cannot auto-detect package type. Please supply -t"
-          end
+        logger.info("Autodetecting package type",flavour: flavour)
+        case(flavour)
+        when 'debian'
+          require 'fpm/package/deb'
+          FPM::Package::Deb
+        when 'redhat'
+          require 'fpm/package/rpm'
+          FPM::Package::RPM
         else
-          FPM::Package.types.fetch(target)
+          raise "Cannot auto-detect package type."
         end
       end
     end
+    attr_writer :output_class
 
     def builder
       @builder ||= begin
@@ -98,10 +87,12 @@ module FPM; module Dockery
         b
       end
     end
+    attr_writer :builder
 
     def cache
       @cache ||= builder.recipe.source.build_cache(tmpdir)
     end
+    attr_writer :cache
 
     def lint_output_class!
 
@@ -130,10 +121,12 @@ module FPM; module Dockery
         JSON.parse(res.body).fetch('id')
       end
     end
+    attr_writer :image_id
 
     def build_image
       @build_image ||= begin
-        cachetag = "fpm-dockery:#{image_id[0..14]}_#{cache.cachekey[0..13]}"
+        sum = Digest::SHA256.hexdigest( image_id + "\0" + cache.cachekey )
+        cachetag = "fpm-dockery:#{sum[0..30]}"
         res = client.get(
           expects: [200,404],
           path: client.url("images/#{cachetag}/json")
@@ -162,14 +155,14 @@ module FPM; module Dockery
           response_block: parser
         )
         if parser.images.none?
-          logger.error("Unable to detect build image")
-          return 100
+          raise "Unable to detect build image"
         end
         image = parser.images.last
         logger.debug("Detected build image", image: image)
         image
       end
     end
+    attr_writer :build_image
 
     def build!
       res = client.post(
@@ -198,9 +191,10 @@ module FPM; module Dockery
           body: '',
           expects: [200],
           middlewares: [
-            StreamParser.new(STDOUT,STDERR),
+            StreamParser.new(out,err),
             Excon::Middleware::Expects,
-            Excon::Middleware::Instrumentor
+            Excon::Middleware::Instrumentor,
+            Excon::Middleware::Mock
           ]
         )
 
