@@ -1,0 +1,13 @@
+#!/bin/bash
+
+case "$1" in
+  remove)
+  <%= remove.join("\n") %>
+  ;;
+  upgrade)
+  <%= upgrade.join("\n") %>
+  ;;
+  *)
+  exit 1
+  ;;
+esac

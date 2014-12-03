@@ -51,12 +51,32 @@ module FPM::Dockery::Plugin ; module Service
       when 'upstart' then
         edit.add_file "/etc/init/#{name}.conf",StringIO.new( env.render('upstart.erb') )
         edit.ln_s '/lib/init/upstart-job', "/etc/init.d/#{name}"
-        builder.after_install env.render('upstart.postinst.erb')
-        builder.before_remove env.render('upstart.preun.erb')
+        builder.plugin('script_helper') do |sh|
+          sh.after_install_or_upgrade(<<BASH)
+if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
+  # It has to be stop+start because upstart doesn't pickup changes with restart.
+  stop #{Shellwords.shellescape name}
+  start #{Shellwords.shellescape name}
+fi
+BASH
+          sh.before_remove_entirely(<<BASH)
+if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
+  stop #{Shellwords.shellescape name}
+fi
+BASH
+        end
       when 'sysv' then
         edit.add_file "/etc/init.d/#{name}",StringIO.new( env.render('sysv.erb') ), chmod: '750'
-        builder.after_install env.render('sysv.postinst.erb')
-        builder.before_remove env.render('sysv.preun.erb')
+        builder.plugin('script_helper') do |sh|
+          sh.after_install_or_upgrade(<<BASH)
+update-rc.d #{Shellwords.shellescape name} defaults
+/etc/init.d/#{Shellwords.shellescape name} restart
+BASH
+          sh.before_remove_entirely(<<BASH)
+/etc/init.d/#{Shellwords.shellescape name} stop
+update-rc.d -f #{Shellwords.shellescape name} remove
+BASH
+        end
       when 'systemd' then
 
       end

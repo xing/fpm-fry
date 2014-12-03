@@ -1,0 +1,6 @@
+#!/bin/bash
+if [[ $1 -eq 1 ]] ; then
+  <%= install.join("\n") %>
+elif [[ $1 -ge 2 ]] ; then
+  <%= upgrade.join("\n") %>
+fi

@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [[ "$1" = "remove" || $1 -eq 0 ]] ; then
-  if status "<%= name %>" 2>/dev/null | grep -q ' start/'; then
-    # Service is running.
-    stop "<%= name %>"
-  fi
-fi
-

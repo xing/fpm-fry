@@ -1,7 +1,0 @@
-#!/bin/bash
-
-if [[ "$1" = "configure" || $1 -ge 1 ]] ; then
-  update-rc.d <%= name %> defaults
-  /etc/init.d/<%= name %> restart
-fi
-

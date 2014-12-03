@@ -18,8 +18,10 @@ describe FPM::Dockery::Plugin::Service do
 
   let(:recipe){ FPM::Dockery::Recipe.new }
 
+  let(:flavour){ 'debian' }
+
   let(:builder){
-    FPM::Dockery::Recipe::Builder.new({init: init},recipe)
+    FPM::Dockery::Recipe::Builder.new({init: init, flavour: flavour},recipe)
   }
 
   let(:package){

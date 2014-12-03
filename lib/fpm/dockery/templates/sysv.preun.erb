@@ -1,7 +1,0 @@
-#!/bin/bash
-
-if [[ "$1" = "remove" || $1 -eq 0 ]] ; then
-  /etc/init.d/<%= name %> stop
-  update-rc.d -f <%= name %> remove
-fi
-

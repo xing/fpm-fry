@@ -1,0 +1,6 @@
+#!/bin/bash
+if [[ $1 -eq 0 ]] ; then
+  <%= remove.join("\n") %>
+elif [[ $1 -ge 1 ]] ; then
+  <%= upgrade.join("\n") %>
+fi
