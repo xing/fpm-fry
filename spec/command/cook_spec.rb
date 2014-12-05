@@ -107,6 +107,7 @@ describe FPM::Dockery::Command::Cook do
 
       before(:each) do
         subject.image_id = 'f'*32
+        subject.flavour  = 'unknown'
         subject.cache = FPM::Dockery::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
@@ -127,6 +128,7 @@ describe FPM::Dockery::Command::Cook do
 
       before(:each) do
         subject.image_id = 'f'*32
+        subject.flavour  = 'unknown'
         subject.cache = FPM::Dockery::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
@@ -173,6 +175,64 @@ describe FPM::Dockery::Command::Cook do
         expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')
       end
     end
+  end
+
+  describe '#update?' do
+
+    let(:client) do
+      c = double('client')
+      allow(c).to receive(:url){|*args| args.join('/') }
+      c
+    end
+
+    subject do
+      s = FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      s.client = client
+      s
+    end
+
+    context 'debian auto without cache' do
+
+      before(:each) do
+        subject.flavour = 'debian'
+        subject.image = 'ubuntu:precise'
+        allow(subject.client).to receive(:post).
+          with(a_hash_including(path: 'containers/create')).
+          and_return(double('response', body: '{"Id":"deadbeef"}'))
+        allow(subject.client).to receive(:read).
+          with('deadbeef','/var/lib/apt/lists').
+          and_yield(double('lists', header: double('lists.header', name: 'lists/')))
+        allow(subject.client).to receive(:delete).
+          with(a_hash_including(path: 'containers/deadbeef'))
+      end
+
+      it 'is true' do
+        expect(subject.update?).to eq true
+      end
+    end
+
+    context 'debian auto with cache' do
+
+      before(:each) do
+        subject.flavour = 'debian'
+        subject.image = 'ubuntu:precise'
+        allow(subject.client).to receive(:post).
+          with(a_hash_including(path: 'containers/create')).
+          and_return(double('response', body: '{"Id":"deadbeef"}'))
+        allow(subject.client).to receive(:read).
+          with('deadbeef','/var/lib/apt/lists').
+          and_yield(double('lists', header: double('lists.header', name: 'lists/'))).
+          and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter')))
+        allow(subject.client).to receive(:delete).
+          with(a_hash_including(path: 'containers/deadbeef'))
+      end
+
+      it 'is true' do
+        expect(subject.update?).to eq false
+      end
+    end
+
+
 
   end
 

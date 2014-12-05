@@ -70,12 +70,16 @@ module FPM; module Dockery
 
     class Build < Struct.new(:base, :variables, :recipe)
 
-      def initialize(base, variables, recipe)
+      attr :options
+      private :options
+
+      def initialize(base, variables, recipe, options = {})
         variables = variables.dup
         if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
           variables[:flavour] = OsDb[variables[:distribution]][:flavour]
         end
         variables.freeze
+        @options = options.dup.freeze
         super(base, variables, recipe)
       end
 
@@ -97,7 +101,11 @@ module FPM; module Dockery
         if deps.any?
           case(variables[:flavour])
           when 'debian'
-            df << "RUN apt-get install --yes #{Shellwords.join(deps)}"
+            update = ''
+            if options[:update]
+              update = 'apt-get update && '
+            end
+            df << "RUN #{update}apt-get install --yes #{Shellwords.join(deps)}"
           when 'redhat'
             df << "RUN yum -y install #{Shellwords.join(deps)}"
           else

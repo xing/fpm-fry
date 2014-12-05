@@ -6,6 +6,15 @@ module FPM; module Dockery
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
 
+    UPDATE_VALUES = ['auto','never','always']
+    option '--update',"<#{UPDATE_VALUES.join('|')}>", 'Update image before installing packages ( only apt currently )',attribute_name: 'update', default: 'auto' do |value|
+      if !UPDATE_VALUES.include? value
+        raise "Unknown value for --update: #{value.inspect}\nPossible values are #{UPDATE_VALUES.join(', ')}"
+      else
+        value
+      end
+    end
+
     parameter 'image', 'Docker image to build from'
     parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
@@ -143,7 +152,7 @@ module FPM; module Dockery
           )
         end
 
-        df = DockerFile::Build.new(cachetag, builder.variables.dup,builder.recipe)
+        df = DockerFile::Build.new(cachetag, builder.variables.dup,builder.recipe, update: update?)
         parser = BuildOutputParser.new(out)
         res = client.post(
           headers: {
@@ -163,6 +172,39 @@ module FPM; module Dockery
       end
     end
     attr_writer :build_image
+
+    def update?
+      if flavour == 'debian'
+        case(update)
+        when 'auto'
+          body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
+          res = client.post( path: client.url('containers','create'),
+                             headers: {'Content-Type' => 'application/json'},
+                             body: body,
+                             expects: [201]
+                           )
+          body = JSON.parse(res.body)
+          container = body.fetch('Id')
+          begin
+            client.read( container, '/var/lib/apt/lists') do |file|
+              next if file.header.name == 'lists/'
+              logger.info("/var/lib/apt/lists is not empty, no update is required ( force update with --apt-update=always )")
+              return false
+            end
+          ensure
+            client.delete(path: client.url('containers',container))
+          end
+          logger.info("/var/lib/apt/lists is empty, update is required ( disable update with --apt-update=never )")
+          return true
+        when 'always'
+          return true
+        when 'never'
+          return false
+        end
+      else
+        return false
+      end
+    end
 
     def build!
       res = client.post(

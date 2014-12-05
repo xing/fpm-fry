@@ -23,6 +23,8 @@ module FPM; module Dockery
       )
     end
 
+    attr_writer :client
+
     subcommand 'detect', 'Detects distribution from an image, a container or a given name' do
 
       option '--image', 'image', 'Docker image to detect'
