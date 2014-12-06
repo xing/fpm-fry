@@ -5,7 +5,7 @@ require 'fpm/dockery/source'
 module FPM; module Dockery ; module Source
   class Git
 
-    REGEX = %r!\A(?:git:|git@|https?:.*\.git\z)!
+    REGEX = %r!\A(?:git:|\S+@\S+:\S+\.git\z|https?:.*\.git\z|ssh:.*\.git\z)!
 
     def self.guess( url )
       Source::guess_regex(REGEX, url)
@@ -74,6 +74,7 @@ module FPM; module Dockery ; module Source
     attr :logger, :git, :rev, :file_map, :url
 
     def initialize( url, options = {} )
+      url = url.sub(/\A(\S+@\S+):(\S+\.git)\z/,'ssh://\1/\2')
       @url = URI(url)
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @rev = options[:branch] || options[:tag] || 'HEAD'

@@ -71,4 +71,13 @@ describe FPM::Dockery::Source::Git do
     end
   end
 
+  context 'url' do
+
+    it 'accepts git@... urls' do
+      src = FPM::Dockery::Source::Git.new('git@github.com:foo/bar.git')
+      expect(src.url.path).to eq '/foo/bar.git'
+    end
+
+  end
+
 end
