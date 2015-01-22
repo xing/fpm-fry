@@ -56,8 +56,8 @@ module FPM::Dockery::Plugin ; module Service
 if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
   # It has to be stop+start because upstart doesn't pickup changes with restart.
   stop #{Shellwords.shellescape name}
-  start #{Shellwords.shellescape name}
 fi
+start #{Shellwords.shellescape name}
 BASH
           sh.before_remove_entirely(<<BASH)
 if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
