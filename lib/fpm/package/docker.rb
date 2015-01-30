@@ -13,23 +13,20 @@ class FPM::Package::Docker < FPM::Package
     if options[:client]
       @client = options[:client]
     end
+    if @logger.nil?
+      @logger = Cabin::Channel.get
+    end
   end
 
   def input(name)
-    if client.broken_symlinks?
-      changes = changes(name)
-      leaves = Hash[ changes.leaves.map{|k| [k,true] } ]
-      exclude_non_leaves = lambda{|x|
-        !leaves.key?(x) }
-      directories = changes.smallest_superset
-      directories.each do |chg|
-        copy(name, chg, only: leaves)
-      end
-    else
-      leaves = changes(name).leaves
-      leaves.each do |chg|
-        copy(name, chg)
-      end
+    changes = changes(name)
+    changes.remove_modified_leaves! do | ml |
+      @logger.warn("Found a modified file. You can only create new files in a package",file: ml)
+    end
+    leaves = Hash[ changes.leaves.map{|k| [k,true] } ]
+    directories = changes.smallest_superset
+    directories.each do |chg|
+      copy(name, chg, only: leaves)
     end
   end
 
@@ -63,10 +60,10 @@ private
     return false
   end
 
-  class Node < Struct.new(:children)
+  class Node < Struct.new(:children, :kind)
 
     def initialize
-      super(Hash.new{|hsh,key| hsh[key] = Node.new })
+      super(Hash.new{|hsh,key| hsh[key] = Node.new },nil)
     end
 
     def [](name)
@@ -91,6 +88,39 @@ private
 
     def contains_leaves?
       children.any?{|_,c| c.leaf? }
+    end
+
+    def modified_leaves( prefix = '/', &block )
+      return to_enum(:modified_leaves, prefix) unless block
+      if leaf?
+        if kind != 1
+          yield prefix
+        end
+      else
+        children.each do |name, cld|
+          cld.modified_leaves( File.join(prefix,name), &block)
+        end
+      end
+    end
+
+    def remove_modified_leaves!( prefix = '/', &block )
+      to_remove = {}
+      children.each do |name, cld|
+        removed_children = cld.remove_modified_leaves!(File.join(prefix,name), &block)
+        if cld.leaf? and cld.kind != 1
+          to_remove[name] = removed_children
+        end
+      end
+      if to_remove.any?
+        to_remove.each do |name, removed_children|
+          children.delete(name)
+          if !removed_children
+            yield File.join(prefix,name)
+          end
+        end
+        return true
+      end
+      return false
     end
 
     def smallest_superset( prefix = '/', &block )
@@ -118,6 +148,15 @@ private
       end
     end
 
+    def delete(path)
+      _, key, rest = path.split('/',3)
+      if rest.nil?
+        children.delete(key)
+      else
+        children[key].delete("/#{rest}")
+      end
+    end
+
     def self.read(enum)
       fs = Node.new
       enum.each do |ch|
@@ -125,6 +164,7 @@ private
         ch['Path'].split('/').each do |part|
           n = n[part]
         end
+        n.kind = ch['Kind']
       end
       return fs
     end

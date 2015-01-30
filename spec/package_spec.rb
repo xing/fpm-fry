@@ -21,22 +21,15 @@ describe FPM::Package::Docker do
     context 'trivial case' do
       let(:changes){
         [
-          { "Path"=> "/dev" },
-          { "Path"=> "/dev/sda" },
-          { "Path"=> "/tmp" },
-          { "Path"=> "/tmp/foo" },
-          { "Path"=> "/usr/bin/foo" }
+          { "Path"=> "/dev", 'Kind' => 0 },
+          { "Path"=> "/dev/sda", 'Kind' => 1 },
+          { "Path"=> "/tmp", 'Kind' => 0 },
+          { "Path"=> "/tmp/foo", 'Kind' => 1 },
+          { "Path"=> "/usr/bin/foo", 'Kind' => 1 }
         ]
       }
 
       it 'ignores changes in /dev and /tmp' do
-        expect(client).to receive(:broken_symlinks?).and_return(false)
-        expect(client).to receive(:copy).with('foo','/usr/bin/foo', a_string_matching(%r!usr/bin/foo!), Hash)
-        subject.input('foo')
-      end
-
-      it 'ignores changes in /dev and /tmp' do
-        expect(client).to receive(:broken_symlinks?).and_return(true)
         expect(client).to receive(:copy).with('foo','/usr/bin', a_string_matching(%r!usr/bin!), Hash)
         subject.input('foo')
       end
@@ -45,24 +38,14 @@ describe FPM::Package::Docker do
     context 'with excludes set' do
       let(:changes){
         [
-          { "Path"=> "/a" },
-          { "Path"=> "/a/bar" },
-          { "Path"=> "/b" },
-          { "Path"=> "/b/bar" }
+          { "Path"=> "/a",'Kind' => 0 },
+          { "Path"=> "/a/bar",'Kind' => 1 },
+          { "Path"=> "/b",'Kind'=> 0 },
+          { "Path"=> "/b/bar",'Kind' => 1 }
         ]
       }
 
       it 'drops whole directories if requested' do
-        expect(client).to receive(:broken_symlinks?).and_return(false)
-        expect(client).to receive(:copy).with('foo','/b/bar', a_string_matching(%r!b/bar\z!), Hash)
-        subject.attributes[:excludes] = [
-          'a'
-        ]
-        subject.input('foo')
-      end
-
-      it 'drops whole directories if requested' do
-        expect(client).to receive(:broken_symlinks?).and_return(true)
         expect(client).to receive(:copy).with('foo','/b', a_string_matching(%r!b\z!), Hash)
         subject.attributes[:excludes] = [
           'a'
@@ -74,17 +57,35 @@ describe FPM::Package::Docker do
     context 'broken docker symlink behavior' do
       let(:changes){
         [
-          { "Path"=> "/a" },
-          { "Path"=> "/a/bar" },
-          { "Path"=> "/b" },
-          { "Path"=> "/b/bar" }
+          { "Path"=> "/a",'Kind' => 0 },
+          { "Path"=> "/a/bar",'Kind' => 1 },
+          { "Path"=> "/b",'Kind'=> 0 },
+          { "Path"=> "/b/bar",'Kind' => 1 }
         ]
       }
 
       it 'is fixed by downloading enclosing directories' do
-        expect(client).to receive(:broken_symlinks?).and_return(true)
         options = {chown: false, only: {'/a/bar'=> true, '/b/bar' => true }}
         expect(client).to receive(:copy).with('foo','/a', a_string_matching(%r!a!), options)
+        expect(client).to receive(:copy).with('foo','/b', a_string_matching(%r!b!), options)
+        subject.input('foo')
+      end
+    end
+
+    context 'with changed files' do
+      let(:changes){
+        [
+          { "Path"=> "/a", 'Kind' => 0 },
+          { "Path"=> "/a/bar", 'Kind' => 0 },
+          { "Path"=> "/b", 'Kind' => 0 },
+          { "Path"=> "/b/bar", 'Kind' => 1 },
+          { "Path"=> "/a", 'Kind' => 0 },
+          { "Path"=> "/a/bar", 'Kind' => 2 }
+        ]
+      }
+
+      it 'drops whole directories if requested' do
+        options = {chown: false, only: {'/b/bar' => true }}
         expect(client).to receive(:copy).with('foo','/b', a_string_matching(%r!b!), options)
         subject.input('foo')
       end

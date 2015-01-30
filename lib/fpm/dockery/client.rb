@@ -43,7 +43,10 @@ class FPM::Dockery::Client
 
   def initialize(options = {})
     @docker_url = options.fetch(:docker_url){ self.class.docker_url }
-    @logger = options.fetch(:logger){ Cabin::Channel.get }
+    @logger = options[:logger]
+    if @logger.nil?
+      @logger = Cabin::Channel.get
+    end
     if options[:tls].nil? ? docker_url =~ %r!(\Ahttps://|:2376\z)! : options[:tls]
       # enable tls
       @tls = {
@@ -112,6 +115,7 @@ class FPM::Dockery::Client
     base = File.dirname(resource)
     read(name, resource) do | entry |
       next unless only[ File.join(base, entry.full_name).chomp('/') ]
+      @logger.debug("Copy",name: File.join(base, entry.full_name).chomp('/') )
       ex.extract_entry(dest, entry, options)
     end
   end
