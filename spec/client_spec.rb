@@ -9,6 +9,11 @@ describe FPM::Dockery::Client do
     FPM::Dockery::Client.new(docker_url: 'http://dock.er')
   }
 
+  before(:each) do
+    stub_request(:get, "http://dock.er/version").
+      to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
+  end
+
   describe '#read' do
     context 'existing file' do
       let(:body){

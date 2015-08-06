@@ -86,6 +86,8 @@ describe FPM::Dockery::Command::Cook do
     context 'with an existing image' do
       before(:each) do
         subject.image = 'foo:bar'
+        stub_request(:get, "http://unix/version").
+          to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/foo:bar/json").
                      to_return(:status => 200, :body => "{\"id\":\"deadbeef\"}")
       end
@@ -110,6 +112,8 @@ describe FPM::Dockery::Command::Cook do
         subject.flavour  = 'unknown'
         subject.cache = FPM::Dockery::Source::Null::Cache
         subject.builder = builder
+        stub_request(:get, "http://unix/version").
+          to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 200, :body => "")
         stub_request(:post, "http://unix/v1.9/build?rm=1").
@@ -131,6 +135,8 @@ describe FPM::Dockery::Command::Cook do
         subject.flavour  = 'unknown'
         subject.cache = FPM::Dockery::Source::Null::Cache
         subject.builder = builder
+        stub_request(:get, "http://unix/version").
+          to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 404)
         stub_request(:post, "http://unix/v1.9/build?rm=1&t=fpm-dockery:5cb0db32efafac12020670506c62c39").
@@ -156,6 +162,8 @@ describe FPM::Dockery::Command::Cook do
 
       before(:each) do
         subject.build_image = 'fpm-dockery:x'
+        stub_request(:get, "http://unix/version").
+          to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:post, "http://unix/v1.9/containers/create").
           with(:body => "{\"Image\":\"fpm-dockery:x\"}",
                :headers => {'Content-Type'=>'application/json'}).
