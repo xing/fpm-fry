@@ -17,10 +17,14 @@ module FPM; module Dockery
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
 
     def client
-      @client ||= FPM::Dockery::Client.new(
-        logger: logger,
-        tls: tls?, tlsverify: tlsverify?
-      )
+      @client ||= begin
+        client = FPM::Dockery::Client.new(
+          logger: logger,
+          tls: tls?, tlsverify: tlsverify?
+        )
+        logger.info("Docker connected",client.server_version)
+        client
+      end
     end
 
     attr_writer :client

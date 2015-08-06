@@ -65,6 +65,16 @@ class FPM::Dockery::Client
     end
   end
 
+  def server_version
+    @server_version ||= begin
+      res = agent.get(
+        expects: [200],
+        path: '/version'
+      )
+      JSON.parse(res.body)
+    end
+  end
+
   def self.docker_cert_path
     ENV.fetch('DOCKER_CERT_PATH',File.join(Dir.home, '.docker'))
   end
@@ -79,7 +89,7 @@ class FPM::Dockery::Client
 
 
   def url(*path)
-    ['', 'v1.9',*path].join('/')
+    ['', "v"+server_version['ApiVersion'],*path].join('/')
   end
 
   def read(name, resource)

@@ -127,7 +127,8 @@ module FPM; module Dockery
           expects: [200],
           path: client.url("images/#{image}/json")
         )
-        JSON.parse(res.body).fetch('id')
+        body = JSON.parse(res.body)
+        body.fetch('id'){ body.fetch('Id') }
       end
     end
     attr_writer :image_id

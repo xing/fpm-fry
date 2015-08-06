@@ -42,6 +42,8 @@ class Cabin::NiceOutput
     # :bold is expected to be truthy
     bold = data.delete(:bold) ? :bold : nil
 
+    backtrace = data.delete(:backtrace)
+
     # Make 'error' and other log levels have color
     if color.nil?
       color = LEVELMAP[level]
@@ -49,9 +51,12 @@ class Cabin::NiceOutput
 
     message = [event[:level] ? '====> ' : '      ',event[:message]]
     message.unshift(CODEMAP[color.to_sym]) if !color.nil?
+    message << DIM_CODEMAP[color] if !color.nil?
     if data.any?
-      message << DIM_CODEMAP[color] if !color.nil?
       message << "\n" <<  pp(data)
+    end
+    if backtrace
+      message << "\n\t--backtrace---------------\n\t" << backtrace.join("\n\t")
     end
     message << CODEMAP[:normal]  if !color.nil?
     @io.puts(message.join(""))
