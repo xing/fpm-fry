@@ -1,6 +1,9 @@
 fpm-dockery
 ======================
 
+[![Build Status](https://travis-ci.org/xing/fpm-dockery.svg?branch=master)](https://travis-ci.org/xing/fpm-dockery)
+[![Coverage Status](https://coveralls.io/repos/xing/fpm-dockery/badge.svg?branch=master&service=github)](https://coveralls.io/github/xing/fpm-dockery?branch=master)
+
 [fpm-cookery](https://github.com/bernd/fpm-cookery) inspired package builder on [docker](https://docker.io)
 
 What does it do?
