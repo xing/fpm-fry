@@ -22,7 +22,7 @@ module FPM; module Dockery ; module Source
             workdir = unpacked_tmpdir + '.tmp'
             begin
               FileUtils.mkdir(workdir)
-            rescue Errno::EEXISTS
+            rescue Errno::EEXIST
               FileUtils.rm_rf(workdir)
               FileUtils.mkdir(workdir)
             end

@@ -142,6 +142,17 @@ describe FPM::Dockery::Source::Patched do
       end
     end
 
+    it "removes existing workdirs" do
+      src = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      cache = src.build_cache(tmpdir)
+      workdir = cache.unpacked_tmpdir + '.tmp'
+      canary  =  File.join( workdir , 'cananry.file')
+      FileUtils.mkdir( workdir )
+      IO.write( canary , 'foo' )
+      cache.send(:update!)
+      expect( File.exist? canary ).to be false
+    end
+
     context 'with #copy_to' do
       before do
         allow(cache).to receive(:copy_to) do |dst|
