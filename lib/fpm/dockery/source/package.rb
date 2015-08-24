@@ -19,7 +19,7 @@ module FPM; module Dockery ; module Source
     class Cache < Struct.new(:package,:tempdir)
       extend Forwardable
 
-      def_delegators :package, :url, :checksum, :checksum_algorithm, :agent, :extension, :logger, :file_map
+      def_delegators :package, :url, :checksum, :checksum_algorithm, :agent, :logger, :file_map
 
       def initialize(*_)
         super
@@ -91,9 +91,17 @@ module FPM; module Dockery ; module Source
         File.join(tempdir,File.basename(url.path))
       end
 
+      def cachekey
+        @observed_checksum || checksum
+      end
+
+    end
+
+    class TarCache < Cache
+
       def tar_io
         update!
-        IO_CLASSES.fetch(extension).open(tempfile)
+        ioclass.open(tempfile)
       end
 
       def copy_to(dst)
@@ -103,20 +111,58 @@ module FPM; module Dockery ; module Source
         system(*cmd)
       end
 
-      def cachekey
-        @observed_checksum || checksum
+    protected
+      def ioclass
+        File
       end
-
     end
 
-    KNOWN_EXTENSION = ['.tar','.tar.gz', '.tgz'
-                       # currently unsupported
-                       #,'.tar.bz', '.tar.xz','.tar.lz'
-                      ]
-    IO_CLASSES = {
-      '.tar' => File,
-      '.tar.gz' => Zlib::GzipReader,
-      '.tgz' => Zlib::GzipReader
+    class TarGzCache < TarCache
+    protected
+
+      def ioclass
+        Zlib::GzipReader
+      end
+    end
+
+    class ZipCache < Cache
+
+      def tar_io
+        if !::File.directory?( unpacked_tmpdir )
+          workdir = unpacked_tmpdir + '.tmp'
+          begin
+            FileUtils.mkdir(workdir)
+          rescue Errno::EEXIST
+            FileUtils.rm_rf(workdir)
+            FileUtils.mkdir(workdir)
+          end
+          copy_to( workdir )
+          File.rename(workdir, unpacked_tmpdir)
+        end
+        cmd = ['tar','-c','.']
+        logger.debug("Running tar",cmd: cmd, dir: unpacked_tmpdir)
+        ::Dir.chdir(unpacked_tmpdir) do
+          return IO.popen(cmd)
+        end
+      end
+
+      def copy_to(dst)
+        update!
+        cmd = ['unzip', tempfile, '-d', dst ]
+        logger.debug("Running unzip",cmd: cmd)
+        system(*cmd, out: '/dev/null')
+      end
+
+      def unpacked_tmpdir
+        File.join(tempdir, cachekey)
+      end
+    end
+
+    CACHE_CLASSES = {
+      '.tar' => TarCache,
+      '.tar.gz' => TarGzCache,
+      '.tgz' => TarGzCache,
+      '.zip' => ZipCache
     }
 
     attr :file_map, :data, :url, :extension, :checksum, :checksum_algorithm, :agent, :logger
@@ -124,7 +170,7 @@ module FPM; module Dockery ; module Source
     def initialize( url, options = {} )
       @url = URI(url)
       @extension = options.fetch(:extension){
-        KNOWN_EXTENSION.find{|ext|
+        CACHE_CLASSES.keys.find{|ext|
           @url.path.end_with?(ext)
         }
       }
@@ -135,7 +181,7 @@ module FPM; module Dockery ; module Source
     end
 
     def build_cache(tempdir)
-      Cache.new(self, tempdir)
+      CACHE_CLASSES.fetch(extension).new(self, tempdir)
     end
   private
 

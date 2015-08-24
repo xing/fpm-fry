@@ -70,31 +70,86 @@ describe FPM::Dockery::Source::Package do
 
   end
 
-  context '#copy_to' do
-    let(:destdir){
-      Dir.mktmpdir("fpm-dockery")
-    }
+  context 'with a tar file' do
+    context '#copy_to' do
+      let(:destdir){
+        Dir.mktmpdir("fpm-dockery")
+      }
 
-    after do
-      FileUtils.rm_rf(destdir)
+      after do
+        FileUtils.rm_rf(destdir)
+      end
+
+      it "untars a file" do
+        stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+        src = FPM::Dockery::Source::Package.new("http://example/file.tar")
+        cache = src.build_cache(tmpdir)
+        cache.copy_to(destdir)
+        expect( Dir.new(destdir).each.to_a ).to eq ['.','..','foo']
+      end
+
     end
 
-    it "untars a file" do
-      stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
-      src = FPM::Dockery::Source::Package.new("http://example/file.tar")
-      cache = src.build_cache(tmpdir)
-      cache.copy_to(destdir)
-      expect( Dir.new(destdir).each.to_a ).to eq ['.','..','foo']
-    end
+    context '#tar_io' do
+      it "untars a file" do
+        stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+        src = FPM::Dockery::Source::Package.new("http://example/file.tar")
+        cache = src.build_cache(tmpdir)
+        expect( cache.tar_io.read ).to eq body
+      end
 
+      it "untars a gz file" do
+        gzbody = StringIO.new
+        gz = Zlib::GzipWriter.new( gzbody )
+        gz.write(body)
+        gz.close
+        stub_request(:get,'http://example/file.tar.gz').to_return(body: gzbody.string, status: 200)
+        src = FPM::Dockery::Source::Package.new("http://example/file.tar.gz")
+        cache = src.build_cache(tmpdir)
+        expect( cache.tar_io.read ).to eq body
+      end
+    end
   end
 
-  context '#tar_io' do
-    it "untars a file" do
-      stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
-      src = FPM::Dockery::Source::Package.new("http://example/file.tar")
-      cache = src.build_cache(tmpdir)
-      expect( cache.tar_io.read ).to eq body
+  context 'with a zip file' do
+
+    let(:zipfile) do
+      outfile = File.join(tmpdir,'zipfile.zip')
+      Dir.chdir(tmpdir) do
+        IO.write('foo', 'bar')
+        system('zip',outfile,'foo', out: '/dev/null')
+      end
+      IO.read(outfile)
+    end
+
+    context '#tar_io' do
+      it "unzips a zip file" do
+        stub_request(:get,'http://example/file.zip').to_return(body: zipfile, status: 200)
+        src = FPM::Dockery::Source::Package.new("http://example/file.zip")
+        cache = src.build_cache(tmpdir)
+        io = cache.tar_io
+        begin
+          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
+          expect(files.size).to eq(2)
+          expect(files['./foo']).to eq "bar"
+        ensure
+          io.close
+        end
+      end
+
+      it "doesn't unzip twice" do
+        stub_request(:get,'http://example/file.zip').to_return(body: zipfile, status: 200)
+        src = FPM::Dockery::Source::Package.new("http://example/file.zip")
+        cache = src.build_cache(tmpdir)
+        cache.tar_io.close
+
+        src = FPM::Dockery::Source::Package.new("http://example/file.zip")
+        cache = src.build_cache(tmpdir)
+        expect(cache).not_to receive(:copy_to)
+        cache.tar_io.close
+      end
     end
   end
+
 end
