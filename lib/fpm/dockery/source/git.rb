@@ -23,7 +23,7 @@ module FPM; module Dockery ; module Source
               raise "Initializing git repository failed"
             end
           end
-          if git('fetch', url.to_s, rev) != 0
+          if git('fetch','--depth=1', url.to_s, rev) != 0
             raise "Failed to fetch from remote #{url.to_s} ( #{rev} )"
           end
           return self
@@ -77,7 +77,7 @@ module FPM; module Dockery ; module Source
       url = url.sub(/\A(\S+@\S+):(\S+\.git)\z/,'ssh://\1/\2')
       @url = URI(url)
       @logger = options.fetch(:logger){ Cabin::Channel.get }
-      @rev = options[:branch] || options[:tag] || 'HEAD'
+      @rev = options[:branch] || options[:tag] || options[:rev] || 'HEAD'
       @file_map = options.fetch(:file_map){ {'' => ''} }
       @git = options[:git] || 'git'
     end
