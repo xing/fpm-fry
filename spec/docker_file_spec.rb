@@ -1,4 +1,5 @@
 require 'fpm/dockery/recipe'
+require 'fpm/dockery/recipe/builder'
 require 'fpm/dockery/docker_file'
 describe FPM::Dockery::DockerFile do
 

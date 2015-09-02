@@ -26,6 +26,7 @@ module FPM; module Dockery
       @tls = nil
       require 'digest'
       require 'fpm/dockery/recipe'
+      require 'fpm/dockery/recipe/builder'
       require 'fpm/dockery/detector'
       require 'fpm/dockery/docker_file'
       require 'fpm/dockery/stream_parser'
