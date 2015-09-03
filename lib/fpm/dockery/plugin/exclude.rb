@@ -11,7 +11,7 @@ module FPM::Dockery::Plugin::Exclude
 
   def exclude(*matches)
     return if matches.none?
-    recipe.input_hooks << Exclude.new(matches)
+    input_hooks << Exclude.new(matches)
   end
 
 end

@@ -111,22 +111,16 @@ class FPM::Dockery::Client
     end
   end
 
-  def copy(name, resource, to, options = {})
-    dest = File.dirname(to)
+  def copy(name, resource, map, options = {})
     ex = FPM::Dockery::Tar::Extractor.new(logger: @logger)
-    case(options[:only])
-    when Hash
-      only = options[:only]
-    when Array
-      only = Hash[ options[:only].map{|k| [k,true] } ]
-    else
-      only = Hash.new{ true }
-    end
     base = File.dirname(resource)
     read(name, resource) do | entry |
-      next unless only[ File.join(base, entry.full_name).chomp('/') ]
-      @logger.debug("Copy",name: File.join(base, entry.full_name).chomp('/') )
-      ex.extract_entry(dest, entry, options)
+      file = File.join(base, entry.full_name).chomp('/')
+      file = file.sub(%r"\A\./",'')
+      to = map[file]
+      next unless to
+      @logger.debug("Copy",name: file, to: to)
+      ex.extract_entry(to, entry, options)
     end
   end
 

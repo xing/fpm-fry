@@ -10,15 +10,15 @@ class FPM::Dockery::Tar
 
     def extract(destdir, reader, options = {})
       reader.each do |entry|
-        extract_entry(destdir, entry, options)
+        extract_entry(File.join(destdir, entry.full_name), entry, options)
       end
     end
 
-    def extract_entry(destdir, entry, options = {})
+    def extract_entry(dest, entry, options = {})
       full_name = entry.full_name
       mode = entry.header.mode
 
-      dest = File.join(destdir, full_name)
+      destdir = File.dirname(dest)
       uid = map_user(entry.header.uid, entry.header.uname)
       gid = map_group(entry.header.gid, entry.header.gname)
 
@@ -43,7 +43,7 @@ class FPM::Dockery::Tar
           os.fsync
         end
       else
-        @logger.warn('Ignoring unknown tar entry',name: entry.full_name)
+        @logger.warn('Ignoring unknown tar entry',name: full_name)
         return
       end
       FileUtils.chmod(entry.header.mode, dest)

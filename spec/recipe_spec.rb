@@ -11,7 +11,7 @@ describe FPM::Dockery::Recipe do
 
   let(:package) do
     p = FPM::Package.new
-    subject.apply(p)
+    subject.packages[0].apply(p)
     p
   end
 
@@ -24,11 +24,11 @@ RECIPE
     end
 
     it 'has a name' do
-      expect(subject.name).to eq "foo"
+      expect(package.name).to eq "foo"
     end
 
     it 'has a version' do
-      expect(subject.version).to eq '0.2.1'
+      expect(package.version).to eq '0.2.1'
     end
 
     it 'applies the name' do
@@ -57,6 +57,7 @@ RECIPE
       build <<RECIPE
 depends "foo"
 depends "bar", ">=0.0.1"
+depends "blub", "0.3.1"
 conflicts "zub"
 provides "fub"
 replaces "zof"
@@ -64,7 +65,7 @@ RECIPE
     end
 
     it 'has correct dependencies' do
-      expect(package.dependencies).to eq(['foo','bar>=0.0.1'])
+      expect(package.dependencies).to eq(['foo','bar >= 0.0.1', 'blub = 0.3.1'])
     end
 
     it 'has correct conflicts' do

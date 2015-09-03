@@ -143,10 +143,10 @@ module FPM::Dockery::Plugin::ScriptHelper
 
     def find(type)
       klass = NAME_TO_SCRIPT[type]
-      script = builder.recipe.scripts[type].find{|s| s.kind_of? klass }
+      script = builder.script(type).find{|s| s.kind_of? klass }
       if script.nil?
         script = klass.new( renderer )
-        builder.recipe.scripts[type] << script
+        builder.script(type,script)
       end
       return script
     end

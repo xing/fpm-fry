@@ -42,10 +42,9 @@ module FPM::Dockery::Plugin ; module Service
 
     # @api private
     def add!(builder)
-      recipe = builder.recipe
-      name = self.name || recipe.name || raise
+      name = self.name || builder.name || raise
       init = Init.detect_init(builder.variables)
-      edit = EditStaging::DSL.new(recipe)
+      edit = builder.plugin('edit_staging')
       env = Environment.new(name, command, "")
       case(init)
       when 'upstart' then

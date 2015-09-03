@@ -192,6 +192,32 @@ plugin "service" do
 end
 ```
 
+Multi-Package support
+-------------------------
+
+You can build multiple packages from a single recipe. To do so add `package` blocks inside the recipe.
+
+```ruby
+name 'mainpackage'
+version '1.3.7'
+
+package 'subpackage' do
+  # subpackages implictly inherit the version
+  # version '1.3.7'
+
+  # add a dependency on the mainpackage with the exact same version:
+  depends 'mainpackage', version
+
+  # tell dockery which files should go in the subpackage
+  files '/usr/bin/awesome'
+end
+```
+
+Subpackages must contain at least one `files` option so the build process knows where a file belongs. All 
+other files are implictly put in the main package.
+
+Subpackage can make use of plugins like `service`, too. They can furthermore depend on each other without 
+disturbing the build process.
 
 
 Building on remote hosts

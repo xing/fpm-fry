@@ -25,6 +25,7 @@ module FPM; module Dockery
     def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
       @tls = nil
       require 'digest'
+      require 'fileutils'
       require 'fpm/dockery/recipe'
       require 'fpm/dockery/recipe/builder'
       require 'fpm/dockery/detector'
@@ -272,25 +273,59 @@ module FPM; module Dockery
     end
 
     def write_output!(output)
-      package_file = output.to_s(nil)
+      package_file = File.expand_path(output.to_s(nil))
       FileUtils.mkdir_p(File.dirname(package_file))
-
       tmp_package_file = package_file + '.tmp'
       begin
-        File.unlink tmp_package_file
+        FileUtils.rm_rf tmp_package_file
       rescue Errno::ENOENT
       end
 
       output.output(tmp_package_file)
 
       begin
-        File.unlink package_file
+        FileUtils.rm_rf package_file
       rescue Errno::ENOENT
       end
       File.rename tmp_package_file, package_file
 
       logger.info("Created package", :path => package_file)
     end
+
+    def packages
+      dir_map = []
+      out_map = {}
+
+      package_map = builder.recipe.packages.map do | package |
+        output = output_class.new
+        output.instance_variable_set(:@logger,logger)
+        package.files.each do | pattern |
+          dir_map << [ pattern, output.staging_path ]
+        end
+        out_map[ output ] = package
+      end
+
+      dir_map = Hash[ dir_map.reverse ]
+
+      yield dir_map
+
+      out_map.each do |output, package|
+        package.apply_output(output)
+      end
+
+      out_map.each do |output, _|
+        write_output!(output)
+      end
+
+    ensure
+
+      out_map.each do |output, _|
+        output.cleanup_staging
+        output.cleanup_build
+      end
+
+    end
+
 
   public
 
@@ -308,19 +343,16 @@ module FPM; module Dockery
       image_id
       build_image
 
-      build! do |container|
-        input_package(container) do |input|
-          output = input.convert(output_class)
-          output.instance_variable_set(:@logger,logger)
-          begin
-            builder.recipe.apply_output(output)
-            write_output!( output )
-          ensure
-            output.cleanup_staging
-            output.cleanup_build
+      packages do | dir_map |
+
+        build! do |container|
+          input_package(container) do |input|
+            input.split( container, dir_map )
           end
         end
+
       end
+
       return 0
     rescue Recipe::NotFound => e
       logger.error("Recipe not found", recipe: recipe, exeception: e)

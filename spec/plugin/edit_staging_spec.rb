@@ -23,7 +23,7 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
         builder.plugin('edit_staging') do
           add_file '/etc/init.d/foo', StringIO.new('#!foo')
         end
-        recipe.apply(package)
+        recipe.packages[0].apply(package)
       end
 
       it "contains the given file" do
@@ -36,7 +36,7 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
         builder.plugin('edit_staging') do
           add_file '/etc/init.d/foo', StringIO.new('#!foo'), chmod: '0750'
         end
-        recipe.apply(package)
+        recipe.packages[0].apply(package)
       end
 
       it "contains the given file" do
@@ -52,7 +52,7 @@ describe 'FPM::Dockery::Plugin::EditStaging' do
         builder.plugin('edit_staging') do
           ln_s '/lib/init/upstart-job', '/etc/init.d/foo'
         end
-        recipe.apply(package)
+        recipe.packages[0].apply(package)
       end
 
       it "contains the given file" do

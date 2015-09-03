@@ -7,12 +7,23 @@ describe FPM::Dockery::Command::Cook do
     Dir.mktmpdir('fpm-dockery')
   end
 
+  let(:targetdir) do
+    Dir.mktmpdir('fpm-dockery-target')
+  end
+
   let(:ui) do
     FPM::Dockery::UI.new(StringIO.new,StringIO.new,nil,tmpdir)
   end
 
   after(:each) do
     FileUtils.rm_rf(tmpdir)
+    FileUtils.rm_rf(targetdir)
+  end
+
+  around(:example) do |example|
+    Dir.chdir(targetdir) do
+      example.run
+    end
   end
 
 
@@ -71,8 +82,11 @@ describe FPM::Dockery::Command::Cook do
       it 'contains the right variables' do
         expect(subject.builder.variables).to eq(distribution: 'ubuntu', distribution_version: '12.04', flavour: 'debian', codename: 'precise')
       end
+      it 'has exactly one package' do
+        expect(subject.builder.recipe.packages.size).to eq 1
+      end
       it 'has loaded the right recipe' do
-        expect(subject.builder.recipe.name).to eq 'foo'
+        expect(subject.builder.recipe.packages[0].name).to eq 'foo'
       end
     end
 
@@ -240,7 +254,80 @@ describe FPM::Dockery::Command::Cook do
       end
     end
 
+  end
 
+  describe '#packages' do
+
+    subject do
+      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+    end
+
+    let(:recipe) do
+      recipe = FPM::Dockery::Recipe.new
+      recipe.packages[0].name = "foo"
+      recipe
+    end
+
+    let(:builder) do
+      FPM::Dockery::Recipe::Builder.new({}, recipe, logger: subject.logger)
+    end
+
+    let(:output_class) do
+      FPM::Package::Dir
+    end
+
+    before(:each) do 
+      subject.builder = builder
+      subject.output_class = output_class
+    end
+
+    context 'with one package' do
+
+      it 'yields one packages' do
+        expect{|p|
+          subject.packages(&p)
+        }.to yield_with_args({'**' => String})
+      end
+
+      it 'writes one package' do
+        subject.packages{}
+        expect( Dir.entries('.').sort ).to eq ['.','..','foo.dir']
+      end
+
+      it 'cleans up tmp' do
+        subject.packages{}
+        expect( Dir.entries(tmpdir) ).to eq ['.','..']
+      end
+
+    end
+
+    context 'with multiple package' do
+
+      before(:each) do
+        builder.instance_eval do
+          package 'blub' do
+            files "/a/b"
+          end
+        end
+      end
+
+      it 'yields multiple packages' do
+        expect{|p|
+          subject.packages(&p)
+        }.to yield_with_args({'/a/b' => String, '**' => String})
+      end
+
+      it 'writes one package' do
+        subject.packages{}
+        expect( Dir.entries('.').sort ).to eq ['.','..','blub.dir','foo.dir']
+      end
+
+      it 'cleans up tmp' do
+        subject.packages{}
+        expect( Dir.entries(tmpdir) ).to eq ['.','..']
+      end
+
+    end
 
   end
 

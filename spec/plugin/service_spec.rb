@@ -10,7 +10,7 @@ shared_examples 'adds script to restart services' do
   end
 
   it 'lints correctly' do
-    expect( recipe.lint ).to eq([])
+    expect( recipe.packages[0].lint ).to eq([])
   end
 end
 
@@ -40,7 +40,7 @@ describe FPM::Dockery::Plugin::Service do
       builder.plugin('service') do
         command "foo","bar","baz"
       end
-      builder.recipe.apply(package)
+      builder.recipe.packages[0].apply_output(package)
     end
 
     context 'for sysv' do

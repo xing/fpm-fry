@@ -4,6 +4,8 @@ describe FPM::Dockery::Plugin::Alternatives do
 
   let(:recipe){ FPM::Dockery::Recipe.new }
 
+  let(:package){ recipe.packages[0] }
+
   let(:builder){
     FPM::Dockery::Recipe::Builder.new({flavour: "debian"},recipe)
   }
@@ -17,11 +19,11 @@ describe FPM::Dockery::Plugin::Alternatives do
     end
 
     it 'adds an after_install' do
-      expect(recipe.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/bin/java java /opt/java/bin/java 10000"]
+      expect(package.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/bin/java java /opt/java/bin/java 10000"]
     end
 
     it 'adds an before_remove' do
-      expect(recipe.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
+      expect(package.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
     end
 
   end
@@ -35,11 +37,11 @@ describe FPM::Dockery::Plugin::Alternatives do
     end
 
     it 'adds an after_install' do
-      expect(recipe.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/local/bin/java java /opt/java/bin/java 123"]
+      expect(package.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/local/bin/java java /opt/java/bin/java 123"]
     end
 
     it 'adds an before_remove' do
-      expect(recipe.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
+      expect(package.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
     end
 
   end
@@ -60,11 +62,11 @@ describe FPM::Dockery::Plugin::Alternatives do
     end
 
     it 'adds an after_install' do
-      expect(recipe.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/local/bin/java java /opt/java/bin/java 123 --slave /usr/bin/jar jar /opt/java/bin/jar"]
+      expect(package.scripts[:after_install].first.configure).to eq ["update-alternatives --install /usr/local/bin/java java /opt/java/bin/java 123 --slave /usr/bin/jar jar /opt/java/bin/jar"]
     end
 
     it 'adds an before_remove' do
-      expect(recipe.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
+      expect(package.scripts[:before_remove].first.remove).to eq ["update-alternatives --remove java /opt/java/bin/java"]
     end
 
   end

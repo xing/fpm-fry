@@ -19,14 +19,26 @@ class FPM::Package::Docker < FPM::Package
   end
 
   def input(name)
+    split( name, '**' => staging_path)
+  end
+
+  def split( name, map )
     changes = changes(name)
     changes.remove_modified_leaves! do | ml |
       @logger.warn("Found a modified file. You can only create new files in a package",file: ml)
     end
-    leaves = Hash[ changes.leaves.map{|k| [k,true] } ]
+    fmap = {}
+    changes.leaves.each do | change |
+      map.each do | match, to |
+        if File.fnmatch?(match, change)
+          fmap[ change ] = File.join(to, change)
+          break
+        end
+      end
+    end
     directories = changes.smallest_superset
     directories.each do |chg|
-      copy(name, chg, only: leaves)
+      client.copy(name, chg, fmap ,chown: false)
     end
   end
 

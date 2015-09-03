@@ -24,17 +24,17 @@ module FPM::Dockery::Plugin::EditStaging
     end
   end
 
-  class DSL < Struct.new(:recipe)
+  class DSL < Struct.new(:builder)
     def add_file(path, io, options = {})
       options = options.dup
       options[:chmod] = convert_chmod(options[:chmod]) if options[:chmod]
       options.freeze
       io.rewind if io.respond_to? :rewind
-      recipe.hooks << AddFile.new(path, io, options)
+      builder.output_hooks << AddFile.new(path, io, options)
     end
 
     def ln_s(src, dest)
-      recipe.hooks << LnS.new(src,dest)
+      builder.output_hooks << LnS.new(src,dest)
     end
   private
 
@@ -52,7 +52,7 @@ module FPM::Dockery::Plugin::EditStaging
   end
 
   def self.apply(builder, &block)
-    d = DSL.new(builder.recipe)
+    d = DSL.new(builder)
     if !block
       return d
     elsif block.arity == 1

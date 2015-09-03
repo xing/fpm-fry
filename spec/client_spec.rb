@@ -66,7 +66,7 @@ describe FPM::Dockery::Client do
 
       it 'is copied' do
         stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 200, body: body.string)
-        subject.copy('deadbeef','foo', tmpdir + '/foo')
+        subject.copy('deadbeef','foo', { 'foo' => tmpdir + '/foo' })
         expect( File.read(File.join(tmpdir,'foo')) ).to eq('bar')
       end
     end
@@ -98,7 +98,7 @@ describe FPM::Dockery::Client do
 
       it 'is copied' do
         stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 200, body: body.string)
-        subject.copy('deadbeef','foo', tmpdir + '/foo')
+        subject.copy('deadbeef','foo', {'foo' => tmpdir + '/foo' , 'foo/a' => tmpdir + '/foo/a'})
         expect( File.readlink(File.join(tmpdir,'foo/a')) ).to eq('b')
       end
     end
