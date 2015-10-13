@@ -130,7 +130,7 @@ describe FPM::Fry::Command::Cook do
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 200, :body => "")
-        stub_request(:post, "http://unix/v1.9/build?rm=1").
+        stub_request(:post, "http://unix/v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built deadbeef"}', :headers => {})
       end
@@ -153,10 +153,10 @@ describe FPM::Fry::Command::Cook do
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 404)
-        stub_request(:post, "http://unix/v1.9/build?rm=1&t=fpm-fry:5cb0db32efafac12020670506c62c39").
+        stub_request(:post, "http://unix/v1.9/build?rm=1&dockerfile=Dockerfile.fpm-fry&t=fpm-fry:5cb0db32efafac12020670506c62c39").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built xxxxxxxx"}', :headers => {})
-        stub_request(:post, "http://unix/v1.9/build?rm=1").
+        stub_request(:post, "http://unix/v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built deadbeef"}', :headers => {})
       end

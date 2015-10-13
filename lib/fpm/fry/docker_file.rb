@@ -7,6 +7,8 @@ require 'fpm/fry/joined_io'
 module FPM; module Fry
   class DockerFile < Struct.new(:variables,:cache,:recipe)
 
+    NAME = 'Dockerfile.fpm-fry'
+
     class Source < Struct.new(:variables, :cache)
 
       def initialize(variables, cache = Source::Null::Cache)
@@ -42,7 +44,7 @@ module FPM; module Fry
       def self_tar_io
         sio = StringIO.new
         tar = Gem::Package::TarWriter.new(sio)
-        tar.add_file('Dockerfile','0777') do |io|
+        tar.add_file(NAME,'0777') do |io|
           io.write(dockerfile)
         end
         #tar.close
@@ -136,7 +138,7 @@ module FPM; module Fry
         tar.add_file('.build.sh','0777') do |io|
           io.write(build_sh)
         end
-        tar.add_file('Dockerfile','0777') do |io|
+        tar.add_file(NAME,'0777') do |io|
           io.write(dockerfile)
         end
         #tar.close

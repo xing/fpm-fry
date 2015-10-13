@@ -150,7 +150,7 @@ module FPM; module Fry
               'Content-Type'=>'application/tar'
             },
             expects: [200],
-            path: client.url("build?rm=1&t=#{cachetag}"),
+            path: client.url("build?rm=1&dockerfile=#{DockerFile::NAME}&t=#{cachetag}"),
             request_block: BlockEnumerator.new(df.tar_io)
           )
         end
@@ -162,7 +162,7 @@ module FPM; module Fry
             'Content-Type'=>'application/tar'
           },
           expects: [200],
-          path: client.url('build?rm=1'),
+          path: client.url("build?rm=1&dockerfile=#{DockerFile::NAME}"),
           request_block: BlockEnumerator.new(df.tar_io),
           response_block: parser
         )
