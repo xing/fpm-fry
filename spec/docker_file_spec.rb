@@ -66,7 +66,7 @@ describe FPM::Fry::DockerFile do
           expect(subject.build_sh).to eq(<<'SHELL')
 #!/bin/bash
 set -e
-echo -e '\e[1;32m====> foo-bar\e[0m'
+echo -e '\e[1;32m====> foo\ bar\e[0m'
 foo bar --baz
 SHELL
         end

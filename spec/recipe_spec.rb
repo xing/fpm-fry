@@ -40,6 +40,33 @@ RECIPE
     end
   end
 
+  context 'bash' do
+
+    context 'with just code' do
+      subject do
+        build <<RECIPE
+bash 'just code >> file'
+RECIPE
+      end
+
+      it 'creates a bash step' do
+        expect(subject.steps.map(&:to_s)).to eq ['just code >> file']
+      end
+    end
+
+    context 'with a name' do
+      subject do
+        build <<RECIPE
+bash 'a name', 'with more "code"'
+RECIPE
+      end
+
+      it 'creates a named step' do
+        expect(subject.steps.map(&:to_s)).to eq ['with more "code"']
+      end
+    end
+  end
+
   context "scripts" do
     subject do
       build <<RECIPE

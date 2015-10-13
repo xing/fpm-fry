@@ -124,8 +124,10 @@ module FPM; module Fry
       def build_sh
         df = ['#!/bin/bash']
         df << 'set -e'
-        recipe.steps.each do |k,v|
-          df << "echo -e '\\e[1;32m====> #{Shellwords.escape k}\\e[0m'"
+        recipe.steps.each do |v|
+          if v.respond_to? :name
+            df << "echo -e '\\e[1;32m====> #{Shellwords.escape v.name}\\e[0m'"
+          end
           df << v.to_s
         end
         df << ''

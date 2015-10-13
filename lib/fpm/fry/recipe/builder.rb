@@ -202,8 +202,16 @@ module FPM::Fry
           options = {}
         end
         command = args.shift
-        name = options.fetch(:name){ [command,*args].select{|c| c[0] != '-' }.join('-') }
-        recipe.steps[name] = Shellwords.join([command, *args])
+        name = options.fetch(:name){ [command,*args].select{|c| c[0] != '-' }.join(' ') }
+        bash( name, Shellwords.join([command, *args]) )
+      end
+
+      def bash( name = nil, code )
+        if name
+          recipe.steps << Recipe::Step.new(name, code)
+        else
+          recipe.steps << code.to_s
+        end
       end
 
       def build_depends( name , options = {} )

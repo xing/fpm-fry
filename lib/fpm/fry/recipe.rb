@@ -12,6 +12,12 @@ module FPM; module Fry
 
   class Recipe
 
+    class Step < Struct.new(:name, :value)
+      def to_s
+        value.to_s
+      end
+    end
+
     class PackageRecipe
       attr_accessor :name,
         :iteration,
@@ -112,7 +118,7 @@ module FPM; module Fry
 
     def initialize
       @source = Source::Null
-      @steps = {}
+      @steps = []
       @packages = [PackageRecipe.new]
       @packages[0].files << '**'
       @build_depends = {}

@@ -135,6 +135,13 @@ run "make"
 run "make", "INSTALL"
 ```
 
+- `bash String?, String`: Run arbitrary bash code during build. This method is intended as an interface for plugins.
+
+```ruby
+bash "echo 'this works' >> file"
+bash "This name will be displayed in the output log", "some code here"
+```
+
 - `after_install String`: adds a script that gets run after installation of this package.
 
 ```ruby
