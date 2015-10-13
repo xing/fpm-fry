@@ -1,6 +1,6 @@
 require 'stringio'
-require 'fpm/dockery/stream_parser'
-describe FPM::Dockery::StreamParser do
+require 'fpm/fry/stream_parser'
+describe FPM::Fry::StreamParser do
 
   let(:err){ double("err") }
   let(:out){ double("out") }
@@ -55,7 +55,7 @@ describe FPM::Dockery::StreamParser do
 
     it "raises an error" do
       expect(out).to receive(:write).with("short")
-      expect{ subject.parse(input) }.to raise_error(FPM::Dockery::StreamParser::ShortRead)
+      expect{ subject.parse(input) }.to raise_error(FPM::Fry::StreamParser::ShortRead)
     end
 
   end
@@ -67,7 +67,7 @@ describe FPM::Dockery::StreamParser do
     }
 
     it "raises an error" do
-      expect{ subject.parse(input) }.to raise_error(FPM::Dockery::StreamParser::ShortRead)
+      expect{ subject.parse(input) }.to raise_error(FPM::Fry::StreamParser::ShortRead)
     end
 
   end
@@ -79,7 +79,7 @@ describe FPM::Dockery::StreamParser do
     }
 
     it "raises an error" do
-      expect{ subject.parse(input) }.to raise_error(FPM::Dockery::StreamParser::ShortRead)
+      expect{ subject.parse(input) }.to raise_error(FPM::Fry::StreamParser::ShortRead)
     end
 
   end

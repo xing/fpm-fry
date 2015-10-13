@@ -1,12 +1,12 @@
-require 'fpm/dockery/client'
+require 'fpm/fry/client'
 require 'webmock/rspec'
 require 'rubygems/package'
 require 'tempfile'
 require 'fileutils'
-describe FPM::Dockery::Client do
+describe FPM::Fry::Client do
 
   subject{
-    FPM::Dockery::Client.new(docker_url: 'http://dock.er')
+    FPM::Fry::Client.new(docker_url: 'http://dock.er')
   }
 
   before(:each) do
@@ -39,7 +39,7 @@ describe FPM::Dockery::Client do
         stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 500)
         expect{
           subject.read('deadbeef','foo'){}
-        }.to raise_error(FPM::Dockery::Client::FileNotFound)
+        }.to raise_error(FPM::Fry::Client::FileNotFound)
       end
     end
   end
@@ -57,7 +57,7 @@ describe FPM::Dockery::Client do
       }
 
       let!(:tmpdir){
-        Dir.mktmpdir('fpm-dockery')
+        Dir.mktmpdir('fpm-fry')
       }
 
       after(:each) do
@@ -89,7 +89,7 @@ describe FPM::Dockery::Client do
       }
 
       let!(:tmpdir){
-        Dir.mktmpdir('fpm-dockery')
+        Dir.mktmpdir('fpm-fry')
       }
 
       after(:each) do

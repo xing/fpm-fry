@@ -1,10 +1,10 @@
-require 'fpm/dockery/recipe'
-require 'fpm/dockery/recipe/builder'
+require 'fpm/fry/recipe'
+require 'fpm/fry/recipe/builder'
 require 'fpm/package'
-describe FPM::Dockery::Recipe do
+describe FPM::Fry::Recipe do
 
   def build(vars ={}, str)
-    b = FPM::Dockery::Recipe::Builder.new(vars)
+    b = FPM::Fry::Recipe::Builder.new(vars)
     b.instance_eval(str)
     return b.recipe
   end
@@ -104,15 +104,15 @@ RECIPE
   context 'source type guessing' do
 
     {
-      'http://foo.bar/baz.tar.gz' => FPM::Dockery::Source::Package,
-      'http://foo.bar/baz.git'    => FPM::Dockery::Source::Git,
-      'git@foo.bar:baz/baz.git'   => FPM::Dockery::Source::Git,
-      '/foo/bar'                  => FPM::Dockery::Source::Dir,
-      './foo/bar'                 => FPM::Dockery::Source::Dir,
-      'file://foo/bar'            => FPM::Dockery::Source::Dir
+      'http://foo.bar/baz.tar.gz' => FPM::Fry::Source::Package,
+      'http://foo.bar/baz.git'    => FPM::Fry::Source::Git,
+      'git@foo.bar:baz/baz.git'   => FPM::Fry::Source::Git,
+      '/foo/bar'                  => FPM::Fry::Source::Dir,
+      './foo/bar'                 => FPM::Fry::Source::Dir,
+      'file://foo/bar'            => FPM::Fry::Source::Dir
     }.each do |url, klass|
       it "map #{url} to #{klass}" do
-        b = FPM::Dockery::Recipe::Builder.new({})
+        b = FPM::Fry::Recipe::Builder.new({})
         expect( b.send(:guess_source,url) ).to eq klass
       end
     end
@@ -120,7 +120,7 @@ RECIPE
 
   describe '#load_file' do
     let(:tmpdir){
-      Dir.mktmpdir("fpm-dockery")
+      Dir.mktmpdir("fpm-fry")
     }
     after(:each) do
       FileUtils.rm_rf(tmpdir)
@@ -130,7 +130,7 @@ RECIPE
 
       it "is switched to the recipes basedir" do
         IO.write(File.join(tmpdir,'recipe.rb'),'variables[:probe] << Dir.pwd')
-        builder = FPM::Dockery::Recipe::Builder.new(probe: [])
+        builder = FPM::Fry::Recipe::Builder.new(probe: [])
         builder.load_file(File.join(tmpdir,'recipe.rb'))
         expect(builder.variables[:probe][0]).to eq(tmpdir)
       end

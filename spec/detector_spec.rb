@@ -1,15 +1,15 @@
-require 'fpm/dockery/detector'
+require 'fpm/fry/detector'
 require 'rubygems/package/tar_header'
-describe FPM::Dockery::Detector::Container do
+describe FPM::Fry::Detector::Container do
 
   let(:client){
     cl = double(:client)
-    allow(cl).to receive(:read){ raise FPM::Dockery::Client::FileNotFound }
+    allow(cl).to receive(:read){ raise FPM::Fry::Client::FileNotFound }
     cl
   }
 
   subject{
-    FPM::Dockery::Detector::Container.new(client, 'doesntmatter')
+    FPM::Fry::Detector::Container.new(client, 'doesntmatter')
   }
 
   class TarEntryMock < StringIO
@@ -73,7 +73,7 @@ LSB
   end
 end
 
-describe FPM::Dockery::Detector::Image do
+describe FPM::Fry::Detector::Image do
 
   let(:client){
     cl = double(:client)
@@ -92,7 +92,7 @@ describe FPM::Dockery::Detector::Image do
   }
 
   subject{
-    FPM::Dockery::Detector::Image.new(client, 'doesntmatter', factory)
+    FPM::Fry::Detector::Image.new(client, 'doesntmatter', factory)
   }
 
   it "creates an image an delegates to its factory" do

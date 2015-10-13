@@ -1,6 +1,6 @@
-require 'fpm/dockery/source/patched'
+require 'fpm/fry/source/patched'
 require 'digest'
-describe FPM::Dockery::Source::Patched do
+describe FPM::Fry::Source::Patched do
 
   let(:patches){
     [ File.expand_path(File.join(File.dirname(__FILE__),'..','data','patch.diff')) ]
@@ -9,7 +9,7 @@ describe FPM::Dockery::Source::Patched do
   context '#build_cache' do
 
     let(:tmpdir){
-      Dir.mktmpdir('fpm-dockery')
+      Dir.mktmpdir('fpm-fry')
     }
 
     let(:cache){
@@ -41,7 +41,7 @@ describe FPM::Dockery::Source::Patched do
     end
 
     it "just passes if no patch is present" do
-      src = FPM::Dockery::Source::Patched.new(source)
+      src = FPM::Fry::Source::Patched.new(source)
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -55,7 +55,7 @@ describe FPM::Dockery::Source::Patched do
     end
 
     it "applies given patches" do
-      src = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      src = FPM::Fry::Source::Patched.new(source, patches: patches )
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -81,7 +81,7 @@ describe FPM::Dockery::Source::Patched do
         sio.rewind
         sio
       }
-      src = FPM::Dockery::Source::Patched.new(source,
+      src = FPM::Fry::Source::Patched.new(source,
                                               patches: [
                                                 file: patches[0], chdir: 'foo'
                                               ] )
@@ -99,13 +99,13 @@ describe FPM::Dockery::Source::Patched do
     end
 
     it "returns the correct cachekey" do
-      src = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      src = FPM::Fry::Source::Patched.new(source, patches: patches )
       cache = src.build_cache(tmpdir)
       expect( cache.cachekey ).to eq Digest::SHA2.hexdigest(cache.inner.cachekey + "\x00" + IO.read(src.patches[0][:file]) + "\x00")
     end
 
     it "doesn't create colliding caches" do
-      src  = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      src  = FPM::Fry::Source::Patched.new(source, patches: patches )
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -117,7 +117,7 @@ describe FPM::Dockery::Source::Patched do
         io.close
       end
 
-      src = FPM::Dockery::Source::Patched.new(source, patches: [File.expand_path(File.join(File.dirname(__FILE__),'..','data','patch2.diff'))] )
+      src = FPM::Fry::Source::Patched.new(source, patches: [File.expand_path(File.join(File.dirname(__FILE__),'..','data','patch2.diff'))] )
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -129,7 +129,7 @@ describe FPM::Dockery::Source::Patched do
         io.close
       end
 
-      src  = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      src  = FPM::Fry::Source::Patched.new(source, patches: patches )
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -143,7 +143,7 @@ describe FPM::Dockery::Source::Patched do
     end
 
     it "removes existing workdirs" do
-      src = FPM::Dockery::Source::Patched.new(source, patches: patches )
+      src = FPM::Fry::Source::Patched.new(source, patches: patches )
       cache = src.build_cache(tmpdir)
       workdir = cache.unpacked_tmpdir + '.tmp'
       canary  =  File.join( workdir , 'cananry.file')
@@ -164,7 +164,7 @@ describe FPM::Dockery::Source::Patched do
       end
 
       it "applies given patches" do
-        src = FPM::Dockery::Source::Patched.new(source, patches: patches )
+        src = FPM::Fry::Source::Patched.new(source, patches: patches )
         cache = src.build_cache(tmpdir)
         io = cache.tar_io
         begin
@@ -186,17 +186,17 @@ describe FPM::Dockery::Source::Patched do
     let(:source){ double("source") }
 
     it 'just passes if nothing is configured' do
-      expect(FPM::Dockery::Source::Patched.decorate({}){source}).to be source
+      expect(FPM::Fry::Source::Patched.decorate({}){source}).to be source
     end
 
     it 'just passes if the patches list is empty' do
-      expect(FPM::Dockery::Source::Patched.decorate(patches: []){source}).to be source
+      expect(FPM::Fry::Source::Patched.decorate(patches: []){source}).to be source
     end
     it 'decorates if the list is not empty' do
-      expect(FPM::Dockery::Source::Patched.decorate(patches: patches){source}).to be_a FPM::Dockery::Source::Patched
+      expect(FPM::Fry::Source::Patched.decorate(patches: patches){source}).to be_a FPM::Fry::Source::Patched
     end
     it 'passes the patch file list' do
-      expect(FPM::Dockery::Source::Patched.decorate(patches: patches){source}.patches).to eq [{file:patches[0]}]
+      expect(FPM::Fry::Source::Patched.decorate(patches: patches){source}.patches).to eq [{file:patches[0]}]
     end
   end
 end

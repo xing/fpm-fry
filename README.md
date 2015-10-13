@@ -1,8 +1,8 @@
-fpm-dockery
+fpm-fry
 ======================
 
-[![Build Status](https://travis-ci.org/xing/fpm-dockery.svg?branch=master)](https://travis-ci.org/xing/fpm-dockery)
-[![Coverage Status](https://coveralls.io/repos/xing/fpm-dockery/badge.svg?branch=master&service=github)](https://coveralls.io/github/xing/fpm-dockery?branch=master)
+[![Build Status](https://travis-ci.org/xing/fpm-fry.svg?branch=master)](https://travis-ci.org/xing/fpm-fry)
+[![Coverage Status](https://coveralls.io/repos/xing/fpm-fry/badge.svg?branch=master&service=github)](https://coveralls.io/github/xing/fpm-fry?branch=master)
 
 [fpm-cookery](https://github.com/bernd/fpm-cookery) inspired package builder on [docker](https://docker.io)
 
@@ -17,15 +17,15 @@ What does it do?
 Installation
 -----------------
 
-    $> gem install fpm-dockery
+    $> gem install fpm-fry
 
-You also need a running a machine running docker. This does not need to be the same machine, fpm-dockery can 
+You also need a running a machine running docker. This does not need to be the same machine, fpm-fry can 
 use the docker remote api. See [the docker install guide](https://www.docker.io/gettingstarted/?#h_installation).
 
 Introduction
 ---------------
 
-fpm-dockery like fpm-cookery works with recipe files. A recipe file can look like this:
+fpm-fry like fpm-cookery works with recipe files. A recipe file can look like this:
 
 ```ruby
 name 'ag'
@@ -66,20 +66,20 @@ run 'make', 'install'
 
 Recipe files contains informations about the used sources, required software packages and build steps.
 
-If you don't tell fpm-dockery which recipe to use it will look for a file called `recipe.rb` in the current directory.
+If you don't tell fpm-fry which recipe to use it will look for a file called `recipe.rb` in the current directory.
 
-Unlike fpm-cookery fpm-dockery needs to know additionally which docker image it should use to build ( `ubuntu:precise` in this example ). 
-fpm-dockery does not pull this image into the docker instance, you have to make sure that it's present and valid ( do `docker pull ubuntu:precise` before you try something ).
+Unlike fpm-cookery fpm-fry needs to know additionally which docker image it should use to build ( `ubuntu:precise` in this example ). 
+fpm-fry does not pull this image into the docker instance, you have to make sure that it's present and valid ( do `docker pull ubuntu:precise` before you try something ).
 
 To build your first package type:
 
-    $> fpm-dockery cook ubuntu:precise recipe.rb
+    $> fpm-fry cook ubuntu:precise recipe.rb
 
 
 Recipe syntax
 -------------------------
 
-Recipe are ordinary ruby code. They are evaled inside an FPM::Dockery::Recipe::Builder which gives you the following methods:
+Recipe are ordinary ruby code. They are evaled inside an FPM::Fry::Recipe::Builder which gives you the following methods:
 
 ### General stuff
 
@@ -153,11 +153,11 @@ BASH
 
 ### Plugins
 
-fpm-dockery has a tiny but powerful plugin architecture.
+fpm-fry has a tiny but powerful plugin architecture.
 
 - `plugin String, *Args`: loads and enables the given plugin with the given arguments.
 
-fpm-dockery ships with these plugins:
+fpm-fry ships with these plugins:
 
 #### exclude
 
@@ -208,7 +208,7 @@ package 'subpackage' do
   # add a dependency on the mainpackage with the exact same version:
   depends 'mainpackage', version
 
-  # tell dockery which files should go in the subpackage
+  # tell fry which files should go in the subpackage
   files '/usr/bin/awesome'
 end
 ```
@@ -223,9 +223,9 @@ disturbing the build process.
 Building on remote hosts
 -------------------------
 
-fpm-dockery like docker respects the `DOCKER_HOST` environment variable. So if you have docker server `docker.example.com` listening on port 4243 you can set `DOCKER_HOST` to `tcp://docker.example.com:4243`.
+fpm-fry like docker respects the `DOCKER_HOST` environment variable. So if you have docker server `docker.example.com` listening on port 4243 you can set `DOCKER_HOST` to `tcp://docker.example.com:4243`.
 
-You don't even need to have the docker command on your local machine. fpm-dockery does all the interaction with docker on it's own.
+You don't even need to have the docker command on your local machine. fpm-fry does all the interaction with docker on it's own.
 
 Bonus
 -------------------------
@@ -241,7 +241,7 @@ You can also package container changes directly.
 
 2. Package it using all the fpm stuff you like
 
-        $> fpm-dockery fpm -sdocker -tdeb -nbla fce49040a269
+        $> fpm-fry fpm -sdocker -tdeb -nbla fce49040a269
         Created deb package {:path=>"bla_1.0_amd64.deb"}
 
 3. Check the result

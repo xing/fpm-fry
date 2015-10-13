@@ -1,17 +1,17 @@
 require 'tempfile'
 require 'fileutils'
-require 'fpm/dockery/source/git'
+require 'fpm/fry/source/git'
 require 'rubygems/package/tar_reader'
-describe FPM::Dockery::Source::Git do
+describe FPM::Fry::Source::Git do
 
   let(:tmpdir){
-    Dir.mktmpdir("fpm-dockery")
+    Dir.mktmpdir("fpm-fry")
   }
 
   let!(:source){
-    s = Dir.mktmpdir("fpm-dockery")
+    s = Dir.mktmpdir("fpm-fry")
     `cd #{s} ; git init ; echo "Hello" > "World" ; git add . ;
-    git -c user.name=Example -c user.email=example@dockery.git commit -m test "--date=2000-01-01T00:00:00 +0000"`
+    git -c user.name=Example -c user.email=example@fry.git commit -m test "--date=2000-01-01T00:00:00 +0000"`
     s
   }
 
@@ -22,7 +22,7 @@ describe FPM::Dockery::Source::Git do
 
   context '#build_cache' do
     it "clones a repo" do
-      src = FPM::Dockery::Source::Git.new(source)
+      src = FPM::Fry::Source::Git.new(source)
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
@@ -35,7 +35,7 @@ describe FPM::Dockery::Source::Git do
     end
 
     it "raises for missing revs" do
-      src = FPM::Dockery::Source::Git.new(source, branch: 'missing')
+      src = FPM::Fry::Source::Git.new(source, branch: 'missing')
       expect{
         cache = src.build_cache(tmpdir)
       }.to raise_error(/Failed to fetch/)
@@ -46,7 +46,7 @@ describe FPM::Dockery::Source::Git do
   context '#copy_to' do
 
     let(:target){
-      Dir.mktmpdir("fpm-dockery")
+      Dir.mktmpdir("fpm-fry")
     }
 
     after do
@@ -54,7 +54,7 @@ describe FPM::Dockery::Source::Git do
     end
 
     it 'copies all contents to the given destination' do
-      src = FPM::Dockery::Source::Git.new(source)
+      src = FPM::Fry::Source::Git.new(source)
       cache = src.build_cache(tmpdir)
       cache.copy_to(target)
       expect(Dir.new(target).entries.sort).to eq [".","..","World"]
@@ -65,7 +65,7 @@ describe FPM::Dockery::Source::Git do
 
   context '#cachekey' do
     it "works" do
-      src = FPM::Dockery::Source::Git.new(source)
+      src = FPM::Fry::Source::Git.new(source)
       cache = src.build_cache(tmpdir)
       expect(cache.cachekey).to eq("21f88b4ce08684ba5f9d58eb48b8bad1dfda8f9c")
     end
@@ -74,7 +74,7 @@ describe FPM::Dockery::Source::Git do
   context 'url' do
 
     it 'accepts git@... urls' do
-      src = FPM::Dockery::Source::Git.new('git@github.com:foo/bar.git')
+      src = FPM::Fry::Source::Git.new('git@github.com:foo/bar.git')
       expect(src.url.path).to eq '/foo/bar.git'
     end
 

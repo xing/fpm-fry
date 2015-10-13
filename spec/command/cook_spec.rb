@@ -1,18 +1,18 @@
 require 'tmpdir'
 require 'fileutils'
-require 'fpm/dockery/command/cook'
-describe FPM::Dockery::Command::Cook do
+require 'fpm/fry/command/cook'
+describe FPM::Fry::Command::Cook do
 
   let(:tmpdir) do
-    Dir.mktmpdir('fpm-dockery')
+    Dir.mktmpdir('fpm-fry')
   end
 
   let(:targetdir) do
-    Dir.mktmpdir('fpm-dockery-target')
+    Dir.mktmpdir('fpm-fry-target')
   end
 
   let(:ui) do
-    FPM::Dockery::UI.new(StringIO.new,StringIO.new,nil,tmpdir)
+    FPM::Fry::UI.new(StringIO.new,StringIO.new,nil,tmpdir)
   end
 
   after(:each) do
@@ -29,7 +29,7 @@ describe FPM::Dockery::Command::Cook do
 
   context 'without recipe' do
     subject do
-      s = FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      s = FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     it 'returns an error' do
@@ -41,7 +41,7 @@ describe FPM::Dockery::Command::Cook do
   describe '#output_class' do
 
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     context 'debian-automatic' do
@@ -67,17 +67,17 @@ describe FPM::Dockery::Command::Cook do
   describe '#builder' do
 
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     context 'trivial case' do
       before(:each) do
-        subject.detector = FPM::Dockery::Detector::String.new('ubuntu-12.04')
+        subject.detector = FPM::Fry::Detector::String.new('ubuntu-12.04')
         subject.flavour = 'debian'
         subject.recipe = File.expand_path('../data/recipe.rb',File.dirname(__FILE__))
       end
       it 'works' do
-        expect(subject.builder).to be_a FPM::Dockery::Recipe::Builder
+        expect(subject.builder).to be_a FPM::Fry::Recipe::Builder
       end
       it 'contains the right variables' do
         expect(subject.builder.variables).to eq(distribution: 'ubuntu', distribution_version: '12.04', flavour: 'debian', codename: 'precise')
@@ -94,7 +94,7 @@ describe FPM::Dockery::Command::Cook do
 
   describe '#image_id' do
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     context 'with an existing image' do
@@ -113,22 +113,22 @@ describe FPM::Dockery::Command::Cook do
 
   describe '#build_image' do
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     context 'with an existing cache image' do
       let(:builder) do
-        FPM::Dockery::Recipe::Builder.new({}, FPM::Dockery::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({}, FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
         subject.image_id = 'f'*32
         subject.flavour  = 'unknown'
-        subject.cache = FPM::Dockery::Source::Null::Cache
+        subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
+        stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 200, :body => "")
         stub_request(:post, "http://unix/v1.9/build?rm=1").
                     with(:headers => {'Content-Type'=>'application/tar'}).
@@ -141,19 +141,19 @@ describe FPM::Dockery::Command::Cook do
 
     context 'without an existing cache image' do
       let(:builder) do
-        FPM::Dockery::Recipe::Builder.new({}, FPM::Dockery::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({}, FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
         subject.image_id = 'f'*32
         subject.flavour  = 'unknown'
-        subject.cache = FPM::Dockery::Source::Null::Cache
+        subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:get, "http://unix/v1.9/images/fpm-dockery:5cb0db32efafac12020670506c62c39/json").
+        stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 404)
-        stub_request(:post, "http://unix/v1.9/build?rm=1&t=fpm-dockery:5cb0db32efafac12020670506c62c39").
+        stub_request(:post, "http://unix/v1.9/build?rm=1&t=fpm-fry:5cb0db32efafac12020670506c62c39").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built xxxxxxxx"}', :headers => {})
         stub_request(:post, "http://unix/v1.9/build?rm=1").
@@ -169,17 +169,17 @@ describe FPM::Dockery::Command::Cook do
 
   describe '#build!' do
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     context 'trivial case' do
 
       before(:each) do
-        subject.build_image = 'fpm-dockery:x'
+        subject.build_image = 'fpm-fry:x'
         stub_request(:get, "http://unix/version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:post, "http://unix/v1.9/containers/create").
-          with(:body => "{\"Image\":\"fpm-dockery:x\"}",
+          with(:body => "{\"Image\":\"fpm-fry:x\"}",
                :headers => {'Content-Type'=>'application/json'}).
           to_return(:status => 201, :body => '{"Id":"caafffee"}')
         stub_request(:post, "http://unix/v1.9/containers/caafffee/start").
@@ -208,7 +208,7 @@ describe FPM::Dockery::Command::Cook do
     end
 
     subject do
-      s = FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      s = FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
       s.client = client
       s
     end
@@ -259,17 +259,17 @@ describe FPM::Dockery::Command::Cook do
   describe '#packages' do
 
     subject do
-      FPM::Dockery::Command::Cook.new('fpm-dockery', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
     end
 
     let(:recipe) do
-      recipe = FPM::Dockery::Recipe.new
+      recipe = FPM::Fry::Recipe.new
       recipe.packages[0].name = "foo"
       recipe
     end
 
     let(:builder) do
-      FPM::Dockery::Recipe::Builder.new({}, recipe, logger: subject.logger)
+      FPM::Fry::Recipe::Builder.new({}, recipe, logger: subject.logger)
     end
 
     let(:output_class) do

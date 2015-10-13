@@ -1,13 +1,13 @@
-require 'fpm/dockery/plugin/alternatives'
+require 'fpm/fry/plugin/alternatives'
 
-describe FPM::Dockery::Plugin::Alternatives do
+describe FPM::Fry::Plugin::Alternatives do
 
-  let(:recipe){ FPM::Dockery::Recipe.new }
+  let(:recipe){ FPM::Fry::Recipe.new }
 
   let(:package){ recipe.packages[0] }
 
   let(:builder){
-    FPM::Dockery::Recipe::Builder.new({flavour: "debian"},recipe)
+    FPM::Fry::Recipe::Builder.new({flavour: "debian"},recipe)
   }
 
   context 'alternatives as string' do

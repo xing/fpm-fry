@@ -1,11 +1,11 @@
 require 'fpm/package/dir'
-require 'fpm/dockery/recipe'
-describe 'FPM::Dockery::Plugin::Exclude' do
+require 'fpm/fry/recipe'
+describe 'FPM::Fry::Plugin::Exclude' do
 
-  let(:recipe){ FPM::Dockery::Recipe.new }
+  let(:recipe){ FPM::Fry::Recipe.new }
 
   let(:builder){
-    FPM::Dockery::Recipe::Builder.new({},recipe)
+    FPM::Fry::Recipe::Builder.new({},recipe)
   }
 
   let(:package){

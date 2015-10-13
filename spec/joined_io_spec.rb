@@ -1,8 +1,8 @@
-require 'fpm/dockery/joined_io'
+require 'fpm/fry/joined_io'
 require 'stringio'
-describe FPM::Dockery::JoinedIO do
+describe FPM::Fry::JoinedIO do
 
-  JoinedIO = FPM::Dockery::JoinedIO
+  JoinedIO = FPM::Fry::JoinedIO
 
   describe "#read without length" do
     context 'simple case' do

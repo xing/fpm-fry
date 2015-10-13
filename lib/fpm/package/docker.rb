@@ -1,7 +1,7 @@
 require 'fpm'
 require 'fpm/package'
 
-require 'fpm/dockery/client'
+require 'fpm/fry/client'
 
 class FPM::Package::Docker < FPM::Package
 
@@ -45,7 +45,7 @@ class FPM::Package::Docker < FPM::Package
 private
 
   def client
-    @client ||= FPM::Dockery::Client.new(logger: @logger)
+    @client ||= FPM::Fry::Client.new(logger: @logger)
   end
 
   def changes(name)

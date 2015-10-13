@@ -1,9 +1,9 @@
-require 'fpm/dockery/source/dir'
+require 'fpm/fry/source/dir'
 
-describe FPM::Dockery::Source::Dir do
+describe FPM::Fry::Source::Dir do
 
   let!(:source){
-    s = Dir.mktmpdir("fpm-dockery")
+    s = Dir.mktmpdir("fpm-fry")
     `cd #{s} ; echo "Hello" > "World"`
     s
   }
@@ -14,7 +14,7 @@ describe FPM::Dockery::Source::Dir do
 
   context '#build_cache' do
     it "tars a dir" do
-      src = FPM::Dockery::Source::Dir.new(source)
+      src = FPM::Fry::Source::Dir.new(source)
       cache = src.build_cache(double('tmpdir'))
       io = cache.tar_io
       begin
@@ -30,7 +30,7 @@ describe FPM::Dockery::Source::Dir do
 
   context '#cachekey' do
     it "works somewhat" do
-      src = FPM::Dockery::Source::Dir.new(source)
+      src = FPM::Fry::Source::Dir.new(source)
       cache = src.build_cache(double('tmpdir'))
       expect(cache.cachekey).to eq(Digest::SHA2.hexdigest(cache.tar_io.read))
     end
@@ -39,7 +39,7 @@ describe FPM::Dockery::Source::Dir do
   context '#copy_to' do
 
     let(:target){
-      Dir.mktmpdir("fpm-dockery")
+      Dir.mktmpdir("fpm-fry")
     }
 
     after do
@@ -47,7 +47,7 @@ describe FPM::Dockery::Source::Dir do
     end
 
     it 'copies all contents to the given destination' do
-      src = FPM::Dockery::Source::Dir.new(source)
+      src = FPM::Fry::Source::Dir.new(source)
       cache = src.build_cache(double('tmpdir'))
       cache.copy_to(target)
       expect(Dir.new(target).entries.sort).to eq [".","..","World"]
@@ -60,7 +60,7 @@ describe FPM::Dockery::Source::Dir do
     it "works somewhat" do
       base = File.dirname(source)
       src = Dir.chdir base do
-        FPM::Dockery::Source::Dir.new(File.basename(source))
+        FPM::Fry::Source::Dir.new(File.basename(source))
       end
       cache = src.build_cache(double('tmpdir'))
       io = cache.tar_io

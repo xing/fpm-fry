@@ -1,10 +1,10 @@
-require 'fpm/dockery/plugin/init'
-describe FPM::Dockery::Plugin::Init do
+require 'fpm/fry/plugin/init'
+describe FPM::Fry::Plugin::Init do
 
   subject{
     o = double('foo')
     allow(o).to receive(:variables){ {distribution: distribution, distribution_version: version} }
-    o.extend(FPM::Dockery::Plugin::Init)
+    o.extend(FPM::Fry::Plugin::Init)
     o
   }
 

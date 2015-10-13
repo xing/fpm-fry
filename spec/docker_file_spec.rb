@@ -1,14 +1,14 @@
-require 'fpm/dockery/recipe'
-require 'fpm/dockery/recipe/builder'
-require 'fpm/dockery/docker_file'
-describe FPM::Dockery::DockerFile do
+require 'fpm/fry/recipe'
+require 'fpm/fry/recipe/builder'
+require 'fpm/fry/docker_file'
+describe FPM::Fry::DockerFile do
 
   module DockerFileParams
     module ClassMethods
       def recipe
-        @recipe ||= FPM::Dockery::Recipe.new
+        @recipe ||= FPM::Fry::Recipe.new
         if block_given?
-          yield FPM::Dockery::Recipe::Builder.new(variables,recipe)
+          yield FPM::Fry::Recipe::Builder.new(variables,recipe)
         end
         @recipe
       end
@@ -28,7 +28,7 @@ describe FPM::Dockery::DockerFile do
       self.class.variables
     end
     def cache
-      FPM::Dockery::Source::Null::Cache
+      FPM::Fry::Source::Null::Cache
     end
     def recipe
       self.class.recipe
@@ -45,7 +45,7 @@ describe FPM::Dockery::DockerFile do
   describe 'Build' do
 
     subject do
-      FPM::Dockery::DockerFile::Build.new(base, variables,recipe)
+      FPM::Fry::DockerFile::Build.new(base, variables,recipe)
     end
 
     describe '#build_sh' do
@@ -179,7 +179,7 @@ SHELL
 
   describe 'Source' do
     subject do
-      FPM::Dockery::DockerFile::Source.new(variables,cache)
+      FPM::Fry::DockerFile::Source.new(variables,cache)
     end
 
     describe '#docker_file' do
