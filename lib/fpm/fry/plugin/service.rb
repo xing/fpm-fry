@@ -5,25 +5,31 @@ require 'erb'
 require 'shellwords'
 module FPM::Fry::Plugin ; module Service
 
-  class Environment < Struct.new(:name,:command, :description)
+  class Environment < Struct.new(:name,:command, :description, :limits)
 
     def render(file)
       _erbout = ""
       erb = ERB.new(
-        IO.read(File.join(File.dirname(__FILE__),'..','templates',file))
+        IO.read(File.join(File.dirname(__FILE__),'..','templates',file)),
+        0, "-"
       )
-      eval(erb.src)
+      eval(erb.src,nil,File.join(File.dirname(__FILE__),'..','templates',file))
       return _erbout
     end
 
   end
 
+  LIMITS = %w(core cpu data fsize memlock msgqueue nice nofile nproc rss rtprio sigpending stack)
+
   class DSL
+
+    attr :limits
 
     def initialize(*_)
       super
       @name = nil
       @command = []
+      @limits = {}
     end
 
     def name( n = nil )
@@ -31,6 +37,13 @@ module FPM::Fry::Plugin ; module Service
         @name = n
       end
       return @name
+    end
+
+    def limit( name, soft, hard = soft )
+      unless LIMITS.include? name
+        raise ArgumentError, "Unknown limit #{name.inspect}. Known limits are: #{LIMITS.inspect}"
+      end
+      @limits[name] = [soft,hard]
     end
 
     def command( *args )
@@ -45,7 +58,7 @@ module FPM::Fry::Plugin ; module Service
       name = self.name || builder.name || raise
       init = Init.detect_init(builder.variables)
       edit = builder.plugin('edit_staging')
-      env = Environment.new(name, command, "")
+      env = Environment.new(name, command, "", @limits)
       case(init)
       when 'upstart' then
         edit.add_file "/etc/init/#{name}.conf",StringIO.new( env.render('upstart.erb') )

@@ -69,4 +69,25 @@ describe FPM::Fry::Plugin::Service do
 
   end
 
+  describe 'limits' do
+
+    before(:each) do
+      builder.name "foo"
+      builder.plugin('service') do
+        command "foo","bar","baz"
+        limit 'nofile', 123,456
+      end
+      builder.recipe.packages[0].apply_output(package)
+    end
+
+    context 'for upstart' do
+      let(:init){ 'upstart' }
+
+      it 'generates an init config containing the limit' do
+        expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^limit nofile 123 456$/
+      end
+    end
+
+  end
+
 end
