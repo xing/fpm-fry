@@ -196,7 +196,17 @@ Adds a service inluding an init script, an upstart script and the correct instal
 plugin "service" do
   name "my-service"
   command "/usr/bin/my-service","-f" # command is expected to stay in foreground
+  user "my-user" # optional
+  group "my-group" # optional
 end
+```
+
+#### user
+
+Adds a configure script adding the given user.
+
+```ruby
+plugin "user", "my-user"
 ```
 
 Multi-Package support

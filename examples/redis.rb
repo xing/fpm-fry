@@ -11,12 +11,15 @@ depends 'redis-server', version
 depends 'redis-cli', version
 depends 'redis-utils', version
 
+plugin 'user', 'redis'
+
 package 'redis-server' do
 
   files '/usr/local/bin/redis-server'
 
   plugin 'service' do
     command '/usr/local/bin/redis-server'
+    user 'redis'
   end
 end
 
@@ -31,6 +34,7 @@ package 'redis-sentinel' do
 
   plugin 'service' do
     command '/usr/local/bin/redis-sentinel'
+    user 'redis'
   end
 
 end
