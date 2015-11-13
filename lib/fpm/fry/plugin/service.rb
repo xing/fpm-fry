@@ -5,7 +5,7 @@ require 'erb'
 require 'shellwords'
 module FPM::Fry::Plugin ; module Service
 
-  class Environment < Struct.new(:name,:command, :description, :limits)
+  class Environment < Struct.new(:name,:command, :description, :limits, :user, :group)
 
     def render(file)
       _erbout = ""
@@ -30,6 +30,8 @@ module FPM::Fry::Plugin ; module Service
       @name = nil
       @command = []
       @limits = {}
+      @user = nil
+      @group = nil
     end
 
     def name( n = nil )
@@ -37,6 +39,20 @@ module FPM::Fry::Plugin ; module Service
         @name = n
       end
       return @name
+    end
+
+    def group( n = nil )
+      if n
+        @group = n
+      end
+      return @group
+    end
+
+    def user( n = nil )
+      if n
+        @user = n
+      end
+      return @user
     end
 
     def limit( name, soft, hard = soft )
@@ -58,7 +74,7 @@ module FPM::Fry::Plugin ; module Service
       name = self.name || builder.name || raise
       init = Init.detect_init(builder.variables)
       edit = builder.plugin('edit_staging')
-      env = Environment.new(name, command, "", @limits)
+      env = Environment.new(name, command, "", @limits, @user, @group)
       case(init)
       when 'upstart' then
         edit.add_file "/etc/init/#{name}.conf",StringIO.new( env.render('upstart.erb') )

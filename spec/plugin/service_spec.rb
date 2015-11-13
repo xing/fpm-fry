@@ -65,6 +65,26 @@ describe FPM::Fry::Plugin::Service do
       it 'generates an init config' do
         expect(File.exists? package.staging_path('/etc/init/foo.conf') ).to be true
       end
+
+      it 'generates the correct init config' do
+        expect(IO.read package.staging_path('/etc/init/foo.conf') ).to eq <<'INIT'
+description "a service"
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+env DESC="foo"
+env NAME="foo"
+env DAEMON="foo"
+env DAEMON_ARGS="bar baz"
+
+respawn
+
+script
+  [ -r /etc/default/$NAME ] && . /etc/default/$NAME
+  exec "$DAEMON" $DAEMON_ARGS
+end script
+INIT
+      end
     end
 
   end
@@ -89,5 +109,48 @@ describe FPM::Fry::Plugin::Service do
     end
 
   end
+
+  describe 'user' do
+
+    before(:each) do
+      builder.name "foo"
+      builder.plugin('service') do
+        command "foo","bar","baz"
+        user "fuz"
+      end
+      builder.recipe.packages[0].apply_output(package)
+    end
+
+    context 'for upstart' do
+      let(:init){ 'upstart' }
+
+      it 'generates an init config containing the user' do
+        expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^setuid "fuz"$/
+      end
+    end
+
+  end
+
+  describe 'group' do
+
+    before(:each) do
+      builder.name "foo"
+      builder.plugin('service') do
+        command "foo","bar","baz"
+        group "fuz"
+      end
+      builder.recipe.packages[0].apply_output(package)
+    end
+
+    context 'for upstart' do
+      let(:init){ 'upstart' }
+
+      it 'generates an init config containing the user' do
+        expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^setgid "fuz"$/
+      end
+    end
+
+  end
+
 
 end

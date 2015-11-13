@@ -7,9 +7,13 @@ env NAME=<%= name.inspect %>
 env DAEMON=<%= command[0].inspect %>
 env DAEMON_ARGS=<%= Shellwords.shelljoin(command[1..-1]).inspect %>
 
+<% if user %>setuid <%= user.inspect %>
+<% end -%>
+<% if group %>setgid <%= group.inspect %>
+<% end -%>
 <% limits.each do | name, (soft, hard) | -%>
 limit <%= name %> <%= soft %> <%= hard %>
-<% end %>
+<% end -%>
 respawn
 
 script
