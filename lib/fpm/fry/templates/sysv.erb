@@ -1,4 +1,18 @@
 #!/bin/sh
+<%
+startopts = ['']
+if user
+  if group
+    startopts << '-c' << Shellwords.escape(user + ':' + group)
+  else
+    startopts <<  '-c' << Shellwords.escape(user)
+  end
+else
+  if group
+    startopts << '-g' << Shellwords.escape(group)
+  end
+end
+-%>
 ### BEGIN INIT INFO
 # Provides:          <%= name %>
 # Required-Start:    $remote_fs $syslog
@@ -42,7 +56,7 @@ do_start()
     #   2 if daemon could not be started
     start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
         || return 1
-    start-stop-daemon --start --quiet --pidfile $PIDFILE --background --exec $DAEMON -- \
+    start-stop-daemon --start --quiet --pidfile $PIDFILE --background<%= startopts.join(" ") %> --exec $DAEMON -- \
         $DAEMON_ARGS \
         || return 2
     # Add code here, if necessary, that waits for the process to be ready

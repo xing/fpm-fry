@@ -129,6 +129,14 @@ INIT
       end
     end
 
+    context 'for sysv' do
+      let(:init){ 'sysv' }
+
+      it 'generates an init script containing the user' do
+        expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -c fuz --exec/
+      end
+    end
+
   end
 
   describe 'group' do
@@ -150,7 +158,14 @@ INIT
       end
     end
 
-  end
+    context 'for sysv' do
+      let(:init){ 'sysv' }
 
+      it 'generates an init script containing the user' do
+        expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -g fuz --exec/
+      end
+    end
+
+  end
 
 end
