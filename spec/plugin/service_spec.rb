@@ -168,4 +168,34 @@ INIT
 
   end
 
+  describe 'chdir' do
+
+    before(:each) do
+      builder.name "foo"
+      builder.plugin('service') do
+        command "foo","bar","baz"
+        chdir "/fuz"
+      end
+      builder.recipe.packages[0].apply_output(package)
+    end
+
+    context 'for upstart' do
+      let(:init){ 'upstart' }
+
+      it 'generates an init config containing the chdir' do
+        expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^chdir "\/fuz"$/
+      end
+    end
+
+    context 'for sysv' do
+      let(:init){ 'sysv' }
+
+      it 'generates an init script containing the chdir' do
+        expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -d \/fuz --exec/
+      end
+    end
+
+  end
+
+
 end

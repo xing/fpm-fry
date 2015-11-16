@@ -11,6 +11,8 @@ env DAEMON_ARGS=<%= Shellwords.shelljoin(command[1..-1]).inspect %>
 <% end -%>
 <% if group %>setgid <%= group.inspect %>
 <% end -%>
+<% if chdir %>chdir <%= chdir.inspect %>
+<% end -%>
 <% limits.each do | name, (soft, hard) | -%>
 limit <%= name %> <%= soft %> <%= hard %>
 <% end -%>

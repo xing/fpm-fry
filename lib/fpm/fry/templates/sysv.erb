@@ -12,6 +12,9 @@ else
     startopts << '-g' << Shellwords.escape(group)
   end
 end
+if chdir
+  startopts << '-d' << Shellwords.escape(chdir)
+end
 -%>
 ### BEGIN INIT INFO
 # Provides:          <%= name %>
