@@ -106,6 +106,18 @@ RECIPE
     it 'has correct replaces' do
       expect(package.replaces).to eq(['zof'])
     end
+
+    context 'with multiple constraints' do
+      subject do
+        build <<RECIPE
+depends "bar", ">= 0.0.1, << 0.0.2"
+RECIPE
+      end
+
+      it 'has multiple dependencies' do
+        expect(package.dependencies).to eq(['bar >= 0.0.1', 'bar << 0.0.2'])
+      end
+    end
   end
 
   context "plugins" do

@@ -131,14 +131,16 @@ module FPM::Fry
 
       def parse_package( name, options = {} )
         if options.kind_of? String
-          options = {version: options}
+          options = {constraints: options}
         end
-        case(v = options[:version])
+        case(v = options[:constraints])
         when String
-          if v =~ /\A(<=|<<|>=|>>|<>|=|>|<)(\s*)/
-            options[:version] = ' ' + $1 + ' ' + $'
-          else
-            options[:version] = ' = ' + v
+          options[:constraints] = v.split(',').map do |c|
+            if c =~ /\A\s*(<=|<<|>=|>>|<>|=|>|<)(\s*)/
+              $1 + ' ' + $'
+            else
+              '= ' + c
+            end
           end
         end
         return name, options

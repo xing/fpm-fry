@@ -68,7 +68,14 @@ module FPM; module Fry
         end
         [:dependencies, :conflicts, :replaces, :provides].each do |sym|
           send(sym).each do |name, options|
-            package.send(sym) << "#{name}#{options[:version]}"
+            constr = Array(options[:constraints])
+            if constr.any?
+              constr.each do | c |
+                package.send(sym) << "#{name} #{c}"
+              end
+            else
+              package.send(sym) << name
+            end
           end
         end
         output_hooks.each{|h| h.call(self, package) }

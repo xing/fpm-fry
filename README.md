@@ -95,13 +95,20 @@ name "my-awesome-package"
 version "1.2.3"
 ```
 
-- `depends String, Options = {}`: Adds a dependency. Available options are:
+- `depends String, ConstraintsOrOptions = {}`: Adds a dependency. Available options are:
     - `install: true|false|String`: Sets if this package is installed during build. You can override the package actually installed by passing a string. This way you can depend on virtual packages but install a real package for building.
+    - `constraints: String|Array`: Specifies a required version. Required versions are currently not honored for build dependencies.
 
 ```ruby
 depends "other-package"
 depends "virtual-package", install: "real-package"
 depends "mock-package", install: false
+depends "mock-package", constraints: "0.0.1"
+depends "mock-package", constraints: ">= 0.0.1"
+# These three lines are all equal:
+depends "mock-package", ">= 0.0.1, << 0.1.0"
+depends "mock-package", constraints: ">= 0.0.1, << 0.1.0"
+depends "mock-package", constraints: [">= 0.0.1", "<< 0.1.0"]
 ```
 
 - `source Url, Options = {}`: Sets the source url to use for this package. Out-of-the-box the following types are supported:
