@@ -26,7 +26,6 @@ describe FPM::Fry::Command::Cook do
     end
   end
 
-
   context 'without recipe' do
     subject do
       s = FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)

@@ -9,30 +9,6 @@ module FPM; module Fry; end ; end
 
 class FPM::Fry::Client
 
-  class LogInstrumentor < Struct.new(:logger)
-
-    def instrument(event, data = {})
-      if block_given?
-        logger.debug('Requesting HTTP', filtered(data))
-        r = yield
-        return r
-      else
-        logger.debug('Getting HTTP response', filtered(data))
-      end
-    end
-
-    def filtered(data)
-      filtered = {}
-      filtered[:path] = data[:path] if data[:path]
-      filtered[:verb] = data[:method] if data[:method]
-      filtered[:status] = data[:status] if data[:status]
-      filtered[:body] = data[:body][0..500] if data[:body]
-      filtered[:headers] = data[:headers] 
-      return filtered
-    end
-
-  end
-
   class FileNotFound < StandardError
   end
 
@@ -141,7 +117,6 @@ class FPM::Fry::Client
   def agent_for( uri, tls )
     proto, address = uri.split('://',2)
     options = {
-      instrumentor: LogInstrumentor.new(logger),
       read_timeout: 10000
     }.merge( tls )
     case(proto)
