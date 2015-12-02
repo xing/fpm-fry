@@ -53,12 +53,8 @@ module FPM; module Fry
     end
 
     def detector=(d)
-      begin
-        unless d.detect!
-          raise "Unable to detect distribution from given image"
-        end
-      rescue Excon::Errors::NotFound
-        raise "Image not found"
+      unless d.detect!
+        raise "Unable to detect distribution from given image"
       end
       @detector = d
     end

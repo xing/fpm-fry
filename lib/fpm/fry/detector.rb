@@ -73,6 +73,10 @@ module FPM; module Fry
     end
 
     class Image < Struct.new(:client,:image,:factory)
+
+      class ImageNotFound < StandardError
+      end
+
       attr :distribution
       attr :version
 
@@ -82,11 +86,15 @@ module FPM; module Fry
 
       def detect!
         body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-        res = client.post( path: client.url('containers','create'),
-                           headers: {'Content-Type' => 'application/json'},
-                           body: body,
-                           expects: [201]
-                         )
+        begin
+          res = client.post( path: client.url('containers','create'),
+                             headers: {'Content-Type' => 'application/json'},
+                             body: body,
+                             expects: [201]
+                           )
+        rescue Excon::Errors::NotFound
+          raise ImageNotFound, "Image #{image.inspect} not found. Did you do a `docker pull #{image}` before?"
+        end
         body = JSON.parse(res.body)
         container = body.fetch('Id')
         begin

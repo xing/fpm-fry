@@ -104,5 +104,10 @@ describe FPM::Fry::Detector::Image do
     expect( subject.detect! ).to be true
   end
 
+  it "raises a pointful error message for non-existing images" do
+    expect(client).to receive(:post).and_raise(Excon::Errors::NotFound.new("Not found"))
+    expect{ subject.detect! }.to raise_error FPM::Fry::Detector::Image::ImageNotFound, /Image "doesntmatter" not found/
+  end
+
 end
 
