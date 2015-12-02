@@ -155,7 +155,7 @@ module FPM; module Fry
           response_block: parser
         )
         if parser.images.none?
-          raise "Unable to detect build image"
+          raise "Didn't find a build image in the stream. This usually means that the build script failed."
         end
         image = parser.images.last
         logger.debug("Detected build image", image: image)
@@ -238,7 +238,7 @@ module FPM; module Fry
         )
         json = JSON.parse(res.body)
         if json["StatusCode"] != 0
-          raise "Build failed"
+          raise "Build failed with exit code #{json["StatusCode"]}"
         end
         return yield container
       ensure
