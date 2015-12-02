@@ -179,13 +179,12 @@ module FPM; module Fry
           begin
             client.read( container, '/var/lib/apt/lists') do |file|
               next if file.header.name == 'lists/'
-              logger.info("/var/lib/apt/lists is not empty, no update is required ( force update with --apt-update=always )")
-              return false
+              logger.info("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never")
+              return true
             end
           ensure
             client.delete(path: client.url('containers',container))
           end
-          logger.info("/var/lib/apt/lists is empty, update is required ( disable update with --apt-update=never )")
           return true
         when 'always'
           return true
