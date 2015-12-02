@@ -351,7 +351,7 @@ module FPM; module Fry
 
       return 0
     rescue Recipe::NotFound => e
-      logger.error("Recipe not found", recipe: recipe, exeception: e)
+      logger.error("Recipe not found", recipe: recipe, exception: e)
       return 1
     rescue => e
       logger.error(e)
