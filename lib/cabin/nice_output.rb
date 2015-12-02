@@ -43,6 +43,9 @@ class Cabin::NiceOutput
     bold = data.delete(:bold) ? :bold : nil
 
     backtrace = data.delete(:backtrace)
+    if !backtrace && data[:exception].respond_to?(:backtrace)
+      backtrace = data[:exception].backtrace
+    end
 
     # Make 'error' and other log levels have color
     if color.nil?

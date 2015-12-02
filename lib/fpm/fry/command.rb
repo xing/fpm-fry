@@ -38,7 +38,7 @@ module FPM; module Fry
           logger: logger,
           tls: tls?, tlsverify: tlsverify?
         )
-        logger.info("Docker connected",client.server_version)
+        logger.debug("Docker connected",client.server_version)
         client
       end
     end

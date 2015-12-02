@@ -58,7 +58,7 @@ module FPM; module Fry
 
     def output_class
       @output_class ||= begin
-        logger.info("Autodetecting package type",flavour: flavour)
+        logger.debug("Autodetecting package type",flavour: flavour)
         case(flavour)
         when 'debian'
           require 'fpm/package/deb'
