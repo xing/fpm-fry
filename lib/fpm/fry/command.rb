@@ -16,6 +16,22 @@ module FPM; module Fry
 
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
 
+    attr :ui
+    extend Forwardable
+    def_delegators :ui, :out, :err, :logger, :tmpdir
+
+    def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
+      super
+      @ui = ctx.fetch(:ui){ UI.new }
+    end
+
+    def parse(attrs)
+      super
+      if debug?
+        ui.logger.level = :debug
+      end
+    end
+
     def client
       @client ||= begin
         client = FPM::Fry::Client.new(
@@ -38,14 +54,6 @@ module FPM; module Fry
       attr :ui
       extend Forwardable
       def_delegators :ui, :logger
-
-      def initialize(*_)
-        super
-        @ui = UI.new()
-        if debug?
-          ui.logger.level = :debug
-        end
-      end
 
       def execute
         require 'fpm/fry/os_db'

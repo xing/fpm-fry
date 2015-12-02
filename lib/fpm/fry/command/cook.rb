@@ -18,10 +18,6 @@ module FPM; module Fry
     parameter 'image', 'Docker image to build from'
     parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
-    attr :ui
-    extend Forwardable
-    def_delegators :ui, :out, :err, :logger, :tmpdir
-
     def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
       @tls = nil
       require 'digest'
@@ -35,10 +31,6 @@ module FPM; module Fry
       require 'fpm/fry/block_enumerator'
       require 'fpm/fry/build_output_parser'
       super
-      @ui = ctx.fetch(:ui){ UI.new }
-      if debug?
-        ui.logger.level = :debug
-      end
     end
 
     def detector
