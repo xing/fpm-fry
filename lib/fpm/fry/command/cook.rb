@@ -80,7 +80,7 @@ module FPM; module Fry
           distribution_version: detector.version,
           flavour: flavour
         }
-        logger.info("Loading recipe",variables: vars, recipe: recipe)
+        logger.debug("Loading recipe",variables: vars, recipe: recipe)
         b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
         b.load_file( recipe )
         b
