@@ -86,6 +86,9 @@ module FPM::Fry
         if mod.respond_to? :apply
           mod.apply(self, *args, &block)
         else
+          if args.any? or block_given?
+            raise ArgumentError, "Simple plugins can't accept additional arguments and blocks."
+          end
           extend(mod)
         end
       end

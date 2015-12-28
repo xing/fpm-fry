@@ -121,8 +121,9 @@ RECIPE
   end
 
   context "plugins" do
-    subject do
-      build( {distribution: "ubuntu"}, <<RECIPE)
+    context 'simple example' do
+      subject do
+        build( {distribution: "ubuntu"}, <<RECIPE)
 plugin "platforms"
 
 platforms [:ubuntu] do
@@ -133,11 +134,39 @@ platforms [:centos] do
   depends "centos"
 end
 RECIPE
+      end
+
+      it 'works' do
+        expect(package.dependencies).to eq(['ubuntu'])
+      end
     end
 
-    it 'works' do
-      expect(package.dependencies).to eq(['ubuntu'])
+    context 'simple module with extra args' do
+      subject do
+        build( {distribution: "ubuntu"}, <<RECIPE)
+plugin "platforms","foo"
+RECIPE
+      end
+
+      it "raises an error" do
+        expect{ subject }.to raise_error(ArgumentError, /Simple plugins can't accept additional arguments/)
+      end
     end
+
+    context 'simple module with extra block' do
+      subject do
+        build( {distribution: "ubuntu"}, <<RECIPE)
+plugin "platforms" do
+end
+RECIPE
+      end
+
+      it "raises an error" do
+        expect{ subject }.to raise_error(ArgumentError, /Simple plugins can't accept additional arguments/)
+      end
+    end
+
+
   end
 
   context 'source type guessing' do
