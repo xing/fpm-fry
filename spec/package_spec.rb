@@ -101,8 +101,14 @@ describe FPM::Package::Docker do
 
   describe '#split', focus: true do
 
+    let(:logger){
+      l = double(:logger)
+      allow(l).to receive(:debug)
+      l
+    }
+
     subject{
-      described_class.new(client: client)
+      described_class.new(client: client, logger: logger)
     }
 
     after(:each) do
@@ -133,6 +139,20 @@ describe FPM::Package::Docker do
         expect(client).to receive(:copy).with('foo','/a', map, Hash)
         expect(client).to receive(:copy).with('foo','/b', map, Hash)
         subject.split('foo', '/a/**' => '/a', '/b/**' => '/b' )
+      end
+    end
+
+    context 'with modified files' do
+
+      let(:changes){
+        [
+          { "Path"=> "/a/foo", 'Kind' => 2 },
+        ]
+      }
+
+      it 'logs a warning' do
+        expect(logger).to receive(:warn).with(/modified file/, name: '/a/foo')
+        subject.split('foo', '/a/**' => '/a')
       end
     end
 
