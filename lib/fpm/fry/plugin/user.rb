@@ -8,6 +8,9 @@ module FPM::Fry::Plugin ; module User
       cmd << '--ingroup' << options[:group]
     when true
       cmd << '--group'
+    when nil
+    else
+      raise ArgumentError, ":group must be a String or true, got #{options[:group].inspect}"
     end
     cmd << name
     builder.plugin('script_helper') do |sh|
