@@ -179,7 +179,7 @@ module FPM; module Fry
           begin
             client.read( container, '/var/lib/apt/lists') do |file|
               next if file.header.name == 'lists/'
-              logger.info("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never")
+              logger.hint("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: 'https://github.com/xing/fpm-fry/wiki/The-update-parameter')
               return true
             end
           ensure

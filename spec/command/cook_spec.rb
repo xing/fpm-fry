@@ -250,7 +250,7 @@ describe FPM::Fry::Command::Cook do
       end
 
       it 'is true' do
-        expect(subject.logger).to receive(:info).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never")
+        expect(subject.logger).to receive(:hint).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: /The-update-parameter/)
         expect(subject.update?).to eq true
       end
     end

@@ -6,14 +6,16 @@ class Cabin::NiceOutput
     :red => "\e[1;31m",
     :green => "\e[1;32m",
     :yellow => "\e[0;33m",
-    :white => "\e[0;37m"
+    :white => "\e[0;37m",
+    :blue => "\e[1;34m"
   }
 
   DIM_CODEMAP = {
     red:   "\e[0;31m",
     green: "\e[0;32m",
     white: "\e[1;30m",
-    yellow: "\e[33m"
+    yellow: "\e[33m",
+    blue: "\e[0;34m"
   }
 
   LEVELMAP = {
@@ -21,6 +23,7 @@ class Cabin::NiceOutput
     :error => :red,
     :warn => :yellow,
     :info => :green,
+    :hint => :blue,
     :debug => :white,
   }
 
@@ -55,6 +58,9 @@ class Cabin::NiceOutput
     message = [event[:level] ? '====> ' : '      ',event[:message]]
     message.unshift(CODEMAP[color.to_sym]) if !color.nil?
     message << DIM_CODEMAP[color] if !color.nil?
+    if documentation = data.delete(:documentation)
+      message << "\n\tRead more on this topic here: #{documentation}"
+    end
     if data.any?
       message << "\n" <<  pp(data)
     end
