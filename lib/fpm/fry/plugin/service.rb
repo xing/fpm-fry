@@ -1,6 +1,7 @@
 require 'fpm/fry/plugin'
 require 'fpm/fry/plugin/init'
 require 'fpm/fry/plugin/edit_staging'
+require 'fpm/fry/plugin/config'
 require 'erb'
 require 'shellwords'
 module FPM::Fry::Plugin ; module Service
@@ -101,6 +102,10 @@ if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
 fi
 BASH
         end
+        builder.plugin('config', FPM::Fry::Plugin::Config::IMPLICIT => true) do |co|
+          co.include "etc/init/#{name}.conf"
+          co.include "etc/init.d/#{name}"
+        end
       when 'sysv' then
         edit.add_file "/etc/init.d/#{name}",StringIO.new( env.render('sysv.erb') ), chmod: '750'
         builder.plugin('script_helper') do |sh|
@@ -112,6 +117,9 @@ BASH
 /etc/init.d/#{Shellwords.shellescape name} stop
 update-rc.d -f #{Shellwords.shellescape name} remove
 BASH
+        end
+        builder.plugin('config', FPM::Fry::Plugin::Config::IMPLICIT => true) do |co|
+          co.include "etc/init.d/#{name}"
         end
       when 'systemd' then
 

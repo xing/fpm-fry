@@ -332,4 +332,82 @@ describe FPM::Fry::Command::Cook do
 
   end
 
+  describe '#adjust_config_files' do
+
+    subject do
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
+    end
+
+    let(:output) do
+      FPM::Package::Dir.new
+    end
+
+    after(:each) do
+      output.cleanup_staging
+      output.cleanup_build
+    end
+
+    context 'with a package containing no config file' do
+
+      it 'does nothing' do
+        expect(subject.logger).not_to receive(:hint)
+        subject.adjust_config_files( output )
+      end
+
+    end
+
+    context 'with a package containing a config file' do
+
+      before(:each) do
+        Dir.mkdir(File.join(output.staging_path, 'etc'))
+        File.open(File.join(output.staging_path, 'etc/foo'), 'w'){}
+      end
+
+      it 'prints a hint' do
+        expect(subject.logger).to receive(:hint).with(/contains some config files in \/etc/, documentation: /Plugin-config/, files: ["etc/foo"])
+        subject.adjust_config_files( output )
+      end
+
+      it 'adds the files to the config file list' do
+        subject.adjust_config_files( output )
+        expect(output.config_files ).to eq ['etc/foo']
+      end
+
+    end
+
+    context 'with a package containing a config file that is already in the list' do
+
+      before(:each) do
+        Dir.mkdir(File.join(output.staging_path, 'etc'))
+        File.open(File.join(output.staging_path, 'etc/foo'), 'w'){}
+        output.config_files << 'etc/foo'
+      end
+
+      it 'doesn\'t print a hint' do
+        expect(subject.logger).not_to receive(:hint)
+        subject.adjust_config_files( output )
+      end
+
+    end
+
+    context 'when the config plugin was used' do
+
+      before(:each) do
+        Dir.mkdir(File.join(output.staging_path, 'etc'))
+        File.open(File.join(output.staging_path, 'etc/foo'), 'w'){}
+        FPM::Fry::Plugin::Config::MARK_EXPLICIT.call(nil, output)
+      end
+
+      it 'doesn\'t print a hint' do
+        expect(subject.logger).not_to receive(:hint)
+        subject.adjust_config_files( output )
+      end
+
+      it 'doesn\'t add the config files' do
+        subject.adjust_config_files( output )
+        expect(output.config_files).to eq []
+      end
+
+    end
+  end
 end

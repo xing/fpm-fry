@@ -51,6 +51,10 @@ describe FPM::Fry::Plugin::Service do
       it 'generates an init.d script' do
         expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
       end
+
+      it 'adds the init script as config' do
+        expect(package.config_files).to eq ['etc/init.d/foo']
+      end
     end
 
     context 'for upstart' do
@@ -85,6 +89,11 @@ script
 end script
 INIT
       end
+
+      it 'adds the init script and the upstart config as config' do
+        expect(package.config_files).to eq ['etc/init/foo.conf','etc/init.d/foo']
+      end
+
     end
 
   end

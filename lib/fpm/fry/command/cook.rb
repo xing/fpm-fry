@@ -270,6 +270,12 @@ module FPM; module Fry
 
       output.output(tmp_package_file)
 
+      if output.config_files.any?
+        logger.debug("Found config files for #{output.name}", files: output.config_files)
+      else
+        logger.debug("No config files for #{output.name}")
+      end
+
       begin
         FileUtils.rm_rf package_file
       rescue Errno::ENOENT
@@ -298,6 +304,7 @@ module FPM; module Fry
 
       out_map.each do |output, package|
         package.apply_output(output)
+        adjust_config_files(output)
       end
 
       out_map.each do |output, _|
@@ -313,6 +320,39 @@ module FPM; module Fry
 
     end
 
+
+    def adjust_config_files( output )
+      # FPM flags all files in /etc as config files but only for debian :/.
+      # Actually this behavior makes sense to me for all packages because it's 
+      # the thing I usually want. By setting this attribute at least the 
+      # misleading warning goes away.
+      output.attributes[:deb_no_default_config_files?] = true
+      output.attributes[:deb_auto_config_files?] = false
+
+      return if output.attributes[:fry_config_explicitly_used]
+
+      # Now that we have disabled this for debian we have to reenable if it for 
+      # all.
+      etc = File.expand_path('etc', output.staging_path)
+      if File.exists?( etc )
+        # Config plugin wasn't used. Add everything under /etc
+        prefix_length = output.staging_path.size + 1
+        added = []
+        Find.find(etc) do | path |
+          next unless File.file? path
+          name = path[prefix_length..-1]
+          if !output.config_files.include? name
+            added << name
+            output.config_files << name
+          end
+        end
+        if added.any?
+          logger.hint( "#{output.name} contains some config files in /etc. They were automatically added. You can customize this using the \"config\" plugin.",
+                      documentation: "https://github.com/xing/fpm-fry/wiki/Plugin-config",
+                      files: added)
+        end
+      end
+    end
 
   public
 
