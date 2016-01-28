@@ -152,4 +152,43 @@ describe FPM::Fry::Source::Package do
     end
   end
 
+  context 'with a plain file' do
+
+    context '#tar_io' do
+      it "tars the file" do
+        stub_request(:get,'http://example/dir/plainfile.bin').to_return(body: "bar", status: 200)
+        src = FPM::Fry::Source::Package.new('http://example/dir/plainfile.bin')
+        cache = src.build_cache(tmpdir)
+        io = cache.tar_io
+        begin
+          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
+          expect(files).to eq('plainfile.bin' => 'bar')
+        ensure
+          io.close
+        end
+      end
+
+    end
+
+    context '#copy_to' do
+      let(:destdir){
+        Dir.mktmpdir("fpm-fry")
+      }
+
+      after do
+        FileUtils.rm_rf(destdir)
+      end
+
+      it "copies a file" do
+        stub_request(:get,'http://example/dir/plainfile.bin').to_return(body: "bar", status: 200)
+        src = FPM::Fry::Source::Package.new('http://example/dir/plainfile.bin')
+        cache = src.build_cache(tmpdir)
+        cache.copy_to(destdir)
+        expect( Dir.new(destdir).each.to_a ).to eq ['.','..','plainfile.bin']
+      end
+
+    end
+  end
+
 end

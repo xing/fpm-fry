@@ -113,12 +113,14 @@ depends "mock-package", constraints: [">= 0.0.1", "<< 0.1.0"]
 
 - `source Url, Options = {}`: Sets the source url to use for this package. Out-of-the-box the following types are supported:
 
-**tar file**: Just pass an url to a tar file.
+**https**: Just pass an http url.
 
 ```ruby
 source "https://example.com/path/source.tar.gz",
-  checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is sha256
+  checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is md5/sha1/sha256/sha512 based on the length of the checksum
 ```
+
+Files ending in .tar, .tar.gz, .tgz and .zip will be extracted. Files ending in .bin and .bundle will be placed in the container as is.
 
 **git**: Understands any url that git understands. Requires git on your system.
 

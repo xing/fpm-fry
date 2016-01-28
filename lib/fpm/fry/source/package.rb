@@ -158,11 +158,32 @@ module FPM; module Fry ; module Source
       end
     end
 
+    class PlainCache < Cache
+
+      def tar_io
+        update!
+        cmd = ['tar','-c',::File.basename(tempfile)]
+        dir = File.dirname(tempfile)
+        logger.debug("Running tar",cmd: cmd, dir: dir)
+        ::Dir.chdir(dir) do
+          return IO.popen(cmd)
+        end
+      end
+
+      def copy_to(dst)
+        update!
+        FileUtils.cp( tempfile, dst )
+      end
+
+    end
+
     CACHE_CLASSES = {
       '.tar' => TarCache,
       '.tar.gz' => TarGzCache,
       '.tgz' => TarGzCache,
-      '.zip' => ZipCache
+      '.zip' => ZipCache,
+      '.bin' => PlainCache,
+      '.bundle' => PlainCache
     }
 
     attr :file_map, :data, :url, :extension, :checksum, :checksum_algorithm, :agent, :logger
