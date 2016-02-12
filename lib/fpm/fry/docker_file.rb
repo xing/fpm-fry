@@ -90,26 +90,16 @@ module FPM; module Fry
         df << "FROM #{base}"
         df << "WORKDIR /tmp/build"
 
-        deps = (recipe.build_depends.merge recipe.depends)\
-          .select{|_,v| v.fetch(:install,true) }\
-          .map do |k,v|
-            i = v.fetch(:install,true)
-            if i == true then
-              k
-            else
-              i
-            end
-          end.sort
-        if deps.any?
+        if build_dependencies.any?
           case(variables[:flavour])
           when 'debian'
             update = ''
             if options[:update]
               update = 'apt-get update && '
             end
-            df << "RUN #{update}apt-get install --yes #{Shellwords.join(deps)}"
+            df << "RUN #{update}apt-get install --yes #{Shellwords.join(build_dependencies)}"
           when 'redhat'
-            df << "RUN yum -y install #{Shellwords.join(deps)}"
+            df << "RUN yum -y install #{Shellwords.join(build_dependencies)}"
           else
             raise "Unknown flavour: #{variables[:flavour]}"
           end
@@ -146,6 +136,27 @@ module FPM; module Fry
         #tar.close
         sio.rewind
         return sio
+      end
+
+    private
+      def build_dependencies
+        return @build_dependencies if @build_dependencies
+        deps = []
+        (recipe.build_depends.merge recipe.depends).each do |k,v|
+          install = v.fetch(:install,true)
+          next unless install
+          case( install )
+          when true
+            deps << simplify_build_dependency(k)
+          when String
+            deps << simplify_build_dependency(install)
+          end
+        end
+        @build_dependencies = deps.sort
+      end
+
+      def simplify_build_dependency( dep )
+        dep.split('|').first.strip
       end
     end
 

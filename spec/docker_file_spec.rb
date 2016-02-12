@@ -153,6 +153,28 @@ SHELL
         end
       end
 
+      context 'dependencies with alternatives' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu'
+        )
+
+        recipe do |b|
+          b.depends 'a | b'
+        end
+
+        it 'works' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build
+RUN apt-get install --yes a
+ADD .build.sh /tmp/build/
+ENTRYPOINT /tmp/build/.build.sh
+SHELL
+        end
+      end
 
 
     end
