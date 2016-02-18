@@ -176,7 +176,7 @@ module FPM::Fry
         end
         variables.freeze
         @recipe = recipe
-        super(variables, recipe.packages[0], options = {})
+        super(variables, recipe.packages[0], options)
       end
 
       def load_file( file )
