@@ -51,6 +51,28 @@ describe 'FPM::Fry::Plugin::Config' do
       end
     end
 
+    context 'with a file that doesn\'t exist' do
+
+      let(:logger) do
+        l = double(:logger)
+        allow(l).to receive(:debug)
+        l
+      end
+
+      before(:each) do
+        builder.plugin('config') do
+          include '/foo'
+        end
+        package.instance_variable_set(:@logger,logger)
+      end
+
+      it "adds all files recursively to the config file list" do
+        expect(logger).to receive(:warn).with("Config path not found", path: 'foo', documentation: String)
+        recipe.packages[0].apply(package)
+        expect(package.config_files).to eq []
+      end
+    end
+
   end
 
   describe '#exclude' do

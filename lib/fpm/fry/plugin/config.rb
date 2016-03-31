@@ -23,10 +23,16 @@ module FPM::Fry::Plugin::Config
       keys.each do | key |
         if files[key]
           # Inclusion rule. Crawl file system for candidates
-          Find.find( File.expand_path(key, package.staging_path) ) do | path |
-            next unless File.file? path
-            name = path[prefix_length..-1]
-            candidates << name
+          begin
+            Find.find( File.expand_path(key, package.staging_path) ) do | path |
+              next unless File.file? path
+              name = path[prefix_length..-1]
+              candidates << name
+            end
+          rescue Errno::ENOENT
+            package.logger.warn("Config path not found",
+                                path: key,
+                                documentation: 'https://github.com/xing/fpm-fry/wiki/Plugin-config#config-path-not-found')
           end
         else
           # Exclusion rule. Remove matching candidates
