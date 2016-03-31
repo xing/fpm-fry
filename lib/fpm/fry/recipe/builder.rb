@@ -176,6 +176,7 @@ module FPM::Fry
         end
         variables.freeze
         @recipe = recipe
+        @before_build = false
         super(variables, recipe.packages[0], options)
       end
 
@@ -213,10 +214,21 @@ module FPM::Fry
 
       def bash( name = nil, code )
         if name
-          recipe.steps << Recipe::Step.new(name, code)
-        else
-          recipe.steps << code.to_s
+          code = Recipe::Step.new(name, code)
         end
+        # Don't do this at home
+        if @before_build
+          recipe.before_build_steps << code
+        else
+          recipe.steps << code
+        end
+      end
+
+      def before_build
+        @before_build = true
+        yield
+      ensure
+        @before_build = false
       end
 
       def build_depends( name , options = {} )

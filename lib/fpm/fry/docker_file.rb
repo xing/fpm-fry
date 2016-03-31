@@ -105,6 +105,10 @@ module FPM; module Fry
           end
         end
 
+        recipe.before_build_steps.each do |step|
+          df << "RUN #{step.to_s}"
+        end
+
         df << "ADD .build.sh /tmp/build/"
         df << "ENTRYPOINT /tmp/build/.build.sh"
         df << ''

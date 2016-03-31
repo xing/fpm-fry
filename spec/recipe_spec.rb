@@ -67,6 +67,30 @@ RECIPE
     end
   end
 
+  context 'before_build' do
+
+    context 'inserts bash scripts into the before_build_steps section' do
+      subject do 
+        build <<RECIPE
+bash 'before'
+before_build do
+  bash 'inside'
+end
+bash 'after'
+RECIPE
+      end
+
+      it 'places inner bash steps in before_build_steps' do
+        expect(subject.before_build_steps.map(&:to_s)).to eq ['inside']
+      end
+
+      it 'places surrounding bash steps in steps' do
+        expect(subject.steps.map(&:to_s)).to eq ['before','after']
+      end
+    end
+
+  end
+
   context "scripts" do
     subject do
       build <<RECIPE

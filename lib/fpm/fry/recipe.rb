@@ -121,10 +121,16 @@ module FPM; module Fry
       end
     end
 
-    attr_accessor :source, :steps, :packages, :build_depends, :input_hooks
+    attr_accessor :source,
+      :before_build_steps,
+      :steps,
+      :packages,
+      :build_depends,
+      :input_hooks
 
     def initialize
       @source = Source::Null
+      @before_build_steps = []
       @steps = []
       @packages = [PackageRecipe.new]
       @packages[0].files << '**'

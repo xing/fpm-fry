@@ -160,6 +160,16 @@ echo "lol"
 BASH
 ```
 
+- `before_build` runs all comamnds before the actual build happens ( since 0.2.1, experimental )
+
+```ruby
+before_build do
+  run "gem","install","
+end
+```
+
+Scripts running inside `before_install` modify the base image instead of the package. This is the ideal place to install build dependencies that are not linux packages ( gems, jars, eggs, ... ).
+
 ### Target info
 
 - `flavour`: Returns the linux family like "redhat" or "debian"
