@@ -92,9 +92,17 @@ module FPM::Fry::Plugin ; module Service
           sh.after_install_or_upgrade(<<BASH)
 if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then
   # It has to be stop+start because upstart doesn't pickup changes with restart.
-  stop #{Shellwords.shellescape name}
+  if which invoke-rc.d >/dev/null 2>&1; then
+    invoke-rc.d #{Shellwords.shellescape name} stop
+  else
+    stop #{Shellwords.shellescape name}
+  fi
 fi
-start #{Shellwords.shellescape name}
+if which invoke-rc.d >/dev/null 2>&1; then
+  invoke-rc.d #{Shellwords.shellescape name} start
+else
+  start #{Shellwords.shellescape name}
+fi
 BASH
           sh.before_remove_entirely(<<BASH)
 if status #{Shellwords.shellescape name} 2>/dev/null | grep -q ' start/'; then

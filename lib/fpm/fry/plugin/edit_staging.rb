@@ -5,6 +5,7 @@ module FPM::Fry::Plugin::EditStaging
   class AddFile < Struct.new(:path, :io, :options)
     def call(_ , package)
       file = package.staging_path(path)
+      package.logger.debug("Writing file directly to staging", target: file, content: io.inspect)
       FileUtils.mkdir_p(File.dirname(file))
       File.open(file,'w') do | f |
         IO.copy_stream(io, f)
@@ -19,6 +20,7 @@ module FPM::Fry::Plugin::EditStaging
   class LnS < Struct.new(:src, :dest)
     def call(_ , package)
       file = package.staging_path(dest)
+      package.logger.debug("Linking file directly in staging", target: file, to: src)
       FileUtils.mkdir_p(File.dirname(file))
       File.symlink(src, file)
     end
