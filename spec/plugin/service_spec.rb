@@ -90,8 +90,8 @@ end script
 INIT
       end
 
-      it 'adds the init script and the upstart config as config' do
-        expect(package.config_files).to eq ['etc/init/foo.conf','etc/init.d/foo']
+      it 'adds the upstart config as config' do
+        expect(package.config_files).to eq ['etc/init/foo.conf']
       end
 
     end

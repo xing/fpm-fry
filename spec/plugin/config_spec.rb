@@ -1,7 +1,14 @@
 require 'fpm/package/dir'
 require 'fpm/package/deb'
 require 'fpm/fry/recipe'
+require 'fpm/fry/recipe/builder'
 describe 'FPM::Fry::Plugin::Config' do
+
+  let(:logger) do
+    l = double(:logger)
+    allow(l).to receive(:debug)
+    l
+  end
 
   let(:recipe){ FPM::Fry::Recipe.new }
 
@@ -17,6 +24,7 @@ describe 'FPM::Fry::Plugin::Config' do
   let(:package){
     pack = FPM::Package::Dir.new
     Dir.mkdir( File.join(pack.staging_path, "etc") )
+    pack.instance_variable_set(:@logger,logger)
     pack
   }
 
@@ -53,21 +61,30 @@ describe 'FPM::Fry::Plugin::Config' do
 
     context 'with a file that doesn\'t exist' do
 
-      let(:logger) do
-        l = double(:logger)
-        allow(l).to receive(:debug)
-        l
-      end
-
       before(:each) do
         builder.plugin('config') do
           include '/foo'
         end
-        package.instance_variable_set(:@logger,logger)
       end
 
-      it "adds all files recursively to the config file list" do
-        expect(logger).to receive(:warn).with("Config path not found", path: 'foo', documentation: String)
+      it "warns about a missing file" do
+        expect(logger).to receive(:warn).with("Config path not found", path: 'foo', documentation: String, plugin: 'config')
+        recipe.packages[0].apply(package)
+        expect(package.config_files).to eq []
+      end
+    end
+
+    context 'with a symlink' do
+      before(:each) do
+        File.open( File.join(package.staging_path, "bar"), 'w' ){}
+        File.symlink( "/bar", File.join(package.staging_path, "foo") )
+        builder.plugin('config') do
+          include '/foo'
+        end
+      end
+
+      it "ignores the symlink" do
+        expect(logger).to receive(:warn).with("Config file is a symlink", path: 'foo', plugin: 'config', documentation: String)
         recipe.packages[0].apply(package)
         expect(package.config_files).to eq []
       end

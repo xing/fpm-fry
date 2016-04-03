@@ -1,4 +1,5 @@
 require 'fpm/fry/plugin'
+require 'fpm/fry/chroot'
 module FPM::Fry::Plugin::Config
 
   # @api private
@@ -15,6 +16,7 @@ module FPM::Fry::Plugin::Config
   class Callback < Struct.new(:files)
 
     def call(_, package)
+      chroot = FPM::Fry::Chroot.new(package.staging_path)
       prefix_length = package.staging_path.size + 1
       candidates = []
       # Sorting is important so that more specific rules override more generic 
@@ -24,14 +26,29 @@ module FPM::Fry::Plugin::Config
         if files[key]
           # Inclusion rule. Crawl file system for candidates
           begin
-            Find.find( File.expand_path(key, package.staging_path) ) do | path |
-              next unless File.file? path
-              name = path[prefix_length..-1]
-              candidates << name
+            lstat = chroot.lstat( key )
+            if lstat.symlink?
+              package.logger.warn("Config file is a symlink",
+                                   path: key,
+                                   plugin: 'config',
+                                   documentation: 'https://github.com/xing/fpm-fry/wiki/Plugin-config#config-path-not-foun://github.com/xing/fpm-fry/wiki/Plugin-config#config-file-is-a-symlink')
+              next
+            end
+            chroot.find( key ) do | path |
+              lstat = chroot.lstat(path)
+              if lstat.symlink?
+                package.logger.debug("Ignoring symlink",
+                                     path: path,
+                                     plugin: 'config')
+                throw :prune
+              elsif lstat.file?
+                candidates << path
+              end
             end
           rescue Errno::ENOENT
             package.logger.warn("Config path not found",
                                 path: key,
+                                plugin: 'config',
                                 documentation: 'https://github.com/xing/fpm-fry/wiki/Plugin-config#config-path-not-found')
           end
         else

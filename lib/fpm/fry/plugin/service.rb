@@ -112,7 +112,6 @@ BASH
         end
         builder.plugin('config', FPM::Fry::Plugin::Config::IMPLICIT => true) do |co|
           co.include "etc/init/#{name}.conf"
-          co.include "etc/init.d/#{name}"
         end
       when 'sysv' then
         edit.add_file "/etc/init.d/#{name}",StringIO.new( env.render('sysv.erb') ), chmod: '750'
