@@ -1,4 +1,5 @@
 require 'fpm/fry/recipe'
+require 'fpm/fry/recipe/error'
 require 'forwardable'
 module FPM::Fry
   class Recipe
@@ -52,11 +53,21 @@ module FPM::Fry
 
       def depends( name , options = {} )
         name, options = parse_package(name, options)
+        if package_recipe.depends.key? name
+          raise Error.new("duplicate dependency",package: name)
+        elsif package_recipe.conflicts.key? name
+          raise Error.new("depending package is already a conflicting package",package: name)
+        end
         package_recipe.depends[name] = options
       end
 
       def conflicts( name , options = {} )
         name, options = parse_package(name, options)
+        if package_recipe.conflicts.key? name
+          raise Error.new("duplicate conflict",package: name)
+        elsif package_recipe.depends.key? name
+          raise Error.new("conflicting package is already a dependency",package: name)
+        end
         package_recipe.conflicts[name] = options
       end
 

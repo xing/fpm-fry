@@ -19,5 +19,25 @@ module FPM; module Fry
 
     include Hint
 
+    # @private
+    def _log(message, data={})
+      case message
+      when Hash
+        data.merge!(message)
+      when Exception
+        # message is an exception
+        data[:message] = message.to_s
+        data[:exception] = message
+        data[:backtrace] = message.backtrace
+        if message.respond_to? :data
+          data = message.data.merge(data)
+        end
+      else
+        data = { :message => message }.merge(data)
+      end
+
+      publish(data)
+    end
+
   end
 end ; end

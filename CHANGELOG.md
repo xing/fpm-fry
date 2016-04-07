@@ -6,3 +6,4 @@
 * [FEATURE] `before_build`
 * [FIX] config plugin now ignores symlinks #9
 * [CHANGE] service plugin now does not mark /etc/init.d/... symlinks as config #9
+* [FIX] adding a dependency twice now raises an error #11

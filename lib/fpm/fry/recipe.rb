@@ -18,6 +18,9 @@ module FPM; module Fry
       end
     end
 
+    class DuplicateDependency < ArgumentError
+    end
+
     class PackageRecipe
       attr_accessor :name,
         :iteration,

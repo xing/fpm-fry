@@ -142,6 +142,50 @@ RECIPE
         expect(package.dependencies).to eq(['bar >= 0.0.1', 'bar << 0.0.2'])
       end
     end
+
+    context 'with a duplicate dependency' do
+      it 'raises an error' do
+        expect{
+          build <<RECIPE
+depends 'x'
+depends 'x'
+RECIPE
+        }.to raise_error(FPM::Fry::Recipe::Error, "duplicate dependency"){|e| expect(e.data).to eq package: 'x' }
+      end
+    end
+
+    context 'with a duplicate conflict' do
+      it 'raises an error' do
+        expect{
+          build <<RECIPE
+conflicts 'x'
+conflicts 'x'
+RECIPE
+        }.to raise_error(FPM::Fry::Recipe::Error, "duplicate conflict"){|e| expect(e.data).to eq package: 'x' }
+      end
+    end
+
+    context 'with a dependency duplicating a conflict' do
+      it 'raises an error' do
+        expect{
+          build <<RECIPE
+conflicts 'x'
+depends 'x'
+RECIPE
+        }.to raise_error(FPM::Fry::Recipe::Error,"depending package is already a conflicting package"){|e| expect(e.data).to eq package: 'x' }
+      end
+    end
+
+    context 'with a conflict duplicating a dependency' do
+      it 'raises an error' do
+        expect{
+          build <<RECIPE
+depends 'x'
+conflicts 'x'
+RECIPE
+        }.to raise_error(FPM::Fry::Recipe::Error,"conflicting package is already a dependency"){|e| expect(e.data).to eq package: 'x' }
+      end
+    end
   end
 
   context "plugins" do
