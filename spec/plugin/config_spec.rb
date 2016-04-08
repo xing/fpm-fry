@@ -4,12 +4,6 @@ require 'fpm/fry/recipe'
 require 'fpm/fry/recipe/builder'
 describe 'FPM::Fry::Plugin::Config' do
 
-  let(:logger) do
-    l = double(:logger)
-    allow(l).to receive(:debug)
-    l
-  end
-
   let(:recipe){ FPM::Fry::Recipe.new }
 
   let(:builder){

@@ -1,11 +1,11 @@
 require 'fpm/package/docker'
 describe FPM::Package::Docker do
 
-  describe '#input' do
+  subject{
+    described_class.new(client: client, logger: logger)
+  }
 
-    subject{
-      described_class.new(client: client)
-    }
+  describe '#input' do
 
     after(:each) do
       subject.cleanup_staging
@@ -76,40 +76,9 @@ describe FPM::Package::Docker do
       end
     end
 
-    context 'with changed files' do
-      let(:changes){
-        [
-          { "Path"=> "/a", 'Kind' => 0 },
-          { "Path"=> "/a/bar", 'Kind' => 0 },
-          { "Path"=> "/b", 'Kind' => 0 },
-          { "Path"=> "/b/bar", 'Kind' => 1 },
-          { "Path"=> "/a", 'Kind' => 0 },
-          { "Path"=> "/a/bar", 'Kind' => 2 }
-        ]
-      }
-
-      it 'drops whole directories if requested' do
-        options = {chown: false}
-        map = {
-          '/b/bar' => a_string_matching(%r!/b/bar\z!)
-        }
-        expect(client).to receive(:copy).with('foo','/b', map, options)
-        subject.input('foo')
-      end
-    end
   end
 
   describe '#split', focus: true do
-
-    let(:logger){
-      l = double(:logger)
-      allow(l).to receive(:debug)
-      l
-    }
-
-    subject{
-      described_class.new(client: client, logger: logger)
-    }
 
     after(:each) do
       subject.cleanup_staging
@@ -146,12 +115,30 @@ describe FPM::Package::Docker do
 
       let(:changes){
         [
-          { "Path"=> "/a/foo", 'Kind' => 2 },
+          { "Path"=> "/a/bar", 'Kind' => 1 },
+          { "Path"=> "/a/foo", 'Kind' => 0 }
         ]
       }
 
       it 'logs a warning' do
+        expect(client).to receive(:copy).with('foo','/a',{'/a/bar'=>'/a/a/bar'},{chown:false})
         expect(logger).to receive(:warn).with(/modified file/, name: '/a/foo')
+        subject.split('foo', '/a/**' => '/a')
+      end
+    end
+
+    context 'with deleted files' do
+
+      let(:changes){
+        [
+          { "Path"=> "/a/bar", 'Kind' => 1 },
+          { "Path"=> "/a/foo", 'Kind' => 2 }
+        ]
+      }
+
+      it 'logs a warning' do
+        expect(client).to receive(:copy).with('foo','/a',{'/a/bar'=>'/a/a/bar'},{chown:false})
+        expect(logger).to receive(:warn).with(/deleted file/, name: '/a/foo')
         subject.split('foo', '/a/**' => '/a')
       end
     end

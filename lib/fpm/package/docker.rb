@@ -24,8 +24,12 @@ class FPM::Package::Docker < FPM::Package
 
   def split( name, map )
     changes = changes(name)
-    changes.remove_modified_leaves! do | ml |
-      @logger.warn("Found a modified file. You can only create new files in a package",name: ml)
+    changes.remove_modified_leaves! do | kind, ml |
+      if kind == DELETED
+        @logger.warn("Found a deleted file. You can only create new files in a package",name: ml)
+      else
+        @logger.warn("Found a modified file. You can only create new files in a package",name: ml)
+      end
     end
     fmap = {}
     changes.leaves.each do | change |
@@ -72,6 +76,10 @@ private
     return false
   end
 
+  MODIFIED = 0
+  CREATED = 1
+  DELETED = 2
+
   class Node < Struct.new(:children, :kind)
 
     def initialize
@@ -105,8 +113,8 @@ private
     def modified_leaves( prefix = '/', &block )
       return to_enum(:modified_leaves, prefix) unless block
       if leaf?
-        if kind != 1
-          yield prefix
+        if kind != CREATED
+          yield kind, prefix
         end
       else
         children.each do |name, cld|
@@ -119,15 +127,15 @@ private
       to_remove = {}
       children.each do |name, cld|
         removed_children = cld.remove_modified_leaves!(File.join(prefix,name), &block)
-        if cld.leaf? and cld.kind != 1
-          to_remove[name] = removed_children
+        if cld.leaf? and cld.kind != CREATED
+          to_remove[name] = [cld.kind, removed_children]
         end
       end
       if to_remove.any?
-        to_remove.each do |name, removed_children|
+        to_remove.each do |name, (kind, removed_children)|
           children.delete(name)
           if !removed_children
-            yield File.join(prefix,name)
+            yield kind, File.join(prefix,name)
           end
         end
         return true

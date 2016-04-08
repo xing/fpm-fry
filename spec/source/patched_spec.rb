@@ -31,7 +31,7 @@ describe FPM::Fry::Source::Patched do
 
     let(:source){
       s = double('source')
-      allow(s).to receive(:logger){ Cabin::Channel.get }
+      allow(s).to receive(:logger){ logger }
       allow(s).to receive(:build_cache){|_| cache }
       s
     }
