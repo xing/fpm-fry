@@ -1,13 +1,18 @@
 module FPM; module Fry
+  # Joins together multiple IOs
   class JoinedIO
     include Enumerable
 
+    # @param [IO] ios
     def initialize(*ios)
       @ios = ios
       @pos = 0
       @readbytes = 0
     end
 
+    # Reads length bytes or all if length is nil.
+    # @param [Numeric, nil] length
+    # @return [String] resulting bytes
     def read( len = nil )
       buf = []
       if len.nil?
@@ -35,27 +40,37 @@ module FPM; module Fry
       end
     end
 
-    def readpartial( len )
+    # Reads up to length bytes.
+    # @param [Numeric] length
+    # @return [String] chunk
+    # @return [nil] at eof
+    def readpartial( length )
       while (io = @ios[@pos])
-        r = io.read( len )
+        r = io.read( length )
         if r.nil?
           @pos = @pos + 1
           next
         else
+          if io.eof?
+            @pos = @pos + 1
+          end
           return r
         end
       end
       return nil
     end
 
+    # @return [Numeric] number bytes read
     def pos
       @readbytes
     end
 
+    # @return [true,false] 
     def eof?
       @pos == @ios.size
     end
 
+    # Closes all IOs.
     def close
       @ios.each(&:close)
     end
