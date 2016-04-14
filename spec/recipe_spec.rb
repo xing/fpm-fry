@@ -239,6 +239,8 @@ RECIPE
 
   context 'source type guessing' do
 
+    subject{ FPM::Fry::Recipe::Builder.new({}) }
+
     {
       'http://foo.bar/baz.tar.gz' => FPM::Fry::Source::Package,
       'http://foo.bar/baz.git'    => FPM::Fry::Source::Git,
@@ -248,10 +250,14 @@ RECIPE
       'file://foo/bar'            => FPM::Fry::Source::Dir
     }.each do |url, klass|
       it "map #{url} to #{klass}" do
-        b = FPM::Fry::Recipe::Builder.new({})
-        expect( b.send(:guess_source,url) ).to eq klass
+        expect( subject.send(:guess_source,url) ).to eq klass
       end
     end
+
+    it 'raises an error when nothing matches' do
+      expect{ subject.send(:guess_source,'foo://bar') }.to raise_error(FPM::Fry::Recipe::Error, %r!No source provider found for foo://bar.!)
+    end
+
   end
 
   describe '#load_file' do

@@ -9,6 +9,14 @@ module FPM; module Fry ; module Source
 
     REGEX = %r!\Ahttps?:!
 
+    def self.name
+      :package
+    end
+
+    def self.aliases
+      [:http]
+    end
+
     def self.guess( url )
       Source::guess_regex(REGEX, url)
     end

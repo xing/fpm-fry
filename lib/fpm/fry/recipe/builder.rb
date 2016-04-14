@@ -188,6 +188,7 @@ module FPM::Fry
         variables.freeze
         @recipe = recipe
         @before_build = false
+        register_default_source_types!
         super(variables, recipe.packages[0], options)
       end
 
@@ -263,19 +264,25 @@ module FPM::Fry
     protected
 
       def source_types
-        @source_types  ||= {
-          git:  Source::Git,
-          http: Source::Package,
-          tar:  Source::Package,
-          dir:  Source::Dir
-        }
+        @source_types  ||= {}
       end
 
-      def register_source_type( name, klass )
+      def register_source_type( klass )
         if !klass.respond_to? :new
           raise ArgumentError.new("Expected something that responds to :new, got #{klass.inspect}")
         end
-        source_types[name] = klass
+        source_types[klass.name] = klass
+        if klass.respond_to? :aliases
+          klass.aliases.each do |al|
+            source_types[al] = klass
+          end
+        end
+      end
+
+      def register_default_source_types!
+        register_source_type Source::Git
+        register_source_type Source::Package
+        register_source_type Source::Dir
       end
 
       NEG_INF = (-1.0/0.0)
@@ -290,10 +297,10 @@ module FPM::Fry
           .sort_by{|score,_| score.nil? ? NEG_INF : score }
         score, klasses = scores.last
         if score == nil
-          raise ArgumentError.new("No source provide found for #{url}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
+          raise Error.new("No source provider found for #{url}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
         end
         if klasses.size != 1
-          raise ArgumentError.new("Multiple possible source providers found for #{url}: #{klasses.join(', ')}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
+          raise Error.new("Multiple possible source providers found for #{url}: #{klasses.join(', ')}.\nMaybe try explicitly setting the type using :with parameter. Valid options are: #{source_types.keys.join(', ')}")
         end
         return klasses.first
       end

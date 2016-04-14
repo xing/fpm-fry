@@ -6,6 +6,10 @@ module FPM; module Fry ; module Source
 
     REGEX = %r!\A(?:file:|/|\.)!
 
+    def self.name
+      :dir
+    end
+
     def self.guess( url )
       Source::guess_regex(REGEX, url)
     end

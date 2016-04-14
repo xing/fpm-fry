@@ -7,6 +7,10 @@ module FPM; module Fry ; module Source
 
     REGEX = %r!\A(?:git:|\S+@\S+:\S+\.git\z|https?:.*\.git\z|ssh:.*\.git\z)!
 
+    def self.name
+      :git
+    end
+
     def self.guess( url )
       Source::guess_regex(REGEX, url)
     end
