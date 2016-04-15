@@ -1,7 +1,14 @@
+require 'stringio'
 require 'fpm/fry/plugin'
 require 'fileutils'
+# A plugin to edit the final build results.
+# @example Add a file
+#   plugin 'edit_staging' do
+#     add_file '/a_file'
+#   end
 module FPM::Fry::Plugin::EditStaging
 
+  # @api private
   class AddFile < Struct.new(:path, :io, :options)
     def call(_ , package)
       file = package.staging_path(path)
@@ -17,6 +24,7 @@ module FPM::Fry::Plugin::EditStaging
     end
   end
 
+  # @api private
   class LnS < Struct.new(:src, :dest)
     def call(_ , package)
       file = package.staging_path(dest)
@@ -27,7 +35,17 @@ module FPM::Fry::Plugin::EditStaging
   end
 
   class DSL < Struct.new(:builder)
-    def add_file(path, io, options = {})
+
+    # @param [String] path
+    # @param [IO, String] content
+    def add_file(path, content, options = {})
+      if content.kind_of?(IO) || content.kind_of?(StringIO)
+        io = content
+      elsif content.kind_of? String
+        io = StringIO.new(content)
+      else
+        raise ArgumentError.new("File content must be a String or IO, got #{content.inspect}")
+      end
       options = options.dup
       options[:chmod] = convert_chmod(options[:chmod]) if options[:chmod]
       options.freeze
@@ -53,6 +71,9 @@ module FPM::Fry::Plugin::EditStaging
 
   end
 
+  # @yield [dsl]
+  # @yieldparam [DSL] dsl
+  # @return [DSL]
   def self.apply(builder, &block)
     d = DSL.new(builder)
     if !block
