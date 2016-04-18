@@ -38,12 +38,12 @@ module FPM ; module Fry
     # @yieldparam [String] entry
     def find(path, &block)
       if stat(path).directory?
-        block.call(path)
-        entries(path).each do | e |
-          next if e == "."
-          next if e == ".."
-          ep = File.join(path,e)
-          catch(:prune) do
+        catch(:prune) do
+          block.call(path)
+          entries(path).each do | e |
+            next if e == "."
+            next if e == ".."
+            ep = File.join(path,e)
             find(ep, &block)
           end
         end

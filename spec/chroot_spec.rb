@@ -145,6 +145,24 @@ describe FPM::Fry::Chroot do
         expect(result).to contain_exactly 'a_file'
       end
     end
+
+    context 'throw :prune' do
+      before(:each) do
+        FileUtils.mkdir File.join(tmpdir, "a_dir")
+        FileUtils.touch File.join(tmpdir, "a_dir", "x")
+        FileUtils.mkdir File.join(tmpdir, "a_dir", "a_subdir")
+        FileUtils.touch File.join(tmpdir, "a_dir","a_subdir", "x")
+      end
+
+      it 'skips a directory' do
+        result = []
+        subject.find('a_dir') do |e|
+          result << e
+          throw :prune if e == "a_dir/a_subdir"
+        end
+        expect(result).to contain_exactly "a_dir","a_dir/x","a_dir/a_subdir"
+      end
+    end
   end
 
   describe '#lstat' do
