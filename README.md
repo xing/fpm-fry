@@ -3,6 +3,7 @@ fpm-fry
 
 [![Build Status](https://travis-ci.org/xing/fpm-fry.svg?branch=master)](https://travis-ci.org/xing/fpm-fry)
 [![Coverage Status](https://coveralls.io/repos/xing/fpm-fry/badge.svg?branch=master&service=github)](https://coveralls.io/github/xing/fpm-fry?branch=master)
+[![Doc Coverage](https://inch-ci.org/github/xing/fpm-fry.svg?branch=master)](https://inch-ci.org/github/xing/fpm-fry)
 
 [fpm-cookery](https://github.com/bernd/fpm-cookery) inspired package builder on [docker](https://docker.io)
 
