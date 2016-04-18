@@ -1,4 +1,5 @@
-module FPM::Fry
+require 'fpm/fry/with_data'
+module FPM ; module Fry
   # Helper class for filesystem operations inside staging directory.
   # Resolves all symlinks relativ to a given base directory.
   class Chroot
@@ -11,40 +12,48 @@ module FPM::Fry
       @base = base
     end
 
-    # @param [String] dir
+    # Returns all directory entries like Dir.entries.
+    # @param [String] path
     # @result [Array<String>] entries
-    def entries(dir)
-      dir = rebase(dir)
+    def entries(path)
+      dir = rebase(path)
       return Dir.entries(dir)
+    rescue => ex
+      raise Fry::WithData(ex, path: path)
     end
 
-    # @param [String] file
+    # Opens a file like File.open.
+    # @param [String] path
     # @see (File.open)
-    def open(file,*args,&block)
-      file = rebase(file)
+    def open(path,*args,&block)
+      file = rebase(path)
       return File.open(file,*args,&block)
+    rescue => ex
+      raise Fry::WithData(ex, path: path)
     end
 
-    # @param [String] dir
+    # Yields all entries recursively like Find.find.
+    # @param [String] path
     # @yields entry
     # @yieldparam [String] entry
-    def find(dir, &block)
-      if stat(dir).directory?
-        entries(dir).each do | e |
+    def find(path, &block)
+      if stat(path).directory?
+        block.call(path)
+        entries(path).each do | e |
           next if e == "."
           next if e == ".."
-          path = File.join(dir,e)
+          ep = File.join(path,e)
           catch(:prune) do
-            block.call(path)
-            find(path, &block)
+            find(ep, &block)
           end
         end
       else
-        block.call(dir)
+        block.call(path)
       end
       return nil
     end
 
+    # Stats a file without following the last symlink like File.lstat.
     # @param [String] file
     # @return [File::Stat] stat
     # @see (File.lstat)
@@ -52,6 +61,7 @@ module FPM::Fry
       File.lstat(rebase(file, FOLLOW_ALL_BUT_LAST))
     end
 
+    # Stats a file like File.stat.
     # @param [String] file
     # @return [File::Stat] stat
     # @see (File.stat)
@@ -95,6 +105,8 @@ module FPM::Fry
           if rl
             if rl.start_with? '/'
               current = []
+            else
+              current.pop
             end
             segs.unshift *rl.split('/')
           end
@@ -103,6 +115,5 @@ module FPM::Fry
       return [base,*current].join('/')
     end
 
-
   end
-end
+end ; end
