@@ -1,11 +1,11 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-fry'
-  gem.version = '0.2.0'
+  gem.version = '0.2.1'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Fry"
 
-  gem.description = 'packages docker changes with fpm'
+  gem.description = 'deep-fried package builder'
 
   gem.authors  = ['Hannes Georg']
   gem.email    = 'hannes.georg@xing.com'
