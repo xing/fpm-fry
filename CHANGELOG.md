@@ -1,3 +1,7 @@
+# 0.2.2 / unreleased
+
+* [FIX] script_helper plugin: after_remove_entirely broken
+
 # 0.2.1 / 2016.04.18
 
 * [FEATURE] Source can now be a plain binary file. The file will be simply fetched and placed in the container verbatim.

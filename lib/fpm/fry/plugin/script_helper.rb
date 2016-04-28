@@ -94,7 +94,8 @@ module FPM::Fry::Plugin::ScriptHelper
 
   class AfterRemove < Script
 
-    def initialize
+    def initialize(*_)
+      super
       @remove = []
       @upgrade = []
     end
