@@ -213,6 +213,10 @@ module FPM::Fry
         recipe.source = source
       end
 
+      def add(source, target)
+        recipe.build_mounts << [source, target]
+      end
+
       def run(*args)
         if args.first.kind_of? Hash
           options = args.shift

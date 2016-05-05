@@ -125,6 +125,7 @@ module FPM; module Fry
     end
 
     attr_accessor :source,
+      :build_mounts,
       :before_build_steps,
       :steps,
       :packages,
@@ -139,6 +140,7 @@ module FPM; module Fry
       @packages[0].files << '**'
       @build_depends = {}
       @input_hooks = []
+      @build_mounts = []
     end
 
     def depends
