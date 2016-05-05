@@ -95,6 +95,10 @@ module FPM; module Fry
           df << "ADD #{source} /tmp/build/#{target}"
         end
 
+        recipe.apt_setup.each do |step|
+          df << "RUN #{step}"
+        end
+
         if build_dependencies.any?
           case(variables[:flavour])
           when 'debian'

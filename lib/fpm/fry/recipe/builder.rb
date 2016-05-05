@@ -217,6 +217,10 @@ module FPM::Fry
         recipe.build_mounts << [source, target]
       end
 
+      def apt_setup(cmd)
+        recipe.apt_setup << cmd
+      end
+
       def run(*args)
         if args.first.kind_of? Hash
           options = args.shift

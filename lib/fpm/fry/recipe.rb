@@ -126,6 +126,7 @@ module FPM; module Fry
 
     attr_accessor :source,
       :build_mounts,
+      :apt_setup,
       :before_build_steps,
       :steps,
       :packages,
@@ -141,6 +142,7 @@ module FPM; module Fry
       @build_depends = {}
       @input_hooks = []
       @build_mounts = []
+      @apt_setup = []
     end
 
     def depends
