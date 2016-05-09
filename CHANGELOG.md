@@ -1,6 +1,7 @@
 # 0.2.2 / unreleased
 
 * [FIX] script_helper plugin: after_remove_entirely broken
+* [FEATURE] .tar.bz2 can now be used as source
 
 # 0.2.1 / 2016.04.18
 

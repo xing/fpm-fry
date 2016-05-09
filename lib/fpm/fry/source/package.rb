@@ -4,6 +4,7 @@ require 'net/http'
 require 'forwardable'
 require 'zlib'
 require 'fpm/fry/source'
+require 'cabin'
 module FPM; module Fry ; module Source
   class Package
 
@@ -133,6 +134,17 @@ module FPM; module Fry ; module Source
       end
     end
 
+    class TarBz2Cache < TarCache
+
+      def tar_io
+        update!
+        cmd = ['bzcat',tempfile]
+        logger.debug("Running bzcat",cmd: cmd)
+        return IO.popen(cmd)
+      end
+
+    end
+
     class ZipCache < Cache
 
       def tar_io
@@ -189,6 +201,7 @@ module FPM; module Fry ; module Source
       '.tar' => TarCache,
       '.tar.gz' => TarGzCache,
       '.tgz' => TarGzCache,
+      '.tar.bz2' => TarBz2Cache,
       '.zip' => ZipCache,
       '.bin' => PlainCache,
       '.bundle' => PlainCache

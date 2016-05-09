@@ -121,7 +121,7 @@ source "https://example.com/path/source.tar.gz",
   checksum: "DEADBEEEEEEEEEEEEEEEF" # checksum is md5/sha1/sha256/sha512 based on the length of the checksum
 ```
 
-Files ending in .tar, .tar.gz, .tgz and .zip will be extracted. Files ending in .bin and .bundle will be placed in the container as is.
+Files ending in .tar, .tar.gz, .tgz, .tar.bz2 and .zip will be extracted. Files ending in .bin and .bundle will be placed in the container as is.
 
 **git**: Understands any url that git understands. Requires git on your system.
 

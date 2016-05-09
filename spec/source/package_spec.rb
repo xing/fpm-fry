@@ -2,6 +2,7 @@ require 'fpm/fry/source/package'
 require 'tempfile'
 require 'fileutils'
 require 'webmock/rspec'
+require 'rubygems/package'
 describe FPM::Fry::Source::Package do
 
   let(:tmpdir){
@@ -191,4 +192,32 @@ describe FPM::Fry::Source::Package do
     end
   end
 
+  context 'with a tar.bz2 file' do
+
+    let(:tarfile) do
+      outfile = File.join(tmpdir,'file.tar.bz2')
+      Dir.chdir(tmpdir) do
+        IO.write('foo', 'bar')
+        system('tar','-cjf',outfile,'foo', out: '/dev/null')
+      end
+      IO.read(outfile)
+    end
+
+    context '#tar_io' do
+      it "untars a tar file" do
+        stub_request(:get,'http://example/file.tar.bz2').to_return(body: tarfile, status: 200)
+        src = FPM::Fry::Source::Package.new("http://example/file.tar.bz2")
+        cache = src.build_cache(tmpdir)
+        io = cache.tar_io
+        begin
+          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
+          expect(files).to eq 'foo' => 'bar'
+        ensure
+          io.close
+        end
+      end
+
+    end
+  end
 end
