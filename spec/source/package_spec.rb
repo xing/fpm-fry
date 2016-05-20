@@ -186,7 +186,7 @@ describe FPM::Fry::Source::Package do
         src = FPM::Fry::Source::Package.new('http://example/dir/plainfile.bin')
         cache = src.build_cache(tmpdir)
         cache.copy_to(destdir)
-        expect( Dir.new(destdir).each.to_a ).to eq ['.','..','plainfile.bin']
+        expect( Dir.new(destdir).each.to_a ).to contain_exactly '.','..','plainfile.bin'
       end
 
     end
