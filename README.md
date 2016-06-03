@@ -171,6 +171,26 @@ end
 
 Scripts running inside `before_install` modify the base image instead of the package. This is the ideal place to install build dependencies that are not linux packages ( gems, jars, eggs, ... ).
 
+
+- `add` mount a file or directoy from the build environment into the build container (corresponds to ADD directive in a Dockerfile)
+
+```ruby
+add "images/code/install-code.sh", ".install-code.sh"
+```
+
+Mounts are added before any other build command runs in the build container.
+
+
+- `apt_setup` run a command before any generated `apt-get install` or `apt-get update` is run inside the build container.
+
+```ruby
+apt_setup "echo 'deb [trusted=yes] http://somedomain/packages/#{distribution}/#{codename} ./' >> /etc/apt/sources.list"
+"
+```
+
+Allows one to add custom apt repositories befor installing in package.
+
+
 ### Target info
 
 - `flavour`: Returns the linux family like "redhat" or "debian"

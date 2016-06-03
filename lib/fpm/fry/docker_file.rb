@@ -90,6 +90,15 @@ module FPM; module Fry
         df << "FROM #{base}"
         df << "WORKDIR /tmp/build"
 
+        # need to add external sources before running any command
+        recipe.build_mounts.each do |source, target|
+          df << "ADD #{source} /tmp/build/#{target}"
+        end
+
+        recipe.apt_setup.each do |step|
+          df << "RUN #{step}"
+        end
+
         if build_dependencies.any?
           case(variables[:flavour])
           when 'debian'
@@ -136,6 +145,11 @@ module FPM; module Fry
         end
         tar.add_file(NAME,'0777') do |io|
           io.write(dockerfile)
+        end
+        recipe.build_mounts.each do |source, _|
+          tar.add_file(source,'0777') do |io|
+            io.write(File.read(source))
+          end
         end
         #tar.close
         sio.rewind

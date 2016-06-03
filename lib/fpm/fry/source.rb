@@ -13,6 +13,14 @@ module FPM; module Fry ; module Source
         super(e.to_s)
       end
     end
+
+    def message
+      super + options.inspect
+    end
+
+    def to_s
+      super + options.inspect
+    end
   end
 
   module Null

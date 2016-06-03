@@ -21,5 +21,6 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'excon', '~> 0.30'
   gem.add_dependency 'fpm', '~> 1.0'
+  gem.add_dependency 'json', '~> 1.8'
 
 end
