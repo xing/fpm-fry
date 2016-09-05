@@ -96,6 +96,26 @@ INIT
 
     end
 
+    context 'for systemd' do
+      let(:init){ 'systemd' }
+
+      it_behaves_like 'adds script to restart services'
+
+      it 'generates the correct unit file' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to eq <<'UNIT'
+[Unit]
+Description=
+
+[Service]
+Type=simple
+ExecStart=foo bar baz
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+      end
+    end
   end
 
   describe 'limits' do
@@ -114,6 +134,14 @@ INIT
 
       it 'generates an init config containing the limit' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^limit nofile 123 456$/
+      end
+    end
+
+    context 'for systemd' do
+      let(:init){ 'systemd' }
+
+      it 'generates an unit file containing the limit' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^LimitNOFILE=123:456$/
       end
     end
 
@@ -146,6 +174,13 @@ INIT
       end
     end
 
+    context 'for systemd' do
+      let(:init){ 'systemd' }
+
+      it 'generates an unit file containing the user' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^User=fuz$/
+      end
+    end
   end
 
   describe 'group' do
@@ -162,7 +197,7 @@ INIT
     context 'for upstart' do
       let(:init){ 'upstart' }
 
-      it 'generates an init config containing the user' do
+      it 'generates an init config containing the group' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^setgid "fuz"$/
       end
     end
@@ -170,11 +205,18 @@ INIT
     context 'for sysv' do
       let(:init){ 'sysv' }
 
-      it 'generates an init script containing the user' do
+      it 'generates an init script containing the group' do
         expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -g fuz --exec/
       end
     end
 
+    context 'for systemd' do
+      let(:init){ 'systemd' }
+
+      it 'generates an unit file containing the group' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^Group=fuz$/
+      end
+    end
   end
 
   describe 'chdir' do
@@ -204,7 +246,13 @@ INIT
       end
     end
 
-  end
+    context 'for systemd' do
+      let(:init){ 'systemd' }
 
+      it 'generates an unit file containing the chdir' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^WorkingDirectory=\/fuz$/
+      end
+    end
+  end
 
 end

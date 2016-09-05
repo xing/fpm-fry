@@ -129,7 +129,20 @@ BASH
           co.include "etc/init.d/#{name}"
         end
       when 'systemd' then
+        edit.add_file "/lib/systemd/system/#{name}.service", StringIO.new( env.render('systemd.erb') ), chmod: '644'
+        builder.plugin('script_helper') do |sh|
+          sh.after_install_or_upgrade(<<BASH)
+systemctl preset #{Shellwords.shellescape name}.service
+if systemctl is-enabled --quiet #{Shellwords.shellescape name}.service ; then
+  systemctl --system daemon-reload
+  systemctl try-reload-or-restart #{Shellwords.shellescape name}.service
+fi
+BASH
+          sh.before_remove_entirely(<<BASH)
+systemctl disable --now #{Shellwords.shellescape name}.service
+BASH
 
+        end
       end
     end
 
