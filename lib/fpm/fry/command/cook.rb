@@ -237,7 +237,7 @@ module FPM; module Fry
         )
         json = JSON.parse(res.body)
         if json["StatusCode"] != 0
-          raise "Build failed with exit code #{json["StatusCode"]}"
+          raise Fry::WithData("Build failed", exit_code: json["StatusCode"])
         end
         return yield container
       ensure

@@ -2,14 +2,14 @@ module FPM; module Fry ; module Source
 
   class CacheFailed < StandardError
 
-    attr :options
+    attr :data
 
-    def initialize(e, opts = {})
+    def initialize(e, data = {})
       if e.kind_of? Exception
-        @options = {reason: e}.merge opts
+        @data = {reason: e}.merge data
         super(e.message)
       else
-        @options = opts.dup
+        @data = data.dup
         super(e.to_s)
       end
     end

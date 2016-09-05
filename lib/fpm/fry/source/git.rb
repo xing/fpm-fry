@@ -23,12 +23,12 @@ module FPM; module Fry ; module Source
       def update
         begin
           if !File.exists? repodir
-            if git('init', '--bare') != 0
-              raise "Initializing git repository failed"
+            if (ecode = git('init', '--bare')) != 0
+              raise CacheFailed.new("Initializing git repository failed", exit_code: ecode)
             end
           end
-          if git('fetch','--depth=1', url.to_s, rev) != 0
-            raise "Failed to fetch from remote #{url.to_s} ( #{rev} )"
+          if (ecode = git('fetch','--depth=1', url.to_s, rev)) != 0
+            raise CacheFailed.new("Failed to fetch from remote", exit_code: ecode, url: url.to_s, rev: rev)
           end
           return self
         rescue Errno::ENOENT
@@ -69,7 +69,7 @@ module FPM; module Fry ; module Source
           err.each_line do |line|
             logger.debug(line.chomp)
           end
-          return thr.value
+          return thr.value.exitstatus
         end
       end
 

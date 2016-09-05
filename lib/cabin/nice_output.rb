@@ -35,6 +35,14 @@ class Cabin::NiceOutput
 
   def <<(event)
     data = event.clone
+    if data[:exception].respond_to? :data
+      ed = data[:exception].data
+      if ed.kind_of? Hash
+        data = ed.merge( data )
+      else
+        data[:exception_data] = ed.inspect
+      end
+    end
     data.delete(:line)
     data.delete(:file)
     level = data.delete(:level) || :normal

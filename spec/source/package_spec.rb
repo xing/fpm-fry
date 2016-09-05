@@ -53,7 +53,27 @@ describe FPM::Fry::Source::Package do
       src = FPM::Fry::Source::Package.new("http://example/file.tar")
       expect{
         src.build_cache(tmpdir)
-      }.to raise_error(FPM::Fry::Source::CacheFailed, "Unable to fetch file")
+      }.to raise_error(FPM::Fry::Source::CacheFailed, "Unable to fetch file"){|e|
+        expect(e.data).to eq(
+          url: 'http://example/file.tar',
+          http_code: 404,
+          http_message: ""
+        )
+      }
+    end
+
+    it "reports wrong checksums" do
+      stub_request(:get,'http://example/file.tar').to_return(body: "doesn't matter", status: 200)
+      src = FPM::Fry::Source::Package.new("http://example/file.tar", checksum: Digest::SHA256.hexdigest("something else"))
+      expect{
+        src.build_cache(tmpdir).tar_io
+      }.to raise_error(FPM::Fry::Source::CacheFailed, "Checksum failed"){|e|
+        expect(e.data).to eq(
+          url: 'http://example/file.tar',
+          expected: Digest::SHA256.hexdigest("something else"),
+          given: Digest::SHA256.hexdigest("doesn't matter")
+        )
+      }
     end
 
     it "returns checksum as cachekey if present" do

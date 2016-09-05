@@ -30,6 +30,12 @@ module FPM; module Fry ; module Source
 
       def_delegators :package, :url, :checksum, :checksum_algorithm, :agent, :logger, :file_map
 
+      def cachekey
+        @observed_checksum || checksum
+      end
+
+    private
+
       def initialize(*_)
         super
         if !checksum
@@ -53,7 +59,9 @@ module FPM; module Fry ; module Source
         end
         d = checksum_algorithm.new
         f = nil
-        fetch_url(url) do |resp|
+        actual_url = url.to_s
+        fetch_url(url) do | last_url, resp|
+          actual_url = last_url.to_s
           begin
             f = File.new(tempfile,'w')
             resp.read_body do | chunk |
@@ -68,10 +76,10 @@ module FPM; module Fry ; module Source
         end
 
         @observed_checksum = d.hexdigest
-        logger.debug("got checksum", checksum: @observed_checksum)
+        logger.debug("Got checksum", checksum: @observed_checksum, url: actual_url)
         if checksum
           if d.hexdigest != checksum
-            raise CacheFailed.new("Checksum failed",given: d.hexdigest, expected: checksum)
+            raise CacheFailed.new("Checksum failed",given: d.hexdigest, expected: checksum, url: actual_url)
           end
         else
           return true
@@ -89,19 +97,15 @@ module FPM; module Fry ; module Source
             logger.debug("Following redirect", url: url.to_s , location: resp['location'])
             return fetch_url( resp['location'], redirs - 1, &block)
           when Net::HTTPSuccess
-            return block.call(resp)
+            return block.call( url, resp)
           else
-            raise CacheFailed.new('Unable to fetch file',url: url.to_s, http_code: resp.code, http_message: resp.message)
+            raise CacheFailed.new('Unable to fetch file',url: url.to_s, http_code: resp.code.to_i, http_message: resp.message)
           end
         end
       end
 
       def tempfile
         File.join(tempdir,File.basename(url.path))
-      end
-
-      def cachekey
-        @observed_checksum || checksum
       end
 
     end
