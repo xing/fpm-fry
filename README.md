@@ -20,7 +20,7 @@ Installation
 
     $> gem install fpm-fry
 
-You also need a running a machine running docker. This does not need to be the same machine, fpm-fry can 
+You also need a running a machine running docker >= 1.8. This does not need to be the same machine, fpm-fry can 
 use the docker remote api. See [the docker install guide](https://www.docker.io/gettingstarted/?#h_installation).
 
 Introduction

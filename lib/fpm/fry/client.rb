@@ -70,12 +70,11 @@ class FPM::Fry::Client
 
   def read(name, resource)
     return to_enum(:read, name, resource) unless block_given?
-    body = JSON.generate({'Resource' => resource})
-    res = agent.post(
-      path: url('containers',name,'copy'),
+    res = agent.get(
+      path: url('containers',name,'archive'),
+      query: URI.encode_www_form('path' => resource),
       headers: { 'Content-Type' => 'application/json' },
-      body: body,
-      expects: [200,500]
+      expects: [200,404,500]
     )
     if res.status == 500
       raise FileNotFound, "File #{resource.inspect} not found: #{res.body}"

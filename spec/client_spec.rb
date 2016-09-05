@@ -27,7 +27,7 @@ describe FPM::Fry::Client do
       }
 
       it 'is yielded' do
-        stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 200, body: body.string)
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
         expect{|yld|
           subject.read('deadbeef','foo', &yld)
         }.to yield_with_args(Gem::Package::TarReader::Entry)
@@ -36,7 +36,7 @@ describe FPM::Fry::Client do
 
     context 'missing file' do
       it 'raises' do
-        stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 500)
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 500)
         expect{
           subject.read('deadbeef','foo'){}
         }.to raise_error(FPM::Fry::Client::FileNotFound)
@@ -65,7 +65,7 @@ describe FPM::Fry::Client do
       end
 
       it 'is copied' do
-        stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 200, body: body.string)
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
         subject.copy('deadbeef','foo', { 'foo' => tmpdir + '/foo' })
         expect( File.read(File.join(tmpdir,'foo')) ).to eq('bar')
       end
@@ -97,7 +97,7 @@ describe FPM::Fry::Client do
       end
 
       it 'is copied' do
-        stub_request(:post,'http://dock.er/v1.9/containers/deadbeef/copy').to_return(status: 200, body: body.string)
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
         subject.copy('deadbeef','foo', {'foo' => tmpdir + '/foo' , 'foo/a' => tmpdir + '/foo/a'})
         expect( File.readlink(File.join(tmpdir,'foo/a')) ).to eq('b')
       end
