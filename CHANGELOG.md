@@ -1,4 +1,4 @@
-# 0.2.2 / unreleased
+# 0.2.2 / 2016.09.05
 
 * [CHANGE] docker minimum version is now 1.8
 * [FIX] script_helper plugin: after_remove_entirely broken
