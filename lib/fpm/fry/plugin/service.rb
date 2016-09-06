@@ -135,7 +135,7 @@ BASH
 systemctl preset #{Shellwords.shellescape name}.service
 if systemctl is-enabled --quiet #{Shellwords.shellescape name}.service ; then
   systemctl --system daemon-reload
-  systemctl try-reload-or-restart #{Shellwords.shellescape name}.service
+  systemctl restart #{Shellwords.shellescape name}.service
 fi
 BASH
           sh.before_remove_entirely(<<BASH)
