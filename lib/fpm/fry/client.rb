@@ -1,3 +1,4 @@
+require 'cabin'
 require 'excon'
 require 'rubygems/package'
 require 'json'
