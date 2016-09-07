@@ -22,6 +22,7 @@ module FPM; module Fry
       @tls = nil
       require 'digest'
       require 'fileutils'
+      require 'fpm/fry/with_data'
       require 'fpm/fry/recipe'
       require 'fpm/fry/recipe/builder'
       require 'fpm/fry/detector'
