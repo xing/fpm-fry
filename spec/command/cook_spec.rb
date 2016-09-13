@@ -190,7 +190,7 @@ describe FPM::Fry::Command::Cook do
         stub_request(:post, "http://unix/v1.9/containers/caafffee/wait").
           to_return(:status => 200, :body => '{"StatusCode":0}')
         stub_request(:delete, "http://unix/v1.9/containers/caafffee").
-          to_return(:status => 200)
+          to_return(:status => 204)
       end
       it 'yields the id' do
         expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')
@@ -223,8 +223,8 @@ describe FPM::Fry::Command::Cook do
         allow(subject.client).to receive(:read).
           with('deadbeef','/var/lib/apt/lists').
           and_yield(double('lists', header: double('lists.header', name: 'lists/')))
-        allow(subject.client).to receive(:delete).
-          with(a_hash_including(path: 'containers/deadbeef'))
+        allow(subject.client).to receive(:destroy).
+          with('deadbeef')
       end
 
       it 'is true' do
@@ -245,8 +245,8 @@ describe FPM::Fry::Command::Cook do
           with('deadbeef','/var/lib/apt/lists').
           and_yield(double('lists', header: double('lists.header', name: 'lists/'))).
           and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter')))
-        allow(subject.client).to receive(:delete).
-          with(a_hash_including(path: 'containers/deadbeef'))
+        allow(subject.client).to receive(:destroy).
+          with('deadbeef')
       end
 
       it 'is true' do
