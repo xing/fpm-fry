@@ -16,4 +16,22 @@ module FPM ; module Fry
     return ex
   end
 
+  # Adds a data method to an exception. This overrides initialize so it may 
+  # not work everywhere.
+  module WithData
+
+    # @return [Hash] debugging/logging data
+    attr :data
+
+    def initialize(e=self.class.name, data = {})
+      if e.kind_of? Exception
+        @data = {reason: e}.merge data
+        super(e.message)
+      else
+        @data = data.dup
+        super(e.to_s)
+      end
+    end
+  end
+
 end ; end

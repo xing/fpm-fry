@@ -5,12 +5,12 @@ require 'json'
 require 'fileutils'
 require 'forwardable'
 require 'fpm/fry/tar'
-
-module FPM; module Fry; end ; end
-
+require 'fpm/fry/with_data'
 class FPM::Fry::Client
 
+  # Raised when a file wasn't found inside a container
   class FileNotFound < StandardError
+    include FPM::Fry::WithData
   end
 
   extend Forwardable
@@ -73,12 +73,13 @@ class FPM::Fry::Client
     return to_enum(:read, name, resource) unless block_given?
     res = agent.get(
       path: url('containers',name,'archive'),
-      query: URI.encode_www_form('path' => resource),
+      query: {'path' => resource},
       headers: { 'Content-Type' => 'application/json' },
       expects: [200,404,500]
     )
-    if res.status == 500
-      raise FileNotFound, "File #{resource.inspect} not found: #{res.body}"
+    if [404,500].include? res.status
+      body_message = Hash[JSON.load(res.body).map{|k,v| ["docker.#{k}",v] }] rescue {'docker.message' => res.body}
+      raise FileNotFound.new("file not found", {'path' => resource}.merge(body_message))
     end
     sio = StringIO.new(res.body)
     tar = ::Gem::Package::TarReader.new( sio )
@@ -104,6 +105,27 @@ class FPM::Fry::Client
     res = agent.get(path: url('containers',name,'changes'))
     raise res.reason if res.status != 200
     return JSON.parse(res.body)
+  end
+
+  def pull(image)
+    agent.post(path: url('images','create'), query: {'fromImage' => image})
+  end
+
+  def create(image)
+    res = agent.post(
+      headers: { 'Content-Type' => 'application/json' },
+      path: url('containers','create'),
+      expects: [201],
+      body: JSON.generate('Image' => image)
+    )
+    return JSON.parse(res.body)['Id']
+  end
+
+  def destroy(container)
+    agent.delete(
+      path: url('containers',container),
+      expects: [204]
+    )
   end
 
   def agent
