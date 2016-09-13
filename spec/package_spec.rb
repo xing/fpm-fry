@@ -78,7 +78,7 @@ describe FPM::Package::Docker do
 
   end
 
-  describe '#split', focus: true do
+  describe '#split' do
 
     after(:each) do
       subject.cleanup_staging
