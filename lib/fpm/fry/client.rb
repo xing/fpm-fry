@@ -13,6 +13,12 @@ class FPM::Fry::Client
     include FPM::Fry::WithData
   end
 
+  # Raised when trying to read file that can't be read e.g. because it's a 
+  # directory.
+  class NotAFile < StandardError
+    include FPM::Fry::WithData
+  end
+
   extend Forwardable
   def_delegators :agent, :post, :get, :delete
 
@@ -85,6 +91,25 @@ class FPM::Fry::Client
     tar = ::Gem::Package::TarReader.new( sio )
     tar.each do |entry|
       yield entry
+    end
+  end
+
+  # Gets the file contents while following symlinks
+  # @param [String] name the container name
+  # @param [String] resource the file name
+  # @return [String] content
+  # @raise [NotAFile] when the file has no readable content
+  # @raise [FileNotFound] when the file does not exist
+  # @api docker
+  def read_content(name, resource)
+    read(name, resource) do |file|
+      if file.header.typeflag == "2"
+        return read_content(name, File.absolute_path(file.header.linkname,File.dirname(resource)))
+      end
+      if file.header.typeflag != "0"
+        raise NotAFile.new("not a file", {'path' => resource})
+      end
+      return file.read
     end
   end
 

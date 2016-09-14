@@ -28,7 +28,6 @@ module FPM; module Fry
       require 'fpm/fry/detector'
       require 'fpm/fry/docker_file'
       require 'fpm/fry/stream_parser'
-      require 'fpm/fry/os_db'
       require 'fpm/fry/block_enumerator'
       require 'fpm/fry/build_output_parser'
       super
@@ -53,7 +52,7 @@ module FPM; module Fry
     end
 
     def flavour
-      @flavour ||= OsDb.fetch(detector.distribution,{flavour: "unknown"})[:flavour]
+      @flavour ||= detector.flavour
     end
     attr_writer :flavour
 
@@ -79,7 +78,8 @@ module FPM; module Fry
         vars = {
           distribution: detector.distribution,
           distribution_version: detector.version,
-          flavour: flavour
+          flavour: flavour,
+          codename: detector.codename
         }
         logger.debug("Loading recipe",variables: vars, recipe: recipe)
         b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)

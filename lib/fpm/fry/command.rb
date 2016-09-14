@@ -56,7 +56,6 @@ module FPM; module Fry
       def_delegators :ui, :logger
 
       def execute
-        require 'fpm/fry/os_db'
         require 'fpm/fry/detector'
 
         if image
@@ -72,12 +71,7 @@ module FPM; module Fry
 
         begin
           if d.detect!
-            data = {distribution: d.distribution, version: d.version}
-            if i = OsDb[d.distribution]
-              data[:flavour] = i[:flavour]
-            else
-              data[:flavour] = "unknown"
-            end
+            data = {distribution: d.distribution, version: d.version, flavour: d.flavour, codename: d.codename}
             logger.info("Detected distribution",data)
             return 0
           else

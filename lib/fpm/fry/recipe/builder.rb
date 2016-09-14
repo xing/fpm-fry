@@ -178,13 +178,6 @@ module FPM::Fry
 
       def initialize( variables, recipe = Recipe.new, options = {})
         variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        if !variables[:codename] && OsDb[variables[:distribution]] && variables[:distribution_version]
-          codename = OsDb[variables[:distribution]][:codenames].find{|name,version| variables[:distribution_version].start_with? version }
-          variables[:codename] = codename[0] if codename
-        end
         variables.freeze
         @recipe = recipe
         @before_build = false

@@ -55,7 +55,8 @@ describe FPM::Fry::DockerFile do
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -81,7 +82,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -106,7 +108,8 @@ SHELL
 
         variables(
           image: 'centos:6.5',
-          distribution: 'centos'
+          distribution: 'centos',
+          flavour: 'redhat'
         )
 
         recipe do |b|
@@ -131,7 +134,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -158,7 +162,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -186,7 +191,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         it 'works' do
@@ -216,7 +222,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         it "map the files" do
@@ -231,8 +238,4 @@ DOCKERFILE
 
   end
 
-=begin
-
-=end
 end
-
