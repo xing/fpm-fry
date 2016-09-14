@@ -71,7 +71,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'trivial case' do
       before(:each) do
-        subject.detector = FPM::Fry::Detector::String.new('ubuntu-12.04')
+        subject.detector = FPM::Fry::Detector::String.new('ubuntu-12.04 precise')
         subject.flavour = 'debian'
         subject.recipe = File.expand_path('../data/recipe.rb',File.dirname(__FILE__))
       end
@@ -117,7 +117,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'with an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
@@ -140,7 +140,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'without an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do

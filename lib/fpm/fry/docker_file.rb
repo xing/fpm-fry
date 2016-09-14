@@ -1,7 +1,6 @@
 require 'fiber'
 require 'shellwords'
 require 'rubygems/package'
-require 'fpm/fry/os_db'
 require 'fpm/fry/source'
 require 'fpm/fry/joined_io'
 module FPM; module Fry
@@ -12,11 +11,7 @@ module FPM; module Fry
     class Source < Struct.new(:variables, :cache)
 
       def initialize(variables, cache = Source::Null::Cache)
-        variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        variables.freeze
+        variables = variables.dup.freeze
         super(variables, cache)
       end
 
@@ -76,11 +71,8 @@ module FPM; module Fry
       private :options
 
       def initialize(base, variables, recipe, options = {})
-        variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        variables.freeze
+        variables = variables.dup.freeze
+        raise Fry::WithData('unknown flavour', 'flavour' => variables[:flavour]) unless ['debian','redhat'].include? variables[:flavour]
         @options = options.dup.freeze
         super(base, variables, recipe)
       end

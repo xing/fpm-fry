@@ -6,9 +6,14 @@ module FPM; module Fry
     class String < Struct.new(:value)
       attr :distribution
       attr :version
+      attr :codename
 
       def detect!
-        @distribution, @version = value.split('-',2)
+        m = /\A([^-]+)-(\d+(?:\.\d+)*)(?: (.+))?/.match(value)
+        return false unless m
+        @distribution = m[1]
+        @version = m[2]
+        @codename = m[3]
         return true
       end
 
@@ -17,52 +22,63 @@ module FPM; module Fry
     class Container < Struct.new(:client,:container)
       attr :distribution
       attr :version
+      attr :codename
+      attr :flavour
 
       def detect!
         begin
-          client.read(container,'/etc/lsb-release') do |file|
-            file.read.each_line do |line|
-              case(line)
-              when /\ADISTRIB_ID=/ then
-                @distribution = $'.strip.downcase
-              when /\ADISTRIB_RELEASE=/ then
-                @version = $'.strip
-              end
-            end
+          client.read(container,'/usr/bin/apt-get') do |file|
           end
-          return !!(@distribution and @version)
+          @flavour = 'debian'
         rescue Client::FileNotFound
         end
         begin
-          client.read(container,'/etc/debian_version') do |file|
-            content = file.read
-            if /\A\d+(?:\.\d+)+\Z/ =~ content
-              @distribution = 'debian'
-              @version = content.strip
-            end
+          client.read(container,'/bin/rpm') do |file|
           end
-          return !!(@distribution and @version)
+          @flavour = 'redhat'
         rescue Client::FileNotFound
         end
         begin
-          client.read(container,'/etc/redhat-release') do |file|
-            if file.header.typeflag == "2" # centos links this file
-              client.read(container,File.absolute_path(file.header.linkname,'/etc')) do |file|
-                detect_redhat_release(file)
-              end
-            else
-              detect_redhat_release(file)
+          client.read_content(container,'/etc/lsb-release').each_line do |line|
+            case(line)
+            when /\ADISTRIB_ID=/ then
+              @distribution = $'.strip.downcase
+            when /\ADISTRIB_RELEASE=/ then
+              @version = $'.strip
+            when /\ADISTRIB_CODENAME=/ then
+              @codename = $'.strip
             end
           end
-          return !!(@distribution and @version)
         rescue Client::FileNotFound
         end
-        return false
+        begin
+          client.read_content(container,'/etc/os-release').each_line do |line|
+            case(line)
+            when /\AVERSION=\"(\w+) \((\w+)\)\"/ then
+              @version ||= $1
+              @codename ||= $2
+            end
+          end
+        rescue Client::FileNotFound
+        end
+        begin
+          content = client.read_content(container,'/etc/debian_version')
+          if /\A\d+(?:\.\d+)+\Z/ =~ content
+            @distribution = 'debian'
+            @version = content.strip
+          end
+        rescue Client::FileNotFound
+        end
+        begin
+          detect_redhat_release(client.read_content(container,'/etc/redhat-release'))
+        rescue Client::FileNotFound
+        end
+        return !!(@flavour and @distribution and @version)
       end
 
     private
-      def detect_redhat_release(file)
-        file.read.each_line do |line|
+      def detect_redhat_release(content)
+        content.each_line do |line|
           case(line)
           when /\A(\w+)(?: Linux)? release ([\d\.]+)/ then
             @distribution = $1.strip.downcase
@@ -79,6 +95,8 @@ module FPM; module Fry
 
       attr :distribution
       attr :version
+      attr :codename
+      attr :flavour
 
       def initialize(client, image, factory = Container)
         super
@@ -102,6 +120,8 @@ module FPM; module Fry
           if d.detect!
             @distribution = d.distribution
             @version = d.version
+            @codename = d.codename
+            @flavour = d.flavour
             return true
           else
             return false
