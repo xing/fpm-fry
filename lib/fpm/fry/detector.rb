@@ -64,7 +64,7 @@ module FPM; module Fry
       def detect_redhat_release(file)
         file.read.each_line do |line|
           case(line)
-          when /\A(\w+) release ([\d\.]+)/ then
+          when /\A(\w+)(?: Linux)? release ([\d\.]+)/ then
             @distribution = $1.strip.downcase
             @version = $2.strip
           end

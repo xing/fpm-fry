@@ -36,10 +36,32 @@ describe FPM::Fry::Client do
 
     context 'missing file' do
       it 'raises' do
-        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 500)
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 500, body:'not my day')
         expect{
           subject.read('deadbeef','foo'){}
-        }.to raise_error(FPM::Fry::Client::FileNotFound)
+        }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
+          expect(e.data).to match(
+            'path' => 'foo',
+            'docker.message' => 'not my day'
+          )
+        end
+      end
+
+      it 'raises (real)' do
+        real_docker.pull('ubuntu:16.04')
+        id = real_docker.create('ubuntu:16.04')
+        begin
+          expect{
+            real_docker.read(id,'foo'){}
+          }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
+            expect(e.data).to match(
+              'path' => 'foo',
+              'docker.message'=> /\Alstat .*: no such file or directory\z/
+            )
+          end
+        ensure
+          real_docker.destroy(id)
+        end
       end
     end
   end

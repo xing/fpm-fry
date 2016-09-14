@@ -1,3 +1,7 @@
+# 0.3.0 / t.b.d
+
+* [ENHANCEMENT] tests can now run against a real docker host, improving test depth
+
 # 0.2.2 / 2016.09.05
 
 * [CHANGE] docker minimum version is now 1.8

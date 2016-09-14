@@ -1,18 +1,8 @@
+require 'fpm/fry/with_data'
 module FPM; module Fry ; module Source
 
   class CacheFailed < StandardError
-
-    attr :data
-
-    def initialize(e, data = {})
-      if e.kind_of? Exception
-        @data = {reason: e}.merge data
-        super(e.message)
-      else
-        @data = data.dup
-        super(e.to_s)
-      end
-    end
+    include WithData
   end
 
   module Null

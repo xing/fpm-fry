@@ -109,5 +109,55 @@ describe FPM::Fry::Detector::Image do
     expect{ subject.detect! }.to raise_error FPM::Fry::Detector::Image::ImageNotFound, /Image "doesntmatter" not found/
   end
 
-end
+  context 'with ubuntu:16.04' do
+    subject{
+      FPM::Fry::Detector::Image.new(real_docker, 'ubuntu:16.04')
+    }
 
+    it 'finds ubuntu 16.04' do
+      real_docker.pull('ubuntu:16.04')
+      expect(subject.detect!).to be true
+      expect(subject.distribution).to eq('ubuntu')
+      expect(subject.version).to eq('16.04')
+    end
+  end
+
+  context 'with ubuntu:14.04' do
+    subject{
+      FPM::Fry::Detector::Image.new(real_docker, 'ubuntu:14.04')
+    }
+
+    it 'finds ubuntu 14.04' do
+      real_docker.pull('ubuntu:14.04')
+      expect(subject.detect!).to be true
+      expect(subject.distribution).to eq('ubuntu')
+      expect(subject.version).to eq('14.04')
+    end
+  end
+
+  context 'with centos:centos6' do
+    subject{
+      FPM::Fry::Detector::Image.new(real_docker, 'centos:centos6')
+    }
+
+    it 'finds centos 6' do
+      real_docker.pull('centos:centos6')
+      expect(subject.detect!).to be true
+      expect(subject.distribution).to eq('centos')
+      expect(subject.version).to match /\A6\.\d+\z/
+    end
+  end
+
+  context 'with centos:centos7' do
+    subject{
+      FPM::Fry::Detector::Image.new(real_docker, 'centos:centos7')
+    }
+
+    it 'finds centos 7' do
+      real_docker.pull('centos:centos7')
+      expect(subject.detect!).to be true
+      expect(subject.distribution).to eq('centos')
+      expect(subject.version).to match /\A7\.\d+\.\d+/
+    end
+  end
+end

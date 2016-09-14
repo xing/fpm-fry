@@ -184,7 +184,7 @@ module FPM; module Fry
               return true
             end
           ensure
-            client.delete(path: client.url('containers',container))
+            client.destroy(container)
           end
           return true
         when 'always'
@@ -243,7 +243,7 @@ module FPM; module Fry
         return yield container
       ensure
         unless keep?
-          client.delete(path: client.url('containers',container))
+          client.destroy(container)
         end
       end
     end
