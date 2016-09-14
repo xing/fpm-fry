@@ -35,7 +35,7 @@ module RealDocker
       puts "Docker #{sv['Version']} ( api #{sv['ApiVersion']} ) available. Enabling real docker tests."
       @available = true
     rescue Excon::Error
-      puts "Docker is not available at #{cl.docker_url}. Skipping all real docker tests."
+      puts "Docker is not available at #{client.docker_url}. Skipping all real docker tests."
       @available = false
     end
     return @available
