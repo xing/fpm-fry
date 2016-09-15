@@ -3,8 +3,12 @@ require 'fpm/package'
 
 require 'fpm/fry/client'
 
+# An {FPM::Package} that loads files from a docker container diff.
 class FPM::Package::Docker < FPM::Package
 
+  # @param [Hash] options
+  # @option options [Cabin::Channel] :logger Logger
+  # @option options [FPM::Fry::Client] :client Docker client
   def initialize( options = {} )
     super()
     if options[:logger]
@@ -18,10 +22,19 @@ class FPM::Package::Docker < FPM::Package
     end
   end
 
+  # Loads all files from a docker container with the given name to the staging 
+  # path.
+  #
+  # @param [String] name docker container name
   def input(name)
     split( name, '**' => staging_path)
   end
 
+  # Loads all files from a docker container into multiple paths defined by map 
+  # param.
+  #
+  # @param [String] name docker container name
+  # @param [Hash<String,String>] map 
   def split( name, map )
     changes = changes(name)
     changes.remove_modified_leaves! do | kind, ml |
@@ -44,6 +57,7 @@ class FPM::Package::Docker < FPM::Package
     directories.each do |chg|
       client.copy(name, chg, fmap ,chown: false)
     end
+    return nil
   end
 
 private
@@ -80,6 +94,7 @@ private
   CREATED = 1
   DELETED = 2
 
+  # @api private
   class Node < Struct.new(:children, :kind)
 
     def initialize

@@ -9,15 +9,18 @@ require 'cabin'
 require 'open3'
 module FPM; module Fry
 
+  # A FPM::Fry::Recipe contains all information needed to build a package.
+  #
+  # It is usually created by {FPM::Fry::Recipe::Builder}.
   class Recipe
 
+    # A FPM::Fry::Recipe::Step is a named build step.
+    #
+    # @see FPM::Fry::Recipe#steps
     class Step < Struct.new(:name, :value)
       def to_s
         value.to_s
       end
-    end
-
-    class DuplicateDependency < ArgumentError
     end
 
     class PackageRecipe
@@ -59,6 +62,10 @@ module FPM; module Fry
 
       alias dependencies depends
 
+      # Applies settings to output package
+      # @param [FPM::Package] package
+      # @return [FPM::Package] package
+      # @api private
       def apply_output( package )
         package.name = name
         package.version = version
@@ -86,8 +93,11 @@ module FPM; module Fry
 
       alias apply apply_output
 
+      # @api private
       SYNTAX_CHECK_SHELLS = ['/bin/sh','/bin/bash', '/bin/dash']
 
+      # Lints the settings for some common problems
+      # @return [Array<String>] problems
       def lint
         problems = []
         problems << "Name is empty." if name.to_s == ''
@@ -123,14 +133,26 @@ module FPM; module Fry
       end
     end
 
-    attr_accessor :source,
-      :build_mounts,
-      :apt_setup,
-      :before_build_steps,
-      :steps,
-      :packages,
-      :build_depends,
-      :input_hooks
+    # @return [FPM::Fry::Source] the source used for building
+    attr_accessor :source
+
+    attr_accessor :build_mounts
+    attr_accessor :apt_setup
+
+    # @return [Array<#to_s>] steps that will be carried out before build
+    attr_accessor :before_build_steps
+
+    # @return [Array<#to_s>] steps that will be carried out during build
+    attr_accessor :steps
+
+    # @return [Array<FPM::Fry::PackageRecipe>] a list of packages that will be created
+    attr_accessor :packages
+
+    # @return [Hash<String,Hash>] build dependencies
+    attr_accessor :build_depends
+
+    # @return [Array<#call>] hooks that will be called on the input package
+    attr_accessor :input_hooks
 
     def initialize
       @source = Source::Null
@@ -144,6 +166,8 @@ module FPM; module Fry
       @apt_setup = []
     end
 
+    # Calculates all dependencies of this recipe
+    # @return [Hash<String,Hash>] the dependencies
     def depends
       depends = @packages.map(&:depends).inject(:merge)
       @packages.map(&:name).each do | n |
@@ -152,10 +176,15 @@ module FPM; module Fry
       return depends
     end
 
+    # Checks all packages for common errors
+    # @return [Array<String>] problems
     def lint
       packages.flat_map(&:lint)
     end
 
+    # Applies input settings to package
+    # @param [FPM::Package] package
+    # @return [FPM::Package]
     def apply_input( package )
       input_hooks.each{|h| h.call(self, package) }
       return package

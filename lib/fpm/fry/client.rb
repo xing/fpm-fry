@@ -48,6 +48,7 @@ class FPM::Fry::Client
     end
   end
 
+  # @return [String] docker server api version
   def server_version
     @server_version ||= begin
       res = agent.get(
@@ -58,6 +59,7 @@ class FPM::Fry::Client
     end
   end
 
+  # @return [String] docker cert path from environment
   def self.docker_cert_path
     ENV.fetch('DOCKER_CERT_PATH',File.join(Dir.home, '.docker'))
   end

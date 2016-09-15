@@ -14,7 +14,7 @@ module FPM ; module Fry
 
     # Returns all directory entries like Dir.entries.
     # @param [String] path
-    # @result [Array<String>] entries
+    # @return [Array<String>] entries
     def entries(path)
       dir = rebase(path)
       return Dir.entries(dir)
@@ -34,7 +34,7 @@ module FPM ; module Fry
 
     # Yields all entries recursively like Find.find.
     # @param [String] path
-    # @yields entry
+    # @yield entry
     # @yieldparam [String] entry
     def find(path, &block)
       if stat(path).directory?
