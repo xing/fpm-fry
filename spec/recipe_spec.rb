@@ -245,6 +245,8 @@ RECIPE
       'http://foo.bar/baz.tar.gz' => FPM::Fry::Source::Package,
       'http://foo.bar/baz.git'    => FPM::Fry::Source::Git,
       'git@foo.bar:baz/baz.git'   => FPM::Fry::Source::Git,
+      'git+ssh://foo.bar/baz'     => FPM::Fry::Source::Git,
+      'https://git.foo.bar/baz'   => FPM::Fry::Source::Git,
       '/foo/bar'                  => FPM::Fry::Source::Dir,
       './foo/bar'                 => FPM::Fry::Source::Dir,
       'file://foo/bar'            => FPM::Fry::Source::Dir

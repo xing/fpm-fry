@@ -5,7 +5,7 @@ require 'fpm/fry/source'
 module FPM; module Fry ; module Source
   class Git
 
-    REGEX = %r!\A(?:git:|\S+@\S+:\S+\.git\z|https?:.*\.git\z|ssh:.*\.git\z)!
+    REGEX = %r!\A(?:git:|\S+@\S+:\S+\.git\z|https?:(?://git\.|.*\.git\z)|ssh:.*\.git\z|git\+[a-z0-9]+:)!
 
     def self.name
       :git

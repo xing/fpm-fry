@@ -1,5 +1,7 @@
 # 0.3.0 / t.b.d
 
+* [CHANGE] also recognize urls starting with https://git. as git
+* [CHANGE] also recognize urls with scheme git+... as git
 * [ENHANCEMENT] tests can now run against a real docker host, improving test depth
 * [ENHANCEMENT] removed OsDb. This file contained some hardcoded Os versions which was not future proof. It was a workaround to get started more quickly.
 
