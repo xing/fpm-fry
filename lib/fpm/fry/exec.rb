@@ -18,18 +18,15 @@ module FPM
 
       class << self
 
-        # @!method [](*cmd, options = {})
-        #   Runs a command and returns its stdout as string. This method is preferred if the expected output is short.
-        #  
-        #   @param [Array<String>] cmd command to run
-        #   @param [Hash] options
-        #   @option options [Cabin::Channel] :logger
-        #   @option options [String] :description human readable string to describe what the command is doing
-        #   @option options [String] :stdin_data data to write to stding
-        #   @option options [String] :chdir directory to change to
-        #   @return [String] stdout
-        #   @raise [FPM::Fry::Exec::Failed] when exitcode != 0
-        #
+        # @!method [](*cmd, options = {}) Runs a command and returns its stdout as string. This method is preferred if the expected output is short.
+        # @param [Array<String>] cmd command to run
+        # @param [Hash] options
+        # @option options [Cabin::Channel] :logger
+        # @option options [String] :description human readable string to describe what the command is doing
+        # @option options [String] :stdin_data data to write to stding
+        # @option options [String] :chdir directory to change to
+        # @return [String] stdout
+        # @raise [FPM::Fry::Exec::Failed] when exitcode != 0
         def [](*args)
           cmd, options, description = extract_options_and_log(args)
           stdout, stderr, status = Open3.capture3(*cmd, options)
@@ -41,16 +38,13 @@ module FPM
 
         alias exec []
 
-        # @!method popen(*cmd, options = {})
-        #   Runs a command and returns its stdout as IO.
-        #  
-        #   @param [Array<String>] cmd command to run
-        #   @param [Hash] options
-        #   @option options [Cabin::Channel] :logger
-        #   @option options [String] :description human readable string to describe what the command is doing
-        #   @option options [String] :chdir directory to change to
-        #   @return [IO] stdout
-        #
+        # @!method popen(*cmd, options = {}) Runs a command and returns its stdout as IO.
+        # @param [Array<String>] cmd command to run
+        # @param [Hash] options
+        # @option options [Cabin::Channel] :logger
+        # @option options [String] :description human readable string to describe what the command is doing
+        # @option options [String] :chdir directory to change to
+        # @return [IO] stdout
         def popen(*args)
           cmd, options, _description = extract_options_and_log(args)
           return IO.popen(cmd, options)
