@@ -1,5 +1,5 @@
 require 'fpm/fry/source'
-require 'fpm/fry/source/package'
+require 'fpm/fry/source/archive'
 require 'fpm/fry/source/dir'
 require 'fpm/fry/source/patched'
 require 'fpm/fry/source/git'

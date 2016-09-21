@@ -20,7 +20,7 @@ module FPM; module Fry ; module Source
 
     REGEX = %r!\A(?:git:|\S+@\S+:\S+\.git\z|https?:(?://git\.|.*\.git\z)|ssh:.*\.git\z|git\+[a-z0-9]+:)!
 
-    # @return :git
+    # @return [:git]
     def self.name
       :git
     end

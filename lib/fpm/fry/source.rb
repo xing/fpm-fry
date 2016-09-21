@@ -1,8 +1,5 @@
 require 'fpm/fry/with_data'
-module FPM; module Fry ; 
-  
-  # h2. Interface
-  module Source
+module FPM; module Fry ; module Source
 
   # Raised when building a cache failed.
   class CacheFailed < StandardError

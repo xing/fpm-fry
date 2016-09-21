@@ -282,7 +282,7 @@ module FPM::Fry
 
       def register_default_source_types!
         register_source_type Source::Git
-        register_source_type Source::Package
+        register_source_type Source::Archive
         register_source_type Source::Dir
       end
 

@@ -5,6 +5,7 @@
 * [ENHANCEMENT] tests can now run against a real docker host, improving test depth
 * [ENHANCEMENT] removed OsDb. This file contained some hardcoded Os versions which was not future proof. It was a workaround to get started more quickly.
 * [FIX] patched sources now fail when the underlying patch fails
+* [CHANGE] Renamed "Source::Package" to "Source::Archive" which is more striking. The term "package" is also used for build results.
 
 # 0.2.2 / 2016.09.05
 
