@@ -38,10 +38,9 @@ describe FPM::Fry::Source::Git do
       src = FPM::Fry::Source::Git.new(source, branch: 'missing')
       expect{
         cache = src.build_cache(tmpdir)
-      }.to raise_error(FPM::Fry::Source::CacheFailed, "Failed to fetch from remote"){|e|
-        expect(e.data).to eq(
+      }.to raise_error(FPM::Fry::Source::CacheFailed, /fetching from remote/){|e|
+        expect(e.data).to include(
           url: source,
-          exit_code: 128,
           rev: "missing"
         )
       }

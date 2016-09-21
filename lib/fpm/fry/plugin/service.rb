@@ -24,10 +24,11 @@ module FPM::Fry::Plugin ; module Service
 
   class DSL
 
+    # @return [Hash<String,Tuple<Numeric,Numeric>]
     attr :limits
 
-    def initialize(*_)
-      super
+    # @api private
+    def initialize()
       @name = nil
       @command = []
       @limits = {}
@@ -36,20 +37,35 @@ module FPM::Fry::Plugin ; module Service
       @chdir = nil
     end
 
-    def name( n = nil )
-      if n
-        @name = n
+    # @overload name
+    #   @return [String] this service's name
+    # @overload name( name )
+    #   @param  [String] name new name for this service
+    #   @return [String] this service's name
+    def name( name = nil )
+      if name
+        @name = name
       end
       return @name
     end
 
-    def group( n = nil )
-      if n
-        @group = n
+    # @overload group
+    #   @return [String] the linux user group this service should run as
+    # @overload group( name )
+    #   @param  [String] name new linux user group this service should run as
+    #   @return [String] the linux user group this service should run as
+    def group( group = nil )
+      if group
+        @group = group
       end
       return @group
     end
 
+    # @overload user
+    #   @return [String] the linux user this service should run as
+    # @overload user( name )
+    #   @param  [String] name new linx user this service should run as
+    #   @return [String] the linux user this service should run as
     def user( n = nil )
       if n
         @user = n
@@ -57,13 +73,39 @@ module FPM::Fry::Plugin ; module Service
       return @user
     end
 
+    # Sets a limit for this service. Valid limits are:
+    #  
+    #   - core
+    #   - cpu
+    #   - data
+    #   - fsize
+    #   - memlock
+    #   - msgqueue
+    #   - nice
+    #   - nofile
+    #   - nproc
+    #   - rss
+    #   - rtprio
+    #   - sigpending
+    #   - stack
+    # 
+    # @see http://linux.die.net/man/5/limits.conf Limits.conf manpage for limits and their meanings.
+    # @param [String] name see above list for valid limits
+    # @param [Numeric,"unlimited"] soft soft limit
+    # @param [Numeric,"unlimited"] hard hard limit
     def limit( name, soft, hard = soft )
       unless LIMITS.include? name
         raise ArgumentError, "Unknown limit #{name.inspect}. Known limits are: #{LIMITS.inspect}"
       end
       @limits[name] = [soft,hard]
+      return nil
     end
 
+    # @overload chdir
+    #   @return [String,nil] working directory of the service
+    # @overload chdir( dir )
+    #   @param  [String] dir new working directory of the service
+    #   @return [String] working directory of the service
     def chdir( dir = nil )
       if dir
         @chdir = dir

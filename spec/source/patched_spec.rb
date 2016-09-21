@@ -68,6 +68,20 @@ describe FPM::Fry::Source::Patched do
       end
     end
 
+    it "fails if patch fails" do
+      src = FPM::Fry::Source::Patched.new(FPM::Fry::Source::Null, patches: patches )
+      expect{
+        cache = src.build_cache(tmpdir)
+        cache.tar_io
+      }.to raise_error(FPM::Fry::Source::CacheFailed){|e|
+        expect(e.data).to include(
+          patch: %r!/spec/data/patch.diff\z!,
+          exitstatus: 1,
+          command: Array
+        )
+      }
+    end
+
     it "applies given patches with chdir" do
       allow(cache).to receive(:tar_io){
         sio = StringIO.new

@@ -25,7 +25,11 @@ module FPM ; module Fry
 
     def initialize(e=self.class.name, data = {})
       if e.kind_of? Exception
-        @data = {reason: e}.merge data
+        if e.respond_to? :data
+          @data = e.data.merge(data)
+        else
+          @data = {reason: e}.merge data
+        end
         super(e.message)
       else
         @data = data.dup

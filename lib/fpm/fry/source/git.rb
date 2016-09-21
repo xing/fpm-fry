@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'forwardable'
-require 'open3'
+require 'fpm/fry/exec'
 require 'fpm/fry/source'
 module FPM; module Fry ; module Source
   class Git
@@ -23,56 +23,33 @@ module FPM; module Fry ; module Source
       def update
         begin
           if !File.exists? repodir
-            if (ecode = git('init', '--bare')) != 0
-              raise CacheFailed.new("Initializing git repository failed", exit_code: ecode)
-            end
+            Exec::exec(package.git, "--git-dir=#{repodir}",'init', '--bare', description: "initializing git repository", logger: logger)
           end
-          if (ecode = git('fetch','--depth=1', url.to_s, rev)) != 0
-            raise CacheFailed.new("Failed to fetch from remote", exit_code: ecode, url: url.to_s, rev: rev)
-          end
+          Exec::exec(package.git, "--git-dir=#{repodir}",'fetch','--depth=1', url.to_s, rev, description: 'fetching from remote', logger: logger)
           return self
-        rescue Errno::ENOENT
-          raise "Cannot find git binary. Is it installed?"
+        rescue => e
+          raise CacheFailed.new(e, url: url.to_s, rev: rev)
         end
       end
 
       def tar_io
-        cmd = [package.git, "--git-dir=#{repodir}",'archive','--format=tar','FETCH_HEAD']
-        logger.debug("Running git",cmd: cmd)
-        IO.popen(cmd)
+        Exec::popen(package.git, "--git-dir=#{repodir}",'archive','--format=tar','FETCH_HEAD', logger: logger)
       end
 
       def copy_to(dst)
-        cmd = [package.git, "--git-dir=#{repodir}", "--work-tree=#{dst}",'checkout','FETCH_HEAD','--','*']
-        logger.debug("Running git",cmd: cmd)
-        system(*cmd, chdir: dst)
+        Exec[
+          package.git, "--git-dir=#{repodir}", "--work-tree=#{dst}",'checkout','FETCH_HEAD','--','*',
+          chdir: dst, logger: logger
+        ]
       end
 
       def cachekey
-        cmd = [package.git, "--git-dir=#{repodir}",'rev-parse','FETCH_HEAD^{tree}']
-        logger.debug("Running git",cmd: cmd)
-        return IO.popen(cmd).read.chomp
+        Exec::exec(package.git, "--git-dir=#{repodir}",'rev-parse','FETCH_HEAD^{tree}', logger: logger).chomp
       end
     private
       def repodir
         File.join(tempdir,File.basename(url.path))
       end
-
-      def git(*args)
-        cmd = [package.git, "--git-dir=#{repodir}",*args]
-        logger.debug("Running git",cmd: cmd.join(' '))
-        Open3.popen3(*cmd) do |sin, out, err, thr|
-          sin.close
-          out.each_line do |line|
-            logger.debug(line.chomp)
-          end
-          err.each_line do |line|
-            logger.debug(line.chomp)
-          end
-          return thr.value.exitstatus
-        end
-      end
-
     end
 
     attr :logger, :git, :rev, :file_map, :url

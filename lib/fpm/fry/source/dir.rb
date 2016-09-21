@@ -1,4 +1,5 @@
 require 'fpm/fry/source'
+require 'fpm/fry/exec'
 require 'fileutils'
 require 'digest'
 module FPM; module Fry ; module Source
@@ -20,11 +21,7 @@ module FPM; module Fry ; module Source
       def_delegators :package, :url, :logger, :file_map
 
       def tar_io
-        cmd = ['tar','-c','.']
-        logger.debug("Running tar",cmd: cmd, dir: dir)
-        ::Dir.chdir(dir) do
-          return IO.popen(cmd)
-        end
+        Exec::popen('tar','-c','.', chdir: dir, logger: logger)
       end
 
       def copy_to(dst)

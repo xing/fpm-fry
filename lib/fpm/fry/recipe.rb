@@ -4,9 +4,9 @@ require 'fpm/fry/source/dir'
 require 'fpm/fry/source/patched'
 require 'fpm/fry/source/git'
 require 'fpm/fry/plugin'
+require 'fpm/fry/exec'
 require 'shellwords'
 require 'cabin'
-require 'open3'
 module FPM; module Fry
 
   # A FPM::Fry::Recipe contains all information needed to build a package.
@@ -119,14 +119,11 @@ module FPM; module Fry
             problems << "#{type} script doesn't have a valid command in shebang"
           end
           if SYNTAX_CHECK_SHELLS.include? args[0]
-            sin, sout, serr, th = Open3.popen3(args[0],'-n')
-            sin.write(s)
-            sin.close
-            if th.value.exitstatus != 0
-              problems << "#{type} script is not valid #{args[0]} code: #{serr.read.chomp}"
+            begin
+              Exec::exec(args[0],'-n', stdin_data: s)
+            rescue Exec::Failed => e
+              problems << "#{type} script is not valid #{args[0]} code: #{e.stderr.chomp}"
             end
-            serr.close
-            sout.close
           end
         end
         return problems

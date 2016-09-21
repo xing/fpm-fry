@@ -80,8 +80,23 @@ class Cabin::NiceOutput
     @io.flush
   end
 
+private
+
   def pp(hash)
-    hash.map{|k,v| '      '+k.to_s + ": " + v.inspect }.join("\n")
+    hash.map{|k,v| '      '+k.to_s + ": " + pp_value(v) }.join("\n")
+  end
+
+  def pp_value(value)
+    case(value)
+    when String
+      if value.include? "\n"
+        return "\n\t" + value.gsub("\n","\n\t")
+      else
+        return value
+      end
+    else
+      return value.inspect
+    end
   end
 
 end

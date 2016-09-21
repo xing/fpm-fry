@@ -1,4 +1,5 @@
 require 'fpm/fry/tar'
+require 'fpm/fry/exec'
 require 'digest'
 module FPM; module Fry ; module Source
   class Patched
@@ -40,8 +41,11 @@ module FPM; module Fry ; module Source
             package.patches.each do |patch|
               cmd = ['patch','-p1','-i',patch[:file]]
               chdir = File.expand_path(patch.fetch(:chdir,'.'),workdir)
-              logger.debug("Running patch",cmd: cmd, dir: chdir )
-              system(*cmd, chdir: chdir, out: :close)
+              begin
+                Fry::Exec[*cmd, chdir: chdir, logger: logger]
+              rescue Exec::Failed => e
+                raise CacheFailed.new(e, patch: patch[:file])
+              end
             end
             File.rename(workdir, unpacked_tmpdir)
           end
@@ -52,12 +56,7 @@ module FPM; module Fry ; module Source
 
       def tar_io
         update!
-        cmd = ['tar','-c','.']
-        logger.debug("Running tar",cmd: cmd, dir: unpacked_tmpdir)
-        # IO.popen( ..., chdir: ... ) doesn't work on older ruby
-        ::Dir.chdir(unpacked_tmpdir) do
-          return IO.popen(cmd)
-        end
+        return Exec::popen('tar','-c','.',chdir: unpacked_tmpdir, logger: logger)
       end
 
       def cachekey
@@ -76,11 +75,11 @@ module FPM; module Fry ; module Source
 
     end
 
-    attr :inner, :patches
+    attr :inner, :logger, :patches
 
     extend Forwardable
 
-    def_delegators :inner, :logger, :file_map
+    def_delegators :inner, :file_map
 
     def initialize( inner , options = {})
       @inner = inner
@@ -97,6 +96,11 @@ module FPM; module Fry ; module Source
           raise ArgumentError, "File doesn't exist: #{options[:file]}"
         end
         options
+      end
+      if @inner.respond_to? :logger
+        @logger = @inner.logger
+      else
+        @logger = Cabin::Channel.get
       end
     end
 

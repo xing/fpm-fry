@@ -4,6 +4,7 @@ require 'net/http'
 require 'forwardable'
 require 'zlib'
 require 'fpm/fry/source'
+require 'fpm/fry/exec'
 require 'cabin'
 module FPM; module Fry ; module Source
   class Package
@@ -119,9 +120,7 @@ module FPM; module Fry ; module Source
 
       def copy_to(dst)
         update!
-        cmd = ['tar','-xf',tempfile,'-C',dst]
-        logger.debug("Running tar",cmd: cmd)
-        system(*cmd)
+        Exec['tar','-xf',tempfile,'-C',dst, logger: logger]
       end
 
     protected
@@ -142,9 +141,7 @@ module FPM; module Fry ; module Source
 
       def tar_io
         update!
-        cmd = ['bzcat',tempfile]
-        logger.debug("Running bzcat",cmd: cmd)
-        return IO.popen(cmd)
+        return Exec::popen('bzcat', tempfile, logger: logger)
       end
 
     end
@@ -163,18 +160,12 @@ module FPM; module Fry ; module Source
           copy_to( workdir )
           File.rename(workdir, unpacked_tmpdir)
         end
-        cmd = ['tar','-c','.']
-        logger.debug("Running tar",cmd: cmd, dir: unpacked_tmpdir)
-        ::Dir.chdir(unpacked_tmpdir) do
-          return IO.popen(cmd)
-        end
+        return Exec::popen('tar','-c','.', chdir: unpacked_tmpdir)
       end
 
       def copy_to(dst)
         update!
-        cmd = ['unzip', tempfile, '-d', dst ]
-        logger.debug("Running unzip",cmd: cmd)
-        system(*cmd, out: '/dev/null')
+        Exec['unzip', tempfile, '-d', dst ]
       end
 
       def unpacked_tmpdir
@@ -186,12 +177,8 @@ module FPM; module Fry ; module Source
 
       def tar_io
         update!
-        cmd = ['tar','-c',::File.basename(tempfile)]
         dir = File.dirname(tempfile)
-        logger.debug("Running tar",cmd: cmd, dir: dir)
-        ::Dir.chdir(dir) do
-          return IO.popen(cmd)
-        end
+        Exec::popen('tar','-c',::File.basename(tempfile), logger: logger, chdir: dir)
       end
 
       def copy_to(dst)
