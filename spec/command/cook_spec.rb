@@ -74,6 +74,7 @@ describe FPM::Fry::Command::Cook do
         subject.detector = FPM::Fry::Detector::String.new('ubuntu-12.04 precise')
         subject.flavour = 'debian'
         subject.recipe = File.expand_path('../data/recipe.rb',File.dirname(__FILE__))
+        expect(subject).to receive(:with_inspector).and_yield(nil)
       end
       it 'works' do
         expect(subject.builder).to be_a FPM::Fry::Recipe::Builder

@@ -72,6 +72,23 @@ module RealDocker
     RealDocker.client
   end
 
+  def with_container(image)
+    docker = real_docker
+    docker.pull(image)
+    container = docker.create(image)
+    begin
+      yield container
+    ensure
+      docker.destroy(container)
+    end
+  end
+
+  def with_inspector(image)
+    with_container(image){|cont|
+      yield FPM::Fry::Inspector.new(real_docker, cont)
+    }
+  end
+
 end
 
 RealDocker.check!

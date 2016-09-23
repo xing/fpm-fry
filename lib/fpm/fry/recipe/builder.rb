@@ -7,13 +7,26 @@ module FPM::Fry
     class NotFound < StandardError
     end
 
-    class PackageBuilder < Struct.new(:variables, :package_recipe)
+    class PackageBuilder
 
+      # @return [Hash<Symbol,Object>]
+      attr :variables
+
+      # @return [FPM::Fry::PackageRecipe]
+      attr :package_recipe
+
+      # @return [Cabin::Channel]
       attr :logger
 
-      def initialize( variables, recipe = PackageRecipe.new, options = {})
-        super(variables, recipe)
+      # @return [FPM::Fry::Inspector,nil]
+      attr :inspector
+
+      # @api private
+      def initialize( variables, package_recipe, options = {})
+        @variables = variables
+        @package_recipe = package_recipe
         @logger = options.fetch(:logger){ Cabin::Channel.get }
+        @inspector = options[:inspector]
       end
 
       def flavour
@@ -176,7 +189,35 @@ module FPM::Fry
 
       attr :recipe
 
-      def initialize( variables, recipe = Recipe.new, options = {})
+      # @overload initialize( variables, recipe = Recipe.new, options = {})
+      #   @deprecated
+      #
+      # @overload initialize( variables, options )
+      #   @param [Hash<Symbol,Object>] variables
+      #   @param [Hash] options
+      #   @option options [FPM::Fry::Recipe] :recipe (Recipe.new)
+      #   @option options [Cabin::Channel] :logger (default cabin channel)
+      #   @option options [FPM::Fry::Inspector] :inspector
+      def initialize( variables, *args )
+        case(args.size)
+        when 0 then
+          recipe = Recipe.new
+          options = {}
+        when 1 then
+          if args.first.kind_of? Hash
+            options = args.first
+            recipe = options.fetch(:recipe){ Recipe.new }
+          else
+            options = {}
+            recipe = args.first
+          end
+        when 2 then
+          # legacy
+          warn("Legacy initializer form Recipe:Builder")
+          recipe, options = *args
+        else
+          raise ArgumentError, "FPM::Fry::Recipe::Builder.new expects 1..3 arguments, got #{args.size + 1}"
+        end
         variables = variables.dup
         variables.freeze
         @recipe = recipe
@@ -259,7 +300,7 @@ module FPM::Fry
         pr.version = package_recipe.version
         pr.iteration = package_recipe.iteration
         recipe.packages << pr
-        PackageBuilder.new(variables, pr).instance_eval(&block)
+        PackageBuilder.new(variables, pr, logger: logger, inspector: inspector).instance_eval(&block)
       end
 
     protected

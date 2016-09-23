@@ -115,6 +115,22 @@ class FPM::Fry::Client
     end
   end
 
+  # Gets the target of a symlink
+  # @param [String] name the container name
+  # @param [String] resource the file name
+  # @return [String] target
+  # @return [nil] if resource is not a symlink
+  # @api docker
+  def link_target(name, resource)
+    read(name, resource) do |file|
+      if file.header.typeflag == "2"
+        return File.absolute_path(file.header.linkname,File.dirname(resource))
+      end
+      return nil
+    end
+    return nil
+  end
+
   def copy(name, resource, map, options = {})
     ex = FPM::Fry::Tar::Extractor.new(logger: @logger)
     base = File.dirname(resource)

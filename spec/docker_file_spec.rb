@@ -8,7 +8,7 @@ describe FPM::Fry::DockerFile do
       def recipe
         @recipe ||= FPM::Fry::Recipe.new
         if block_given?
-          yield FPM::Fry::Recipe::Builder.new(variables,recipe)
+          yield FPM::Fry::Recipe::Builder.new(variables,recipe: recipe)
         end
         @recipe
       end

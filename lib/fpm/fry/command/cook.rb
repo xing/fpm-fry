@@ -30,6 +30,7 @@ module FPM; module Fry
       require 'fpm/fry/stream_parser'
       require 'fpm/fry/block_enumerator'
       require 'fpm/fry/build_output_parser'
+      require 'fpm/fry/inspector'
       super
     end
 
@@ -82,12 +83,24 @@ module FPM; module Fry
           codename: detector.codename
         }
         logger.debug("Loading recipe",variables: vars, recipe: recipe)
-        b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
-        b.load_file( recipe )
+        b = nil
+        with_inspector do |inspector|
+          b = Recipe::Builder.new(vars, logger: ui.logger, inspector: inspector)
+          b.load_file( recipe )
+        end
         b
       end
     end
     attr_writer :builder
+
+    def with_inspector
+      cont = client.create(image)
+      begin
+        return yield Inspector.new(client, cont)
+      ensure
+        client.destroy(cont)
+      end
+    end
 
     def cache
       @cache ||= builder.recipe.source.build_cache(tmpdir)
