@@ -10,21 +10,10 @@ require 'fpm/fry/plugin'
 module FPM::Fry::Plugin::Init
 
   # Contains information about the init system in use.
-  class System < Struct.new(:name, :with)
-    def ==(other)
-      case(other)
-      when String,Symbol
-        return name.to_s == other.to_s
-      end
-      super
-    end
-    def ===(other)
-    case(other)
-      when String,Symbol
-        return name.to_s == other.to_s
-      end
-      super
-    end
+  class System
+    # @return [Hash<Symbol,Object>] features of the init system
+    attr :with
+
     def with?(feature)
       !!with[feature]
     end
@@ -37,32 +26,16 @@ module FPM::Fry::Plugin::Init
     def systemd?
       name == :systemd
     end
+  private
+    attr :name
+    def initialize(name, with)
+      @name, @with = name, with
+    end
   end
 
-  # @overload init
-  #   @return [System] initsystem in use
-  # @overload init(*inits)
-  #   @example
-  #     init("sysv") do
-  #       # do something only for sysv
-  #     end
-  #   @param [Array<String>] inits
-  #   @yield when the initsystem is in inits param
-  #   @return [true] when the initsystem is in inits arguments
-  #   @return [false] otherwise
-  #
-  def init(*inits)
-    inits = inits.flatten.map(&:to_s)
-    if inits.none?
-      return @init
-    elsif inits.include? @init
-      if block_given?
-        yield
-      end
-      return true
-    else
-      return false
-    end
+  # @return [System] initsystem in use
+  def init
+    return @init
   end
 
 private
@@ -97,7 +70,7 @@ private
 
   def self.extended(base)
     base.instance_eval do
-      @init = FPM::Fry::Plugin::Init.detect(inspector)
+      @init ||= FPM::Fry::Plugin::Init.detect(inspector)
     end
   end
 
