@@ -74,8 +74,12 @@ module RealDocker
 
   def with_container(image)
     docker = real_docker
-    docker.pull(image)
-    container = docker.create(image)
+    begin
+      container = docker.create(image)
+    rescue Excon::Error::NotFound
+      docker.pull(image)
+      container = docker.create(image)
+    end
     begin
       yield container
     ensure

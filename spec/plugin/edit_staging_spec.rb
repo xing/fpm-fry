@@ -3,10 +3,10 @@ require 'fpm/fry/recipe'
 require 'fpm/fry/recipe/builder'
 describe 'FPM::Fry::Plugin::EditStaging' do
 
-  let(:recipe){ FPM::Fry::Recipe.new }
+  let(:recipe){ builder.recipe }
 
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({},recipe)
+    FPM::Fry::Recipe::Builder.new({})
   }
 
   let(:package){

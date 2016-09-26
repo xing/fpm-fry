@@ -189,35 +189,13 @@ module FPM::Fry
 
       attr :recipe
 
-      # @overload initialize( variables, recipe = Recipe.new, options = {})
-      #   @deprecated
-      #
-      # @overload initialize( variables, options )
-      #   @param [Hash<Symbol,Object>] variables
-      #   @param [Hash] options
-      #   @option options [FPM::Fry::Recipe] :recipe (Recipe.new)
-      #   @option options [Cabin::Channel] :logger (default cabin channel)
-      #   @option options [FPM::Fry::Inspector] :inspector
-      def initialize( variables, *args )
-        case(args.size)
-        when 0 then
-          recipe = Recipe.new
-          options = {}
-        when 1 then
-          if args.first.kind_of? Hash
-            options = args.first
-            recipe = options.fetch(:recipe){ Recipe.new }
-          else
-            options = {}
-            recipe = args.first
-          end
-        when 2 then
-          # legacy
-          warn("Legacy initializer form Recipe:Builder")
-          recipe, options = *args
-        else
-          raise ArgumentError, "FPM::Fry::Recipe::Builder.new expects 1..3 arguments, got #{args.size + 1}"
-        end
+      # @param [Hash<Symbol,Object>] variables
+      # @param [Hash] options
+      # @option options [FPM::Fry::Recipe] :recipe (Recipe.new)
+      # @option options [Cabin::Channel] :logger (default cabin channel)
+      # @option options [FPM::Fry::Inspector] :inspector
+      def initialize( variables, options = {} )
+        recipe = options.fetch(:recipe){ Recipe.new }
         variables = variables.dup
         variables.freeze
         @recipe = recipe

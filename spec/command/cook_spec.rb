@@ -118,7 +118,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'with an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, recipe: FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
@@ -141,7 +141,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'without an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, recipe: FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
@@ -271,7 +271,7 @@ describe FPM::Fry::Command::Cook do
     end
 
     let(:builder) do
-      FPM::Fry::Recipe::Builder.new({}, recipe, logger: subject.logger)
+      FPM::Fry::Recipe::Builder.new({}, recipe: recipe, logger: subject.logger)
     end
 
     let(:output_class) do
