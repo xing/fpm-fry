@@ -28,11 +28,11 @@ module FPM ; module Fry
         if e.respond_to? :data
           @data = e.data.merge(data)
         else
-          @data = {reason: e}.merge data
+          @data = data.dup.freeze
         end
         super(e.message)
       else
-        @data = data.dup
+        @data = data.dup.freeze
         super(e.to_s)
       end
     end
