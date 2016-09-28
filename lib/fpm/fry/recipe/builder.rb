@@ -187,6 +187,7 @@ module FPM::Fry
 
     class Builder < PackageBuilder
 
+      # @return [FPM::Fry::Recipe]
       attr :recipe
 
       # @param [Hash<Symbol,Object>] variables
