@@ -13,6 +13,11 @@ class FPM::Fry::Client
     include FPM::Fry::WithData
   end
 
+  # Raised when a container wasn't found.
+  class ContainerNotFound < StandardError
+    include FPM::Fry::WithData
+  end
+
   # Raised when trying to read file that can't be read e.g. because it's a 
   # directory.
   class NotAFile < StandardError
@@ -87,6 +92,10 @@ class FPM::Fry::Client
     )
     if [404,500].include? res.status
       body_message = Hash[JSON.load(res.body).map{|k,v| ["docker.#{k}",v] }] rescue {'docker.message' => res.body}
+      body_message['docker.container'] = name
+      if body_message['docker.message'] =~ /\ANo such container:/
+        raise ContainerNotFound.new("container not found", body_message)
+      end
       raise FileNotFound.new("file not found", {'path' => resource}.merge(body_message))
     end
     sio = StringIO.new(res.body)

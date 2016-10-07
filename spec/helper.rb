@@ -97,7 +97,7 @@ end
 
 RealDocker.check!
 
-require 'webmock'
+require 'webmock/rspec'
 WebMock.disable_net_connect!( allow: RealDocker.url )
 
 RSpec.configure do |config|

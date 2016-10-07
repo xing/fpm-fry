@@ -42,28 +42,52 @@ describe FPM::Fry::Client do
         }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
           expect(e.data).to match(
             'path' => 'foo',
-            'docker.message' => 'not my day'
+            'docker.message' => 'not my day',
+            'docker.container' => 'deadbeef'
           )
         end
       end
 
       it 'raises (real)' do
-        real_docker.pull('ubuntu:16.04')
-        id = real_docker.create('ubuntu:16.04')
-        begin
+        with_container('ubuntu:16.04') do |id|
           expect{
             real_docker.read(id,'foo'){}
           }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
             expect(e.data).to match(
               'path' => 'foo',
-              'docker.message'=> /\Alstat .*: no such file or directory\z/
+              'docker.message'=> /\Alstat .*: no such file or directory\z/,
+              'docker.container' => /\A\h{64}\z/
             )
           end
-        ensure
-          real_docker.destroy(id)
         end
       end
     end
+
+    context 'missing container' do
+      it 'raises' do
+        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 404, body:'{"message":"No such container:"}')
+        expect{
+          subject.read('deadbeef','foo'){}
+        }.to raise_error(FPM::Fry::Client::ContainerNotFound) do |e|
+          expect(e.data).to match(
+            'docker.message' => 'No such container:',
+            'docker.container' => 'deadbeef'
+          )
+        end
+      end
+
+      it 'raises (real)' do
+        expect{
+          real_docker.read('ishouldreallynotexist','foo'){}
+        }.to raise_error(FPM::Fry::Client::ContainerNotFound) do |e|
+          expect(e.data).to match(
+            'docker.message'=> "No such container: ishouldreallynotexist",
+            'docker.container' => 'ishouldreallynotexist'
+          )
+        end
+      end
+    end
+
   end
 
   describe '#copy' do
