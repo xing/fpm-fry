@@ -239,13 +239,14 @@ describe FPM::Fry::Command::Cook do
         allow(subject.client).to receive(:read).
           with('deadbeef','/var/lib/apt/lists').
           and_yield(double('lists', header: double('lists.header', name: 'lists/'))).
-          and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter')))
+          and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter'))).
+          and_yield(double('cache2', header: double('cache.header', name: 'lists/doenst_matter_either')))
         allow(subject.client).to receive(:destroy).
           with('deadbeef')
       end
 
       it 'is true' do
-        expect(subject.logger).to receive(:hint).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: /The-update-parameter/)
+        expect(subject.logger).to receive(:hint).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: /The-update-parameter/).once
         expect(subject.update?).to eq true
       end
     end
