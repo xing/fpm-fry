@@ -1,4 +1,4 @@
-# 0.3.0 / t.b.d
+# 0.3.0 / 2016.10.16
 
 * [CHANGE] also recognize urls starting with https://git. as git
 * [CHANGE] also recognize urls with scheme git+... as git
