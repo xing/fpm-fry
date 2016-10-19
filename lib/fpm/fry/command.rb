@@ -23,6 +23,7 @@ module FPM; module Fry
     def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
       super
       @ui = ctx.fetch(:ui){ UI.new }
+      @client = ctx[:client]
     end
 
     def parse(attrs)
@@ -45,42 +46,27 @@ module FPM; module Fry
 
     attr_writer :client
 
-    subcommand 'detect', 'Detects distribution from an image, a container or a given name' do
+    subcommand 'detect', 'Detects distribution from an image' do
 
-      option '--image', 'image', 'Docker image to detect'
-      option '--container', 'container', 'Docker container to detect'
-      option '--distribution', 'distribution', 'Distribution name to detect'
+      parameter 'image', 'Docker image to detect'
 
       attr :ui
       extend Forwardable
       def_delegators :ui, :logger
 
       def execute
+        require 'fpm/fry/inspector'
         require 'fpm/fry/detector'
 
-        if image
-          d = Detector::Image.new(client, image)
-        elsif distribution
-          d = Detector::String.new(distribution)
-        elsif container
-          d = Detector::Container.new(client, container)
-        else
-          logger.error("Please supply either --image, --distribution or --container")
-          return 1
-        end
-
-        begin
-          if d.detect!
-            data = {distribution: d.distribution, version: d.version, flavour: d.flavour, codename: d.codename}
-            logger.info("Detected distribution",data)
+        Inspector.for_image(client, image) do | inspector |
+          begin
+            data = Detector.detect(inspector)
+            logger.info("Detected the following parameters",data)
             return 0
-          else
-            logger.error("Detection failed")
-            return 2
+          rescue => e
+            logger.error(e)
+            return 1
           end
-        rescue => e
-          logger.error(e)
-          return 3
         end
       end
 

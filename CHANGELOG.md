@@ -6,6 +6,8 @@
 * [ENHANCEMENT] removed OsDb. This file contained some hardcoded Os versions which was not future proof. It was a workaround to get started more quickly.
 * [FIX] patched sources now fail when the underlying patch fails
 * [CHANGE] Renamed "Source::Package" to "Source::Archive" which is more striking. The term "package" is also used for build results.
+* [IMPROVEMENT] removed hardcoded init system list, try to guess the init system from the provided container
+* [CHANGE] init plugin has a different syntax
 
 # 0.2.2 / 2016.09.05
 

@@ -2,7 +2,6 @@ require 'fpm/fry/command'
 module FPM; module Fry
   class Command::Cook < Command
 
-    option '--distribution', 'distribution', 'Distribution like ubuntu-12.04'
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
 
@@ -30,31 +29,10 @@ module FPM; module Fry
       require 'fpm/fry/stream_parser'
       require 'fpm/fry/block_enumerator'
       require 'fpm/fry/build_output_parser'
+      require 'fpm/fry/inspector'
+      require 'fpm/fry/plugin/config'
       super
     end
-
-    def detector
-      @detector || begin
-        if distribution
-          d = Detector::String.new(distribution)
-        else
-          d = Detector::Image.new(client, image)
-        end
-        self.detector=d
-      end
-    end
-
-    def detector=(d)
-      unless d.detect!
-        raise "Unable to detect distribution from given image"
-      end
-      @detector = d
-    end
-
-    def flavour
-      @flavour ||= detector.flavour
-    end
-    attr_writer :flavour
 
     def output_class
       @output_class ||= begin
@@ -75,19 +53,21 @@ module FPM; module Fry
 
     def builder
       @builder ||= begin
-        vars = {
-          distribution: detector.distribution,
-          distribution_version: detector.version,
-          flavour: flavour,
-          codename: detector.codename
-        }
-        logger.debug("Loading recipe",variables: vars, recipe: recipe)
-        b = Recipe::Builder.new(vars, Recipe.new, logger: ui.logger)
-        b.load_file( recipe )
+        b = nil
+        Inspector.for_image(client, image) do |inspector|
+          variables = Detector.detect(inspector)
+          logger.debug("Loading recipe",variables: variables, recipe: recipe)
+          b = Recipe::Builder.new(variables, logger: ui.logger, inspector: inspector)
+          b.load_file( recipe )
+        end
         b
       end
     end
     attr_writer :builder
+
+    def flavour
+      builder.variables[:flavour]
+    end
 
     def cache
       @cache ||= builder.recipe.source.build_cache(tmpdir)
@@ -169,22 +149,12 @@ module FPM; module Fry
       if flavour == 'debian'
         case(update)
         when 'auto'
-          body = JSON.generate({"Image" => image, "Cmd" => "exit 0"})
-          res = client.post( path: client.url('containers','create'),
-                             headers: {'Content-Type' => 'application/json'},
-                             body: body,
-                             expects: [201]
-                           )
-          body = JSON.parse(res.body)
-          container = body.fetch('Id')
-          begin
-            client.read( container, '/var/lib/apt/lists') do |file|
+          Inspector.for_image(client, image) do |inspector|
+            inspector.read('/var/lib/apt/lists') do |file|
               next if file.header.name == 'lists/'
               logger.hint("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: 'https://github.com/xing/fpm-fry/wiki/The-update-parameter')
-              return true
+              break
             end
-          ensure
-            client.destroy(container)
           end
           return true
         when 'always'
@@ -360,11 +330,8 @@ module FPM; module Fry
     def execute
       # force some eager loading
       lint_recipe_file!
-      detector
-      flavour
-      output_class
-      lint_output_class!
       builder
+      lint_output_class!
       lint_recipe!
       cache
 

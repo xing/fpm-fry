@@ -6,10 +6,10 @@ describe 'FPM::Fry::Plugin::ScriptHelper' do
 
   let(:flavour){ 'debian' }
 
-  let(:recipe){ FPM::Fry::Recipe.new }
+  let(:recipe){ builder.recipe }
 
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({flavour: flavour},recipe)
+    FPM::Fry::Recipe::Builder.new({flavour: flavour})
   }
 
   after(:each) do

@@ -72,11 +72,32 @@ module RealDocker
     RealDocker.client
   end
 
+  def with_container(image)
+    docker = real_docker
+    begin
+      container = docker.create(image)
+    rescue Excon::Error::NotFound
+      docker.pull(image)
+      container = docker.create(image)
+    end
+    begin
+      yield container
+    ensure
+      docker.destroy(container)
+    end
+  end
+
+  def with_inspector(image)
+    with_container(image){|cont|
+      yield FPM::Fry::Inspector.new(real_docker, cont)
+    }
+  end
+
 end
 
 RealDocker.check!
 
-require 'webmock'
+require 'webmock/rspec'
 WebMock.disable_net_connect!( allow: RealDocker.url )
 
 RSpec.configure do |config|

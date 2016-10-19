@@ -2,12 +2,12 @@ require 'fpm/fry/plugin/user'
 
 describe FPM::Fry::Plugin::User do
 
-  let(:recipe){ FPM::Fry::Recipe.new }
+  let(:recipe){ builder.recipe }
 
   let(:flavour){ 'debian' }
 
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({flavour: flavour},recipe)
+    FPM::Fry::Recipe::Builder.new({flavour: flavour})
   }
 
   let(:package){

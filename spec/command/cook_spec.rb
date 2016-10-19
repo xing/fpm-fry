@@ -45,7 +45,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'debian-automatic' do
       before(:each) do
-        subject.flavour = 'debian'
+        subject.builder = FPM::Fry::Recipe::Builder.new(flavour: 'debian')
       end
       it 'returns Deb' do
         expect(subject.output_class).to eq FPM::Package::Deb
@@ -54,7 +54,7 @@ describe FPM::Fry::Command::Cook do
 
     context 'redhat-automatic' do
       before(:each) do
-        subject.flavour = 'redhat'
+        subject.builder = FPM::Fry::Recipe::Builder.new(flavour: 'redhat')
       end
       it 'returns Deb' do
         expect(subject.output_class).to eq FPM::Package::RPM
@@ -66,20 +66,16 @@ describe FPM::Fry::Command::Cook do
   describe '#builder' do
 
     subject do
-      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui, client: real_docker)
     end
 
     context 'trivial case' do
       before(:each) do
-        subject.detector = FPM::Fry::Detector::String.new('ubuntu-12.04 precise')
-        subject.flavour = 'debian'
+        subject.image = 'ubuntu:16.04'
         subject.recipe = File.expand_path('../data/recipe.rb',File.dirname(__FILE__))
       end
       it 'works' do
         expect(subject.builder).to be_a FPM::Fry::Recipe::Builder
-      end
-      it 'contains the right variables' do
-        expect(subject.builder.variables).to eq(distribution: 'ubuntu', distribution_version: '12.04', flavour: 'debian', codename: 'precise')
       end
       it 'has exactly one package' do
         expect(subject.builder.recipe.packages.size).to eq 1
@@ -99,6 +95,7 @@ describe FPM::Fry::Command::Cook do
     context 'with an existing image' do
       before(:each) do
         subject.image = 'foo:bar'
+
         stub_request(:get, "http://unix/version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:get, "http://unix/v1.9/images/foo:bar/json").
@@ -117,12 +114,12 @@ describe FPM::Fry::Command::Cook do
 
     context 'with an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, logger: subject.logger)
       end
 
       before(:each) do
         subject.image_id = 'f'*32
-        subject.flavour  = 'unknown'
+        subject.update = 'never'
         subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/version").
@@ -140,12 +137,12 @@ describe FPM::Fry::Command::Cook do
 
     context 'without an existing cache image' do
       let(:builder) do
-        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, FPM::Fry::Recipe.new, logger: subject.logger)
+        FPM::Fry::Recipe::Builder.new({flavour: 'debian'}, recipe: FPM::Fry::Recipe.new, logger: subject.logger)
       end
 
       before(:each) do
         subject.image_id = 'f'*32
-        subject.flavour  = 'unknown'
+        subject.update = 'never'
         subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
         stub_request(:get, "http://unix/version").
@@ -174,6 +171,7 @@ describe FPM::Fry::Command::Cook do
     context 'trivial case' do
 
       before(:each) do
+        subject.image = 'fpm-fry:x'
         subject.build_image = 'fpm-fry:x'
         stub_request(:get, "http://unix/version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
@@ -207,22 +205,19 @@ describe FPM::Fry::Command::Cook do
     end
 
     subject do
-      s = FPM::Fry::Command::Cook.new('fpm-fry', ui: ui)
-      s.client = client
-      s
+      FPM::Fry::Command::Cook.new('fpm-fry', ui: ui, client: client)
     end
 
     context 'debian auto without cache' do
 
       before(:each) do
-        subject.flavour = 'debian'
         subject.image = 'ubuntu:precise'
-        allow(subject.client).to receive(:post).
-          with(a_hash_including(path: 'containers/create')).
-          and_return(double('response', body: '{"Id":"deadbeef"}'))
+        subject.builder = FPM::Fry::Recipe::Builder.new(flavour: 'debian')
+        allow(subject.client).to receive(:create).
+          with('ubuntu:precise').
+          and_return('deadbeef')
         allow(subject.client).to receive(:read).
-          with('deadbeef','/var/lib/apt/lists').
-          and_yield(double('lists', header: double('lists.header', name: 'lists/')))
+          with('deadbeef','/var/lib/apt/lists')
         allow(subject.client).to receive(:destroy).
           with('deadbeef')
       end
@@ -236,21 +231,22 @@ describe FPM::Fry::Command::Cook do
     context 'debian auto with cache' do
 
       before(:each) do
-        subject.flavour = 'debian'
         subject.image = 'ubuntu:precise'
-        allow(subject.client).to receive(:post).
-          with(a_hash_including(path: 'containers/create')).
-          and_return(double('response', body: '{"Id":"deadbeef"}'))
+        subject.builder = FPM::Fry::Recipe::Builder.new(flavour: 'debian')
+        allow(subject.client).to receive(:create).
+          with('ubuntu:precise').
+          and_return('deadbeef')
         allow(subject.client).to receive(:read).
           with('deadbeef','/var/lib/apt/lists').
           and_yield(double('lists', header: double('lists.header', name: 'lists/'))).
-          and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter')))
+          and_yield(double('cache', header: double('cache.header', name: 'lists/doenst_matter'))).
+          and_yield(double('cache2', header: double('cache.header', name: 'lists/doenst_matter_either')))
         allow(subject.client).to receive(:destroy).
           with('deadbeef')
       end
 
       it 'is true' do
-        expect(subject.logger).to receive(:hint).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: /The-update-parameter/)
+        expect(subject.logger).to receive(:hint).with("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: /The-update-parameter/).once
         expect(subject.update?).to eq true
       end
     end
@@ -270,7 +266,7 @@ describe FPM::Fry::Command::Cook do
     end
 
     let(:builder) do
-      FPM::Fry::Recipe::Builder.new({}, recipe, logger: subject.logger)
+      FPM::Fry::Recipe::Builder.new({}, recipe: recipe, logger: subject.logger)
     end
 
     let(:output_class) do

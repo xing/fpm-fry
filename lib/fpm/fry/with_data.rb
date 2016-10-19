@@ -23,16 +23,28 @@ module FPM ; module Fry
     # @return [Hash] debugging/logging data
     attr :data
 
+    # @overload initialize(data = {})
+    #   @param data [Hash]
+    #
+    # @overload initialize(cause, data = {})
+    #   If cause responds to #data the data will be merged.
+    #   @param cause [Exception]
+    #   @param data [Hash]
+    #
+    # @overload initialize(message, data = {})
+    #   @param message [String]
+    #   @param data [Hash]
+    #
     def initialize(e=self.class.name, data = {})
       if e.kind_of? Exception
         if e.respond_to? :data
           @data = e.data.merge(data)
         else
-          @data = {reason: e}.merge data
+          @data = data.dup.freeze
         end
         super(e.message)
       else
-        @data = data.dup
+        @data = data.dup.freeze
         super(e.to_s)
       end
     end
