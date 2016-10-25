@@ -87,8 +87,8 @@ module FPM; module Fry
           df << "ADD #{source} /tmp/build/#{target}"
         end
 
-        recipe.apt_setup.each do |step|
-          df << "RUN #{step}"
+        recipe.before_dependencies_steps.each do |step|
+          df << "RUN #{step.to_s}"
         end
 
         if build_dependencies.any?

@@ -1,3 +1,7 @@
+# 0.3.1 / t.b.d
+
+* [FEATURE] add experimental apt plugin
+
 # 0.3.0 / 2016.10.16
 
 * [CHANGE] also recognize urls starting with https://git. as git

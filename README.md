@@ -181,16 +181,6 @@ add "images/code/install-code.sh", ".install-code.sh"
 Mounts are added before any other build command runs in the build container.
 
 
-- `apt_setup` run a command before any generated `apt-get install` or `apt-get update` is run inside the build container.
-
-```ruby
-apt_setup "echo 'deb [trusted=yes] http://somedomain/packages/#{distribution}/#{codename} ./' >> /etc/apt/sources.list"
-"
-```
-
-Allows one to add custom apt repositories befor installing in package.
-
-
 ### Target info
 
 - `flavour`: Returns the linux family like "redhat" or "debian"
@@ -247,6 +237,16 @@ Adds a configure script adding the given user.
 
 ```ruby
 plugin "user", "my-user"
+```
+
+#### apt
+
+Adds an apt repository ( experimental ).
+
+```ruby
+plugin 'apt' do |apt|
+  apt.repository "https://repo.varnish-cache.org/#{distribution}", codename, "varnish-4.1"
+end
 ```
 
 Multi-Package support

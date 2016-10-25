@@ -200,7 +200,7 @@ module FPM::Fry
         variables = variables.dup
         variables.freeze
         @recipe = recipe
-        @before_build = false
+        @steps = :steps
         register_default_source_types!
         super(variables, recipe.packages[0], options)
       end
@@ -231,7 +231,9 @@ module FPM::Fry
       end
 
       def apt_setup(cmd)
-        recipe.apt_setup << cmd
+        before_dependencies do
+          bash cmd
+        end
       end
 
       def run(*args)
@@ -250,7 +252,10 @@ module FPM::Fry
           code = Recipe::Step.new(name, code)
         end
         # Don't do this at home
-        if @before_build
+        case(@steps)
+        when :before_dependencies
+          recipe.before_dependencies_steps << code
+        when :before_build
           recipe.before_build_steps << code
         else
           recipe.steps << code
@@ -258,10 +263,17 @@ module FPM::Fry
       end
 
       def before_build
-        @before_build = true
+        steps, @steps = @steps, :before_build
         yield
       ensure
-        @before_build = false
+        @steps = steps
+      end
+
+      def before_dependencies
+        steps, @steps = @steps, :before_dependencies
+        yield
+      ensure
+        @steps = steps
       end
 
       def build_depends( name , options = {} )

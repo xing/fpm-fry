@@ -134,7 +134,9 @@ module FPM; module Fry
     attr_accessor :source
 
     attr_accessor :build_mounts
-    attr_accessor :apt_setup
+
+    # @return [Array<#to_s>] steps that will be carried out before dependencies are installed
+    attr_accessor :before_dependencies_steps
 
     # @return [Array<#to_s>] steps that will be carried out before build
     attr_accessor :before_build_steps
@@ -153,6 +155,7 @@ module FPM; module Fry
 
     def initialize
       @source = Source::Null
+      @before_dependencies_steps = []
       @before_build_steps = []
       @steps = []
       @packages = [PackageRecipe.new]
@@ -160,7 +163,6 @@ module FPM; module Fry
       @build_depends = {}
       @input_hooks = []
       @build_mounts = []
-      @apt_setup = []
     end
 
     # Calculates all dependencies of this recipe

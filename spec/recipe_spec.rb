@@ -91,6 +91,31 @@ RECIPE
 
   end
 
+  context 'before_dependencies' do
+
+    context 'inserts bash scripts into the before_dependencies_steps section' do
+      subject do
+        build <<RECIPE
+bash 'before'
+before_dependencies do
+  bash 'inside'
+end
+bash 'after'
+RECIPE
+      end
+
+      it 'places inner bash steps in before_dependencies_steps' do
+        expect(subject.before_dependencies_steps.map(&:to_s)).to eq ['inside']
+      end
+
+      it 'places surrounding bash steps in steps' do
+        expect(subject.steps.map(&:to_s)).to eq ['before','after']
+      end
+    end
+
+  end
+
+
   context "scripts" do
     subject do
       build <<RECIPE
