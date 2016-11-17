@@ -61,9 +61,9 @@ private
 
   def self.detect_sysv(inspector)
     features = {
-      chkconfig: inspector.exists?('/sbin/chkconfig'),
-      'update-rc.d': inspector.exists?('/usr/sbin/update-rc.d'),
-      'invoke-rc.d': inspector.exists?('/usr/sbin/invoke-rc.d')
+      :chkconfig => inspector.exists?('/sbin/chkconfig'),
+      :'update-rc.d' => inspector.exists?('/usr/sbin/update-rc.d'),
+      :'invoke-rc.d' => inspector.exists?('/usr/sbin/invoke-rc.d')
     }
     return System.new(:sysv,features)
   end
