@@ -216,7 +216,7 @@ SHELL
         include DockerFileParams
         let(:cache){
           c = double('cache')
-          allow(c).to receive(:file_map){ {'' => '' } }
+          allow(c).to receive(:file_map){ nil }
           c
         }
 
@@ -232,6 +232,37 @@ FROM ubuntu:precise
 RUN mkdir /tmp/build
 ADD . /tmp/build
 DOCKERFILE
+        end
+      end
+
+      context 'with a cache supporting prefix' do
+        include DockerFileParams
+        let(:cache){
+          c = double('cache')
+          allow(c).to receive(:prefix).and_return('a_prefix')
+          allow(c).to receive(:file_map){ {'a_prefix' => '' } }
+          allow(c).to receive(:logger).and_return(logger)
+          c
+        }
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        it "map the files" do
+          allow(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          expect(subject.dockerfile).to eq(<<DOCKERFILE)
+FROM ubuntu:precise
+RUN mkdir /tmp/build
+ADD a_prefix /tmp/build
+DOCKERFILE
+        end
+
+        it "hints that file_map can be removed" do
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
         end
       end
     end

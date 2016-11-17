@@ -1,3 +1,7 @@
+# 0.4.0 / t.b.d
+
+* [ENHANCEMENT] setting file_map parameter on source is now mostly superfluous
+
 # 0.3.1 / t.b.d
 
 * [FEATURE] add experimental apt plugin

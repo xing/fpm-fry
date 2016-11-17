@@ -36,6 +36,10 @@ module FPM; module Fry ; module Source
         end
         return dig.hexdigest
       end
+
+      def prefix
+        Source::prefix(dir)
+      end
     end
 
     attr :url, :logger, :file_map
@@ -46,7 +50,7 @@ module FPM; module Fry ; module Source
         @url.path = File.expand_path(@url.path)
       end
       @logger = options.fetch(:logger){ Cabin::Channel.get }
-      @file_map = options.fetch(:file_map){ {'' => ''} }
+      @file_map = options[:file_map]
     end
 
     def build_cache(_)

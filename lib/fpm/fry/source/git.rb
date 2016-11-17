@@ -59,6 +59,11 @@ module FPM; module Fry ; module Source
       def cachekey
         Exec::exec(package.git, "--git-dir=#{repodir}",'rev-parse','FETCH_HEAD^{tree}', logger: logger).chomp
       end
+
+      def prefix
+        ""
+      end
+
     private
       def initialize(*_)
         super
@@ -90,7 +95,7 @@ module FPM; module Fry ; module Source
     # @return [String] the git rev to pull (default "HEAD")
     attr :rev
 
-    # @return [Hash<String,String>] the file map for generating a docker file
+    # @return [Hash<String,String>,nil] the file map for generating a docker file
     attr :file_map
 
     # @return [URI] the uri to pull from
@@ -107,7 +112,7 @@ module FPM; module Fry ; module Source
       @url = URI(url)
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @rev = options[:branch] || options[:tag] || options[:rev] || 'HEAD'
-      @file_map = options.fetch(:file_map){ {'' => ''} }
+      @file_map = options[:file_map]
       @git = options[:git] || 'git'
     end
 

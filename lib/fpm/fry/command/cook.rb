@@ -122,6 +122,9 @@ module FPM; module Fry
             path: client.url("build?rm=1&dockerfile=#{DockerFile::NAME}&t=#{cachetag}"),
             request_block: BlockEnumerator.new(df.tar_io)
           )
+        else
+          # Hack to trigger hints/warnings even when the cache is valid.
+          DockerFile::Source.new(builder.variables.merge(image: image_id),cache).send(:file_map)
         end
 
         df = DockerFile::Build.new(cachetag, builder.variables.dup,builder.recipe, update: update?)
