@@ -185,7 +185,7 @@ Mounts are added before any other build command runs in the build container.
 
 - `flavour`: Returns the linux family like "redhat" or "debian"
 - `distribution`: Returns the linux distribution like "ubuntu" or "centos"
-- `distribution_version`: The distribution version as a string like "12.04" or "6.0.7"
+- `release`: The distribution version as a string like "12.04" or "6.0.7"
 - `codename`: The release codename like "squeeze" or "trusty"
 
 ### Plugins

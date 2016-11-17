@@ -40,6 +40,37 @@ RECIPE
     end
   end
 
+  describe 'basic variables' do
+
+    subject{
+      FPM::Fry::Recipe::Builder.new(distribution: "foo", codename: "bar", release: "1.2.3", flavour: "tasty")
+    }
+
+    it 'has a distribution' do
+      expect(subject.distribution).to eq 'foo'
+    end
+
+    it 'has a platform' do
+      expect(subject.platform).to eq 'foo'
+    end
+
+    it 'has a codename' do
+      expect(subject.codename).to eq 'bar'
+    end
+
+    it 'has a release' do
+      expect(subject.release).to eq '1.2.3'
+    end
+
+    it 'has a distribution_version' do
+      expect(subject.distribution_version).to eq '1.2.3'
+    end
+
+    it 'has a flavour' do
+      expect(subject.flavour).to eq 'tasty'
+    end
+  end
+
   context 'bash' do
 
     context 'with just code' do

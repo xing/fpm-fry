@@ -29,6 +29,8 @@ module FPM::Fry
         @inspector = options[:inspector]
       end
 
+      # Returns the package type ( e.g. "debian" or "redhat" ).
+      # @return [String]
       def flavour
         variables[:flavour]
       end
@@ -38,9 +40,13 @@ module FPM::Fry
       end
       alias platform distribution
 
-      def distribution_version
-        variables[:distribution_version]
+      # The release version of the distribution ( e.g. "12.04" or "6.0.7" )
+      # @return [String]
+      def release
+        variables[:release]
       end
+
+      alias distribution_version release
       alias platform_version distribution_version
 
       def codename
