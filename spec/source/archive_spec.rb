@@ -255,4 +255,81 @@ describe FPM::Fry::Source::Archive do
     end
 
   end
+
+  describe '#prefix' do
+
+    context 'with a simple tar file' do
+      it "returns an empty string" do
+        stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+        src = FPM::Fry::Source::Archive.new("http://example/file.tar")
+        cache = src.build_cache(tmpdir)
+        expect( cache.prefix ).to eq ''
+      end
+    end
+
+    context 'with a more complex tar file' do
+
+      let(:body){
+        body = StringIO.new
+        tar = Gem::Package::TarWriter.new(body)
+        tar.mkdir('bar/','0777')
+        tar.add_file('bar/foo','0777') do |io|
+          io.write("bar")
+        end
+        tar.mkdir('bar/baz','0777')
+        tar.add_file('bar/baz/blub','0777') do |io|
+          io.write("bar")
+        end
+        body.string
+      }
+
+      it "returns the prefix string" do
+        stub_request(:get,'http://example/file.tar').to_return(body: body, status: 200)
+        src = FPM::Fry::Source::Archive.new("http://example/file.tar")
+        cache = src.build_cache(tmpdir)
+        expect( cache.prefix ).to eq 'bar'
+      end
+    end
+
+    context 'with a simple zip file' do
+      let(:body) do
+        outfile = File.join(tmpdir,'zipfile.zip')
+        Dir.chdir(tmpdir) do
+          IO.write('foo', 'bar')
+          system('zip',outfile,'foo', out: '/dev/null')
+        end
+        IO.read(outfile)
+      end
+
+      it "returns an empty string" do
+        stub_request(:get,'http://example/file.zip').to_return(body: body, status: 200)
+        src = FPM::Fry::Source::Archive.new("http://example/file.zip")
+        cache = src.build_cache(tmpdir)
+        expect( cache.prefix ).to eq ''
+      end
+    end
+
+    context 'with a more complex zip file' do
+      let(:body) do
+        outfile = File.join(tmpdir,'zipfile.zip')
+        Dir.chdir(tmpdir) do
+          Dir.mkdir('foo')
+          Dir.mkdir('foo/bar')
+          Dir.mkdir('foo/bar/baz')
+          IO.write('foo/bar/fuz', 'bar')
+          system('zip','-r',outfile,'foo', out: '/dev/null')
+        end
+        IO.read(outfile)
+      end
+
+      it "returns the prefix string" do
+        stub_request(:get,'http://example/file.zip').to_return(body: body, status: 200)
+        src = FPM::Fry::Source::Archive.new("http://example/file.zip")
+        cache = src.build_cache(tmpdir)
+        expect( cache.prefix ).to eq 'foo/bar'
+      end
+    end
+
+
+  end
 end

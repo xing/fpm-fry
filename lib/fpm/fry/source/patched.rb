@@ -8,6 +8,7 @@ module FPM; module Fry ; module Source
       extend Forwardable
 
       def_delegators :package, :logger, :file_map
+      def_delegators :inner, :prefix
 
       attr :inner
 
@@ -18,39 +19,64 @@ module FPM; module Fry ; module Source
       end
 
       def update!
-        @updated ||= begin
-          if !File.directory?(unpacked_tmpdir)
-            workdir = unpacked_tmpdir + '.tmp'
-            begin
-              FileUtils.mkdir(workdir)
-            rescue Errno::EEXIST
-              FileUtils.rm_rf(workdir)
-              FileUtils.mkdir(workdir)
-            end
-            if inner.respond_to? :copy_to
-              inner.copy_to(workdir)
-            else
-              ex = Tar::Extractor.new(logger: logger)
-              tio = inner.tar_io
-              begin
-                ex.extract(workdir, ::Gem::Package::TarReader.new(tio), chown: false)
-              ensure
-                tio.close
-              end
-            end
-            package.patches.each do |patch|
-              cmd = ['patch','-p1','-i',patch[:file]]
-              chdir = File.expand_path(patch.fetch(:chdir,'.'),workdir)
-              begin
-                Fry::Exec[*cmd, chdir: chdir, logger: logger]
-              rescue Exec::Failed => e
-                raise CacheFailed.new(e, patch: patch[:file])
-              end
-            end
-            File.rename(workdir, unpacked_tmpdir)
+        return if @updated
+        if !File.directory?(unpacked_tmpdir)
+          workdir = unpacked_tmpdir + '.tmp'
+          begin
+            FileUtils.mkdir(workdir)
+          rescue Errno::EEXIST
+            FileUtils.rm_rf(workdir)
+            FileUtils.mkdir(workdir)
           end
-          true
+          if inner.respond_to? :copy_to
+            inner.copy_to(workdir)
+          else
+            ex = Tar::Extractor.new(logger: logger)
+            tio = inner.tar_io
+            begin
+              ex.extract(workdir, ::Gem::Package::TarReader.new(tio), chown: false)
+            ensure
+              tio.close
+            end
+          end
+          base = workdir
+          if inner.respond_to? :prefix
+            base = File.expand_path(inner.prefix, base)
+          end
+          package.patches.each do |patch|
+            cmd = ['patch','-p1','-i',patch[:file]]
+            chdir = base
+            if patch.key? :chdir
+              given_chdir = File.expand_path(patch[:chdir],workdir)
+              if given_chdir != chdir
+                chdir = given_chdir
+              else
+                logger.hint("You can remove the chdir: #{patch[:chdir].inspect} option for #{patch[:file]}. The given value is the default.", documentation: 'https://github.com/xing/fpm-fry/wiki/Source-patching#chdir' )
+              end
+            end
+            begin
+              Fry::Exec[*cmd, chdir: chdir, logger: logger]
+            rescue Exec::Failed => e
+              raise CacheFailed.new(e, patch: patch[:file])
+            end
+          end
+          File.rename(workdir, unpacked_tmpdir)
+        else
+          # 
+          base = unpacked_tmpdir
+          if inner.respond_to? :prefix
+            base = File.expand_path(inner.prefix, base)
+          end
+          package.patches.each do |patch|
+            if patch.key? :chdir
+              given_chdir = File.expand_path(patch[:chdir],unpacked_tmpdir)
+              if given_chdir == base
+                logger.hint("You can remove the chdir: #{patch[:chdir].inspect} option for #{patch[:file]}. The given value is the default.", documentation: 'https://github.com/xing/fpm-fry/wiki/Source-patching#chdir' )
+              end
+            end
+          end
         end
+        @updated = true
       end
       private :update!
 

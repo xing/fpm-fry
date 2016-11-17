@@ -13,6 +13,11 @@ module FPM; module Fry
       def initialize(variables, cache = Source::Null::Cache)
         variables = variables.dup.freeze
         super(variables, cache)
+        if cache.respond_to? :logger
+          @logger = cache.logger
+        else
+          @logger = Cabin::Channel.get
+        end
       end
 
       def dockerfile
@@ -21,7 +26,7 @@ module FPM; module Fry
 
         df << "RUN mkdir /tmp/build"
 
-        cache.file_map.each do |from, to|
+        file_map.each do |from, to|
           df << "ADD #{map_from(from)} #{map_to(to)}"
         end
 
@@ -45,6 +50,28 @@ module FPM; module Fry
         #tar.close
         sio.rewind
         return sio
+      end
+
+    private
+
+      attr :logger
+
+      def file_map
+        prefix = ""
+        if cache.respond_to? :prefix
+          prefix = cache.prefix
+        end
+        fm = cache.file_map
+        if fm.nil? 
+          return { prefix => "" }
+        end
+        if fm.size == 1
+          key, value = fm.first
+          if ["",".","./"].include?(value) && key == prefix
+            logger.hint("You can remove the file_map: #{fm.inspect} option on source. The given value is the default")
+          end
+        end
+        return fm
       end
 
       def map_to(dir)

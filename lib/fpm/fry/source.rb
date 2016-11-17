@@ -26,6 +26,11 @@ module FPM; module Fry ; module Source
       def self.cachekey
         return '0' * 32
       end
+
+      # @return [String] common path prefix of all files that should be stripped
+      def self.prefix
+        return ""
+      end
     end
 
     # @see FPM::Fry::Source::Null::Cache
@@ -42,6 +47,28 @@ module FPM; module Fry ; module Source
     def guess_regex(rx, url)
       if m = rx.match(url.to_s)
         return m[0].size
+      end
+    end
+
+    # @api private
+    # @param dir [String] directory
+    # @return [String] prefix
+    def prefix(dir)
+      e = ::Dir.entries(dir)
+      if e.size != 3
+        return ""
+      end
+      other = (e - ['.','..']).first
+      path = File.join(dir, other)
+      if File.directory?( path )
+        pf = prefix(path)
+        if pf == ""
+          return other
+        else
+          return File.join(other, pf)
+        end
+      else
+        return ""
       end
     end
 

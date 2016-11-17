@@ -155,6 +155,32 @@ module FPM; module Fry ; module Source
         Exec['tar','-xf',tempfile,'-C',dst, logger: logger]
       end
 
+      def prefix
+        update!
+        @prefix ||= prefix!
+      end
+
+      def prefix!
+        longest = nil
+        Exec.popen('tar','-tf',tempfile, logger: logger).each_line.map do |line|
+          line = line.chomp
+          parts = line.split('/')
+          parts.pop unless line[-1] == '/'
+          if longest.nil?
+            longest = parts
+          else
+            longest.each_with_index do | e, i |
+              if parts[i] != e
+                longest = longest[0...i]
+                break
+              end
+            end
+            break if longest.none?
+          end
+        end
+        return Array(longest).join('/')
+      end
+
     protected
       def ioclass
         File
@@ -181,6 +207,22 @@ module FPM; module Fry ; module Source
     class ZipCache < Cache
 
       def tar_io
+        unpack!
+        return Exec::popen('tar','-c','.', chdir: unpacked_tmpdir)
+      end
+
+      def copy_to(dst)
+        update!
+        Exec['unzip', tempfile, '-d', dst ]
+      end
+
+      def prefix
+        unpack!
+        Source::prefix(unpacked_tmpdir)
+      end
+    private
+
+      def unpack!
         if !::File.directory?( unpacked_tmpdir )
           workdir = unpacked_tmpdir + '.tmp'
           begin
@@ -192,14 +234,8 @@ module FPM; module Fry ; module Source
           copy_to( workdir )
           File.rename(workdir, unpacked_tmpdir)
         end
-        return Exec::popen('tar','-c','.', chdir: unpacked_tmpdir)
       end
 
-      def copy_to(dst)
-        update!
-        Exec['unzip', tempfile, '-d', dst ]
-      end
-    private
       def unpacked_tmpdir
         File.join(tempdir, cachekey)
       end
@@ -216,6 +252,10 @@ module FPM; module Fry ; module Source
       def copy_to(dst)
         update!
         FileUtils.cp( tempfile, dst )
+      end
+
+      def prefix
+        ""
       end
 
     end
@@ -243,7 +283,7 @@ module FPM; module Fry ; module Source
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @checksum = options[:checksum]
       @checksum_algorithm = guess_checksum_algorithm(options[:checksum])
-      @file_map = options.fetch(:file_map){ {'' => ''} }
+      @file_map = options[:file_map]
     end
 
     # Creates a cache.
