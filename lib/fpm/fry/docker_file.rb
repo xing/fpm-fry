@@ -67,6 +67,7 @@ module FPM; module Fry
         end
         if fm.size == 1
           key, value = fm.first
+          key = key.gsub(%r!\A\./|/\z!,'')
           if ["",".","./"].include?(value) && key == prefix
             logger.hint("You can remove the file_map: #{fm.inspect} option on source. The given value is the default")
           end

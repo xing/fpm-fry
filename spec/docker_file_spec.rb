@@ -264,6 +264,18 @@ DOCKERFILE
           expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
           subject.dockerfile
         end
+
+        it "hints that file_map can be removed even when the paths are not exactly the same" do
+          allow(cache).to receive(:file_map).and_return( './a_prefix' => '' )
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
+        end
+
+        it "hints that file_map can be removed even when the paths are not exactly the same" do
+          allow(cache).to receive(:file_map).and_return( 'a_prefix/' => '' )
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
+        end
       end
     end
 
