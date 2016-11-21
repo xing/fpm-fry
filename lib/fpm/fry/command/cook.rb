@@ -278,6 +278,7 @@ module FPM; module Fry
 
       out_map.each do |output, package|
         package.apply_output(output)
+        adjust_package_settings(output)
         adjust_config_files(output)
       end
 
@@ -294,6 +295,10 @@ module FPM; module Fry
 
     end
 
+    def adjust_package_settings( output )
+      # FPM ignores the file permissions on rpm packages.
+      output.attributes[:rpm_use_file_permissions?] = true
+    end
 
     def adjust_config_files( output )
       # FPM flags all files in /etc as config files but only for debian :/.
