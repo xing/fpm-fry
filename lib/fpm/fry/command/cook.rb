@@ -298,6 +298,8 @@ module FPM; module Fry
     def adjust_package_settings( output )
       # FPM ignores the file permissions on rpm packages.
       output.attributes[:rpm_use_file_permissions?] = true
+      output.attributes[:rpm_user] = 'root'
+      output.attributes[:rpm_group] = 'root'
     end
 
     def adjust_config_files( output )
