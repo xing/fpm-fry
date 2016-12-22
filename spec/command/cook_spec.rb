@@ -293,7 +293,7 @@ describe FPM::Fry::Command::Cook do
 
       it 'cleans up tmp' do
         subject.packages{}
-        expect( Dir.entries(tmpdir) ).to eq ['.','..']
+        expect( Dir.entries(tmpdir).sort ).to eq ['.','..']
       end
 
     end
@@ -321,7 +321,7 @@ describe FPM::Fry::Command::Cook do
 
       it 'cleans up tmp' do
         subject.packages{}
-        expect( Dir.entries(tmpdir) ).to eq ['.','..']
+        expect( Dir.entries(tmpdir).sort ).to eq ['.','..']
       end
 
     end
