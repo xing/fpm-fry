@@ -60,7 +60,7 @@ module FPM; module Fry ; module Source
     class Cache < Struct.new(:package,:tempdir)
       extend Forwardable
 
-      def_delegators :package, :url, :checksum, :checksum_algorithm, :logger, :file_map
+      def_delegators :package, :url, :checksum, :checksum_algorithm, :logger, :file_map, :to
 
       # @return [String] cachekey which is equal to the checksum
       def cachekey
@@ -270,7 +270,7 @@ module FPM; module Fry ; module Source
       '.bundle' => PlainCache
     }
 
-    attr :file_map, :data, :url, :checksum, :checksum_algorithm, :logger
+    attr :file_map, :data, :url, :checksum, :checksum_algorithm, :logger, :to
 
     # @param [URI] url
     # @param [Hash] options
@@ -284,6 +284,7 @@ module FPM; module Fry ; module Source
       @checksum = options[:checksum]
       @checksum_algorithm = guess_checksum_algorithm(options[:checksum])
       @file_map = options[:file_map]
+      @to = options[:to]
     end
 
     # Creates a cache.

@@ -8,7 +8,7 @@ module FPM; module Fry ; module Source
       extend Forwardable
 
       def_delegators :package, :logger, :file_map
-      def_delegators :inner, :prefix
+      def_delegators :inner, :prefix, :to
 
       attr :inner
 

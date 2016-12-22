@@ -2,8 +2,7 @@ name 'ag'
 version '0.21.0'
 
 source 'https://github.com/ggreer/the_silver_searcher/archive/0.21.0.tar.gz',
-  checksum: 'ee921373e2bb1a25c913b0098ab946d137749b166d340a8ae6d88a554940a793',
-  file_map: {"the_silver_searcher-#{version}" => '.'}
+  checksum: 'ee921373e2bb1a25c913b0098ab946d137749b166d340a8ae6d88a554940a793'
 
 if flavour == 'redhat'
   build_depends 'pkgconfig'

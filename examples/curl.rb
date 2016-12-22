@@ -1,9 +1,11 @@
-name 'curl'
-version '7.36.0'
+# Tested with these images:
+# - ubuntu:16.04
 
-source 'http://curl.haxx.se/download/curl-7.36.0.tar.gz',
-  checksum: '33015795d5650a2bfdd9a4a28ce4317cef944722a5cfca0d1563db8479840e90',
-  file_map: {"curl-#{version}" => '.'}
+name 'curl'
+version '7.51.0'
+
+source "http://curl.haxx.se/download/curl-#{version}.tar.gz",
+  checksum: '65b5216a6fbfa72f547eb7706ca5902d7400db9868269017a8888aa91d87977c'
 
 build_depends 'autoconf'
 build_depends 'libtool'
@@ -22,7 +24,7 @@ build_depends 'krb5-multidev'
 depends       'libldap-2.4-2'
 build_depends 'libldap2-dev'
 # rtmp support
-depends       'librtmp0'
+depends       'librtmp1'
 build_depends 'librtmp-dev'
 
 run './buildconf'

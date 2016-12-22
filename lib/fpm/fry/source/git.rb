@@ -43,7 +43,7 @@ module FPM; module Fry ; module Source
     class Cache < Struct.new(:package, :tempdir)
       extend Forwardable
 
-      def_delegators :package, :url, :rev, :logger, :file_map
+      def_delegators :package, :url, :rev, :logger, :file_map, :to
 
       def tar_io
         Exec::popen(package.git, "--git-dir=#{repodir}",'archive','--format=tar','FETCH_HEAD', logger: logger)
@@ -101,6 +101,9 @@ module FPM; module Fry ; module Source
     # @return [URI] the uri to pull from
     attr :url
 
+    # @return [String,nil]
+    attr :to
+
     # @param [URI] url the url to pull from
     # @param [Hash] options
     # @option options [Cabin::Channel] :logger (cabin default channel)
@@ -114,6 +117,7 @@ module FPM; module Fry ; module Source
       @rev = options[:branch] || options[:tag] || options[:rev] || 'HEAD'
       @file_map = options[:file_map]
       @git = options[:git] || 'git'
+      @to = options[:to]
     end
 
     # @param [String] tempdir

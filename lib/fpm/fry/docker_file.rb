@@ -58,12 +58,16 @@ module FPM; module Fry
 
       def file_map
         prefix = ""
+        to = ""
         if cache.respond_to? :prefix
           prefix = cache.prefix
         end
+        if cache.respond_to? :to
+          to = cache.to || ""
+        end
         fm = cache.file_map
         if fm.nil? 
-          return { prefix => "" }
+          return { prefix => to }
         end
         if fm.size == 1
           key, value = fm.first
