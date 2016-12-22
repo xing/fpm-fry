@@ -181,6 +181,29 @@ SHELL
         end
       end
 
+      context 'with a source responding to #to' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        before(:each) do
+          allow(subject.recipe.source).to receive(:to).and_return 'src/foo'
+        end
+
+        it 'adjusts the paths' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build/src/foo
+ADD .build.sh /tmp/build/src/foo/
+ENTRYPOINT /tmp/build/src/foo/.build.sh
+SHELL
+        end
+
+      end
 
     end
 

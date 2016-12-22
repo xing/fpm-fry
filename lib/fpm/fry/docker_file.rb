@@ -112,11 +112,15 @@ module FPM; module Fry
       def dockerfile
         df = []
         df << "FROM #{base}"
-        df << "WORKDIR /tmp/build"
+        workdir = '/tmp/build'
+        if recipe.source.respond_to? :to
+          workdir = File.expand_path(recipe.source.to, workdir)
+        end
+        df << "WORKDIR #{workdir}"
 
         # need to add external sources before running any command
         recipe.build_mounts.each do |source, target|
-          df << "ADD #{source} /tmp/build/#{target}"
+          df << "ADD #{source} ./#{target}"
         end
 
         recipe.before_dependencies_steps.each do |step|
@@ -142,8 +146,8 @@ module FPM; module Fry
           df << "RUN #{step.to_s}"
         end
 
-        df << "ADD .build.sh /tmp/build/"
-        df << "ENTRYPOINT /tmp/build/.build.sh"
+        df << "ADD .build.sh #{workdir}/"
+        df << "ENTRYPOINT #{workdir}/.build.sh"
         df << ''
         return df.join("\n")
       end
