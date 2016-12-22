@@ -27,7 +27,7 @@ module FPM; module Fry
         df << "RUN mkdir /tmp/build"
 
         file_map.each do |from, to|
-          df << "ADD #{map_from(from)} #{map_to(to)}"
+          df << "COPY #{map_from(from)} #{map_to(to)}"
         end
 
         df << ""
@@ -120,7 +120,7 @@ module FPM; module Fry
 
         # need to add external sources before running any command
         recipe.build_mounts.each do |source, target|
-          df << "ADD #{source} ./#{target}"
+          df << "COPY #{source} ./#{target}"
         end
 
         recipe.before_dependencies_steps.each do |step|
@@ -146,7 +146,7 @@ module FPM; module Fry
           df << "RUN #{step.to_s}"
         end
 
-        df << "ADD .build.sh #{workdir}/"
+        df << "COPY .build.sh #{workdir}/"
         df << "ENTRYPOINT #{workdir}/.build.sh"
         df << ''
         return df.join("\n")

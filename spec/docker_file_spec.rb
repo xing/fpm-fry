@@ -97,7 +97,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes arg blub foo
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
         end
@@ -123,7 +123,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN yum -y install arg blub foo
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
         end
@@ -151,7 +151,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes D a b e\\=1.0.0
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
         end
@@ -175,7 +175,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes a
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 ENTRYPOINT /tmp/build/.build.sh
 SHELL
         end
@@ -198,7 +198,7 @@ SHELL
           expect(subject.dockerfile).to eq(<<SHELL)
 FROM <base>
 WORKDIR /tmp/build/src/foo
-ADD .build.sh /tmp/build/src/foo/
+COPY .build.sh /tmp/build/src/foo/
 ENTRYPOINT /tmp/build/src/foo/.build.sh
 SHELL
         end
@@ -253,7 +253,7 @@ SHELL
           expect(subject.dockerfile).to eq(<<DOCKERFILE)
 FROM ubuntu:precise
 RUN mkdir /tmp/build
-ADD . /tmp/build
+COPY . /tmp/build
 DOCKERFILE
         end
       end
@@ -279,7 +279,7 @@ DOCKERFILE
           expect(subject.dockerfile).to eq(<<DOCKERFILE)
 FROM ubuntu:precise
 RUN mkdir /tmp/build
-ADD a_prefix /tmp/build
+COPY a_prefix /tmp/build
 DOCKERFILE
         end
 
