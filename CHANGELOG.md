@@ -2,6 +2,7 @@
 
 * [FEATURE] add experimental apt plugin
 * [ENHANCEMENT] setting file_map parameter on source is now mostly superfluous
+* [FEATURE] source learned a new :to option to change the target to change the path where the source resides
 
 # 0.3.0 / 2016.10.16
 
