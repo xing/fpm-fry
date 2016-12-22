@@ -110,21 +110,25 @@ module FPM; module Fry
       end
 
       def dockerfile
-        df = []
-        df << "FROM #{base}"
+        df = {
+          source: [],
+          dependencies: [],
+          build: []
+        }
+        df[:source] << "FROM #{base}"
         workdir = '/tmp/build'
         if recipe.source.respond_to? :to
           workdir = File.expand_path(recipe.source.to, workdir)
         end
-        df << "WORKDIR #{workdir}"
+        df[:source] << "WORKDIR #{workdir}"
 
         # need to add external sources before running any command
         recipe.build_mounts.each do |source, target|
-          df << "COPY #{source} ./#{target}"
+          df[:dependencies] << "COPY #{source} ./#{target}"
         end
 
         recipe.before_dependencies_steps.each do |step|
-          df << "RUN #{step.to_s}"
+          df[:dependencies] << "RUN #{step.to_s}"
         end
 
         if build_dependencies.any?
@@ -134,22 +138,22 @@ module FPM; module Fry
             if options[:update]
               update = 'apt-get update && '
             end
-            df << "RUN #{update}apt-get install --yes #{Shellwords.join(build_dependencies)}"
+            df[:dependencies] << "RUN #{update}apt-get install --yes #{Shellwords.join(build_dependencies)}"
           when 'redhat'
-            df << "RUN yum -y install #{Shellwords.join(build_dependencies)}"
+            df[:dependencies] << "RUN yum -y install #{Shellwords.join(build_dependencies)}"
           else
             raise "Unknown flavour: #{variables[:flavour]}"
           end
         end
 
         recipe.before_build_steps.each do |step|
-          df << "RUN #{step.to_s}"
+          df[:build] << "RUN #{step.to_s}"
         end
 
-        df << "COPY .build.sh #{workdir}/"
-        df << "ENTRYPOINT #{workdir}/.build.sh"
-        df << ''
-        return df.join("\n")
+        df[:build] << "COPY .build.sh #{workdir}/"
+        df[:build] << "ENTRYPOINT #{workdir}/.build.sh"
+        recipe.apply_dockerfile_hooks(df)
+        return [*df[:source],*df[:dependencies],*df[:build],""].join("\n")
       end
 
       def build_sh

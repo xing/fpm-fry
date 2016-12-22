@@ -153,6 +153,9 @@ module FPM; module Fry
     # @return [Array<#call>] hooks that will be called on the input package
     attr_accessor :input_hooks
 
+    # @return [Array<#call>] hooks that will be called when building the Dockerfile
+    attr_accessor :dockerfile_hooks
+
     def initialize
       @source = Source::Null
       @before_dependencies_steps = []
@@ -162,6 +165,7 @@ module FPM; module Fry
       @packages[0].files << '**'
       @build_depends = {}
       @input_hooks = []
+      @dockerfile_hooks = []
       @build_mounts = []
     end
 
@@ -187,6 +191,16 @@ module FPM; module Fry
     def apply_input( package )
       input_hooks.each{|h| h.call(self, package) }
       return package
+    end
+
+    # Filters the dockerfile
+    # @api experimental
+    # @param [Hash] df
+    def apply_dockerfile_hooks( df )
+      dockerfile_hooks.each do |hook|
+        hook.call(self, df)
+      end
+      return nil
     end
 
   end

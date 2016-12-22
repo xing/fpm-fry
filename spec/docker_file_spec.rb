@@ -205,6 +205,46 @@ SHELL
 
       end
 
+      context 'with a dockerfile hook' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        let(:probe){
+          probe = double(:probe)
+          expect(probe).to receive(:call){|recipe,df|
+            expect(recipe).to be_a FPM::Fry::Recipe
+            expect(df).to match source: Array, dependencies: Array, build: Array
+            df[:source] << "probe a"
+            df[:dependencies] << "probe b"
+            df[:build] << "probe c"
+          }
+          probe
+        }
+
+        recipe do |b|
+          b.depends 'a | b'
+        end
+
+        it 'calls the hook' do
+          subject.recipe.dockerfile_hooks << probe
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build
+probe a
+RUN apt-get install --yes a
+probe b
+COPY .build.sh /tmp/build/
+ENTRYPOINT /tmp/build/.build.sh
+probe c
+SHELL
+        end
+      end
+
     end
 
     describe '#tar_io' do
