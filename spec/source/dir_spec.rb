@@ -105,4 +105,12 @@ describe FPM::Fry::Source::Dir do
 
   end
 
+  describe '#to' do
+    it 'works' do
+      src = FPM::Fry::Source::Dir.new(source, to: 'foo/bar')
+      cache = src.build_cache(double('tmpdir'))
+      expect(cache.to).to eq 'foo/bar'
+    end
+  end
+
 end

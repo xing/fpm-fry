@@ -18,7 +18,7 @@ module FPM; module Fry ; module Source
     class Cache < Struct.new(:package, :dir)
       extend Forwardable
 
-      def_delegators :package, :url, :logger, :file_map
+      def_delegators :package, :url, :logger, :file_map, :to
 
       def tar_io
         Exec::popen('tar','-c','.', chdir: dir, logger: logger)
@@ -42,7 +42,7 @@ module FPM; module Fry ; module Source
       end
     end
 
-    attr :url, :logger, :file_map
+    attr :url, :logger, :file_map, :to
 
     def initialize( url, options = {} )
       @url = URI(url)
@@ -51,6 +51,7 @@ module FPM; module Fry ; module Source
       end
       @logger = options.fetch(:logger){ Cabin::Channel.get }
       @file_map = options[:file_map]
+      @to = options[:to]
     end
 
     def build_cache(_)
