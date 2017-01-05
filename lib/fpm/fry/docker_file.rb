@@ -117,8 +117,10 @@ module FPM; module Fry
         }
         df[:source] << "FROM #{base}"
         workdir = '/tmp/build'
+        # TODO: get this from cache, not from the source itself
         if recipe.source.respond_to? :to
-          workdir = File.expand_path(recipe.source.to, workdir)
+          to = recipe.source.to || ""
+          workdir = File.expand_path(to, workdir)
         end
         df[:source] << "WORKDIR #{workdir}"
 
