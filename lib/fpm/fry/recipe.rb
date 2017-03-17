@@ -67,6 +67,7 @@ module FPM; module Fry
       # @return [FPM::Package] package
       # @api private
       def apply_output( package )
+        output_hooks.each{|h| h.call(self, package) }
         package.name = name
         package.version = version
         package.iteration = iteration
@@ -87,7 +88,6 @@ module FPM; module Fry
             end
           end
         end
-        output_hooks.each{|h| h.call(self, package) }
         return package
       end
 
