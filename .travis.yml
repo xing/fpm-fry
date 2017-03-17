@@ -19,3 +19,9 @@ matrix:
     sudo: required
     services:
       - docker
+  - rvm: "2.4.0"
+  - rvm: "2.4.0"
+    env: FPM_FRY_DOCKER=yes
+    sudo: required
+    services:
+      - docker
