@@ -96,7 +96,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes arg blub foo
 ADD .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -121,7 +121,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN yum -y install arg blub foo
 ADD .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -148,7 +148,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes D a b e\\=1.0.0
 ADD .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -171,7 +171,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes a
 ADD .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end

@@ -119,7 +119,7 @@ module FPM; module Fry
         end
 
         df << "ADD .build.sh /tmp/build/"
-        df << "ENTRYPOINT /tmp/build/.build.sh"
+        df << "CMD /tmp/build/.build.sh"
         df << ''
         return df.join("\n")
       end
