@@ -45,7 +45,7 @@ describe FPM::Fry::Source::Package do
       src = FPM::Fry::Source::Package.new("http://example/fileA.tar")
       expect{
         src.build_cache(tmpdir)
-      }.to raise_error( FPM::Fry::Source::CacheFailed, "Too many redirects")
+      }.to raise_error( FPM::Fry::Source::CacheFailed)
     end
 
     it "reports missing files" do
@@ -53,7 +53,7 @@ describe FPM::Fry::Source::Package do
       src = FPM::Fry::Source::Package.new("http://example/file.tar")
       expect{
         src.build_cache(tmpdir)
-      }.to raise_error(FPM::Fry::Source::CacheFailed, "Unable to fetch file")
+      }.to raise_error(FPM::Fry::Source::CacheFailed)
     end
 
     it "returns checksum as cachekey if present" do
