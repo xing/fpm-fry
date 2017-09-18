@@ -262,7 +262,7 @@ RECIPE
 
   describe '#load_file' do
     let(:tmpdir){
-      Dir.mktmpdir("fpm-fry")
+      File.realpath(Dir.mktmpdir("fpm-fry"))
     }
     after(:each) do
       FileUtils.rm_rf(tmpdir)
