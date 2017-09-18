@@ -26,7 +26,7 @@ describe FPM::Fry::Source::Git do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = rd.each.select{|e| e.header.name == "World" }
         expect(files.size).to eq(1)
       ensure

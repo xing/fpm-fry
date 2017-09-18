@@ -5,6 +5,8 @@ require 'forwardable'
 require 'zlib'
 require 'fpm/fry/source'
 require 'cabin'
+require 'cabin/channel'
+
 module FPM; module Fry ; module Source
   class Package
 

@@ -89,7 +89,7 @@ class FPM::Fry::Client
       raise FileNotFound, "File #{resource.inspect} not found: #{res.body}"
     end
     sio = StringIO.new(res.body)
-    tar = ::Gem::Package::TarReader.new( sio )
+    tar = FPM::Fry::Tar::Reader.new( sio )
     tar.each do |entry|
       yield entry
     end

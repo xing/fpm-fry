@@ -1,6 +1,69 @@
+require "rubygems/package"
+require 'fpm/fry/channel'
+
 module FPM; module Fry; end ; end
 
 class FPM::Fry::Tar
+
+  class Reader
+    include Enumerable
+
+    def initialize(io)
+      @reader = Gem::Package::TarReader.new(io)
+    end
+
+    def each
+      return to_enum(:each) unless block_given?
+
+      last_pax_header = nil
+      @reader.each do |entry|
+        if entry.header.typeflag == 'x'
+          last_pax_header = extract_pax_header(entry.read)
+        else
+          if last_pax_header && (path = last_pax_header["path"])
+            entry.header.instance_variable_set :@name, path
+            last_pax_header = nil
+          end
+          yield entry
+        end
+      end
+    end
+
+    def map
+      return to_enum(:map) unless block_given?
+
+      res = []
+      each do |entry|
+        res << yield(entry)
+      end
+      res
+    end
+
+    private
+
+    def extract_pax_header(string)
+      res = {}
+      s = StringIO.new(string)
+      while !s.eof?
+        total_len = 0
+        prefix_len = 0
+        # read number prefix and following blank
+        while (c = s.getc) && (c =~ /\d/)
+          total_len = 10 * total_len + c.to_i
+          prefix_len += 1
+        end
+        field = s.read(total_len - prefix_len - 2)
+        if field =~ /\A([^=]+)=(.+)\z/
+          res[$1] = $2
+        else
+          raise "malformed pax header: #{field}"
+        end
+        s.read(1) # read trailing newline
+      end
+      res
+    end
+
+  end
 
   class Extractor
 

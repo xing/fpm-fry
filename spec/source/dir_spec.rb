@@ -18,7 +18,7 @@ describe FPM::Fry::Source::Dir do
       cache = src.build_cache(double('tmpdir'))
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = rd.each.select{|e| e.header.name == "./World" }
         expect(files.size).to eq(1)
       ensure
@@ -65,7 +65,7 @@ describe FPM::Fry::Source::Dir do
       cache = src.build_cache(double('tmpdir'))
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = rd.each.select{|e| e.header.name == "./World" }
         expect(files.size).to eq(1)
       ensure

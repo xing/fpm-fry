@@ -1,6 +1,8 @@
 require 'fpm/fry/recipe'
 require 'fpm/fry/recipe/error'
 require 'forwardable'
+require 'fpm/fry/channel'
+
 module FPM::Fry
   class Recipe
 

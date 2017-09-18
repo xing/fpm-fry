@@ -191,7 +191,7 @@ SHELL
 
         it 'works' do
           io = subject.tar_io
-          entries = Gem::Package::TarReader.new(io).map{|e| e.header.name }
+          entries = FPM::Fry::Tar::Reader.new(io).map{|e| e.header.name }
           expect( entries ).to eq ['.build.sh','Dockerfile.fpm-fry']
         end
 
