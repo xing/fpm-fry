@@ -56,7 +56,7 @@ describe FPM::Fry::Client do
           }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
             expect(e.data).to match(
               'path' => 'foo',
-              'docker.message'=> /\Alstat .*: no such file or directory\z/,
+              'docker.message'=> /Could not find the file foo in container \h{64}\z/,
               'docker.container' => /\A\h{64}\z/
             )
           end
