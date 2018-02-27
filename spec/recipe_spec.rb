@@ -40,6 +40,37 @@ RECIPE
     end
   end
 
+  describe 'basic variables' do
+
+    subject{
+      FPM::Fry::Recipe::Builder.new(distribution: "foo", codename: "bar", release: "1.2.3", flavour: "tasty")
+    }
+
+    it 'has a distribution' do
+      expect(subject.distribution).to eq 'foo'
+    end
+
+    it 'has a platform' do
+      expect(subject.platform).to eq 'foo'
+    end
+
+    it 'has a codename' do
+      expect(subject.codename).to eq 'bar'
+    end
+
+    it 'has a release' do
+      expect(subject.release).to eq '1.2.3'
+    end
+
+    it 'has a distribution_version' do
+      expect(subject.distribution_version).to eq '1.2.3'
+    end
+
+    it 'has a flavour' do
+      expect(subject.flavour).to eq 'tasty'
+    end
+  end
+
   context 'bash' do
 
     context 'with just code' do
@@ -90,6 +121,31 @@ RECIPE
     end
 
   end
+
+  context 'before_dependencies' do
+
+    context 'inserts bash scripts into the before_dependencies_steps section' do
+      subject do
+        build <<RECIPE
+bash 'before'
+before_dependencies do
+  bash 'inside'
+end
+bash 'after'
+RECIPE
+      end
+
+      it 'places inner bash steps in before_dependencies_steps' do
+        expect(subject.before_dependencies_steps.map(&:to_s)).to eq ['inside']
+      end
+
+      it 'places surrounding bash steps in steps' do
+        expect(subject.steps.map(&:to_s)).to eq ['before','after']
+      end
+    end
+
+  end
+
 
   context "scripts" do
     subject do
@@ -242,9 +298,11 @@ RECIPE
     subject{ FPM::Fry::Recipe::Builder.new({}) }
 
     {
-      'http://foo.bar/baz.tar.gz' => FPM::Fry::Source::Package,
+      'http://foo.bar/baz.tar.gz' => FPM::Fry::Source::Archive,
       'http://foo.bar/baz.git'    => FPM::Fry::Source::Git,
       'git@foo.bar:baz/baz.git'   => FPM::Fry::Source::Git,
+      'git+ssh://foo.bar/baz'     => FPM::Fry::Source::Git,
+      'https://git.foo.bar/baz'   => FPM::Fry::Source::Git,
       '/foo/bar'                  => FPM::Fry::Source::Dir,
       './foo/bar'                 => FPM::Fry::Source::Dir,
       'file://foo/bar'            => FPM::Fry::Source::Dir

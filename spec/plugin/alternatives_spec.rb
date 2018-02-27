@@ -2,12 +2,12 @@ require 'fpm/fry/plugin/alternatives'
 
 describe FPM::Fry::Plugin::Alternatives do
 
-  let(:recipe){ FPM::Fry::Recipe.new }
+  let(:recipe){ builder.recipe }
 
   let(:package){ recipe.packages[0] }
 
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({flavour: "debian"},recipe)
+    FPM::Fry::Recipe::Builder.new({flavour: "debian"})
   }
 
   context 'alternatives as string' do

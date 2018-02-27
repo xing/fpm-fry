@@ -2,10 +2,10 @@ require 'fpm/package/dir'
 require 'fpm/fry/recipe'
 describe 'FPM::Fry::Plugin::Exclude' do
 
-  let(:recipe){ FPM::Fry::Recipe.new }
+  let(:recipe){ builder.recipe }
 
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({},recipe)
+    FPM::Fry::Recipe::Builder.new({})
   }
 
   let(:package){

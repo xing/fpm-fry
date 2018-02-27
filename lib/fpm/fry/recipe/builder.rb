@@ -9,15 +9,30 @@ module FPM::Fry
     class NotFound < StandardError
     end
 
-    class PackageBuilder < Struct.new(:variables, :package_recipe)
+    class PackageBuilder
 
+      # @return [Hash<Symbol,Object>]
+      attr :variables
+
+      # @return [FPM::Fry::PackageRecipe]
+      attr :package_recipe
+
+      # @return [Cabin::Channel]
       attr :logger
 
-      def initialize( variables, recipe = PackageRecipe.new, options = {})
-        super(variables, recipe)
+      # @return [FPM::Fry::Inspector,nil]
+      attr :inspector
+
+      # @api private
+      def initialize( variables, package_recipe, options = {})
+        @variables = variables
+        @package_recipe = package_recipe
         @logger = options.fetch(:logger){ Cabin::Channel.get }
+        @inspector = options[:inspector]
       end
 
+      # Returns the package type ( e.g. "debian" or "redhat" ).
+      # @return [String]
       def flavour
         variables[:flavour]
       end
@@ -27,9 +42,13 @@ module FPM::Fry
       end
       alias platform distribution
 
-      def distribution_version
-        variables[:distribution_version]
+      # The release version of the distribution ( e.g. "12.04" or "6.0.7" )
+      # @return [String]
+      def release
+        variables[:release]
       end
+
+      alias distribution_version release
       alias platform_version distribution_version
 
       def codename
@@ -176,20 +195,20 @@ module FPM::Fry
 
     class Builder < PackageBuilder
 
+      # @return [FPM::Fry::Recipe]
       attr :recipe
 
-      def initialize( variables, recipe = Recipe.new, options = {})
+      # @param [Hash<Symbol,Object>] variables
+      # @param [Hash] options
+      # @option options [FPM::Fry::Recipe] :recipe (Recipe.new)
+      # @option options [Cabin::Channel] :logger (default cabin channel)
+      # @option options [FPM::Fry::Inspector] :inspector
+      def initialize( variables, options = {} )
+        recipe = options.fetch(:recipe){ Recipe.new }
         variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        if !variables[:codename] && OsDb[variables[:distribution]] && variables[:distribution_version]
-          codename = OsDb[variables[:distribution]][:codenames].find{|name,version| variables[:distribution_version].start_with? version }
-          variables[:codename] = codename[0] if codename
-        end
         variables.freeze
         @recipe = recipe
-        @before_build = false
+        @steps = :steps
         register_default_source_types!
         super(variables, recipe.packages[0], options)
       end
@@ -220,7 +239,9 @@ module FPM::Fry
       end
 
       def apt_setup(cmd)
-        recipe.apt_setup << cmd
+        before_dependencies do
+          bash cmd
+        end
       end
 
       def run(*args)
@@ -239,7 +260,10 @@ module FPM::Fry
           code = Recipe::Step.new(name, code)
         end
         # Don't do this at home
-        if @before_build
+        case(@steps)
+        when :before_dependencies
+          recipe.before_dependencies_steps << code
+        when :before_build
           recipe.before_build_steps << code
         else
           recipe.steps << code
@@ -247,10 +271,17 @@ module FPM::Fry
       end
 
       def before_build
-        @before_build = true
+        steps, @steps = @steps, :before_build
         yield
       ensure
-        @before_build = false
+        @steps = steps
+      end
+
+      def before_dependencies
+        steps, @steps = @steps, :before_dependencies
+        yield
+      ensure
+        @steps = steps
       end
 
       def build_depends( name , options = {} )
@@ -268,7 +299,7 @@ module FPM::Fry
         pr.version = package_recipe.version
         pr.iteration = package_recipe.iteration
         recipe.packages << pr
-        PackageBuilder.new(variables, pr).instance_eval(&block)
+        PackageBuilder.new(variables, pr, logger: logger, inspector: inspector).instance_eval(&block)
       end
 
     protected
@@ -291,7 +322,7 @@ module FPM::Fry
 
       def register_default_source_types!
         register_source_type Source::Git
-        register_source_type Source::Package
+        register_source_type Source::Archive
         register_source_type Source::Dir
       end
 

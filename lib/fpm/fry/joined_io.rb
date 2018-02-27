@@ -11,7 +11,7 @@ module FPM; module Fry
     end
 
     # Reads length bytes or all if length is nil.
-    # @param [Numeric, nil] length
+    # @param [Numeric, nil] len
     # @return [String] resulting bytes
     def read( len = nil )
       buf = []

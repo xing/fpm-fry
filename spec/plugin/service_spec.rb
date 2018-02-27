@@ -1,3 +1,5 @@
+require 'fpm/package'
+require 'fpm/fry/recipe/builder'
 require 'fpm/fry/plugin/service'
 shared_examples 'adds script to restart services' do
 
@@ -20,8 +22,13 @@ describe FPM::Fry::Plugin::Service do
 
   let(:flavour){ 'debian' }
 
+  let(:init){ FPM::Fry::Plugin::Init::System.new(:sysv,{}) }
+
   let(:builder){
-    FPM::Fry::Recipe::Builder.new({init: init, flavour: flavour},recipe)
+    bld = FPM::Fry::Recipe::Builder.new({flavour: flavour},recipe: recipe)
+    allow(bld).to receive(:plugin).and_call_original
+    allow(bld).to receive(:plugin).with('init').and_return(init)
+    bld
   }
 
   let(:package){
@@ -44,9 +51,9 @@ describe FPM::Fry::Plugin::Service do
     end
 
     context 'for sysv' do
-      let(:init){ 'sysv' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:sysv,{}) }
 
-      it_behaves_like 'adds script to restart services' 
+      it_behaves_like 'adds script to restart services'
 
       it 'generates an init.d script' do
         expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
@@ -58,12 +65,29 @@ describe FPM::Fry::Plugin::Service do
     end
 
     context 'for upstart' do
-      let(:init){ 'upstart' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{}) }
 
       it_behaves_like 'adds script to restart services'
 
-      skip 'generates an init.d script' do
-        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
+      context 'with sysvcompat' do
+        let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{sysvcompat: '/lib/init/upstart-job'}) }
+
+        skip 'generates an init.d script' do
+          expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
+        end
+
+        it 'generates an init.d link to the upstart compat script' do
+          expect(File.readlink package.staging_path('/etc/init.d/foo') ).to eq '/lib/init/upstart-job'
+        end
+
+      end
+
+      context 'without sysvcompat' do
+        let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{sysvcompat: false}) }
+
+        it 'doesn\'t generate an init.d script' do
+          expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be false
+        end
       end
 
       it 'generates an init config' do
@@ -96,6 +120,26 @@ INIT
 
     end
 
+    context 'for systemd' do
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:systemd,{}) }
+
+      it_behaves_like 'adds script to restart services'
+
+      it 'generates the correct unit file' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to eq <<'UNIT'
+[Unit]
+Description=
+
+[Service]
+Type=simple
+ExecStart=foo bar baz
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+      end
+    end
   end
 
   describe 'limits' do
@@ -110,10 +154,18 @@ INIT
     end
 
     context 'for upstart' do
-      let(:init){ 'upstart' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{}) }
 
       it 'generates an init config containing the limit' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^limit nofile 123 456$/
+      end
+    end
+
+    context 'for systemd' do
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:systemd,{}) }
+
+      it 'generates an unit file containing the limit' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^LimitNOFILE=123:456$/
       end
     end
 
@@ -131,7 +183,7 @@ INIT
     end
 
     context 'for upstart' do
-      let(:init){ 'upstart' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{}) }
 
       it 'generates an init config containing the user' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^setuid "fuz"$/
@@ -139,13 +191,20 @@ INIT
     end
 
     context 'for sysv' do
-      let(:init){ 'sysv' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:sysv,{}) }
 
       it 'generates an init script containing the user' do
         expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -c fuz --exec/
       end
     end
 
+    context 'for systemd' do
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:systemd,{}) }
+
+      it 'generates an unit file containing the user' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^User=fuz$/
+      end
+    end
   end
 
   describe 'group' do
@@ -160,21 +219,28 @@ INIT
     end
 
     context 'for upstart' do
-      let(:init){ 'upstart' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{}) }
 
-      it 'generates an init config containing the user' do
+      it 'generates an init config containing the group' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^setgid "fuz"$/
       end
     end
 
     context 'for sysv' do
-      let(:init){ 'sysv' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:sysv,{}) }
 
-      it 'generates an init script containing the user' do
+      it 'generates an init script containing the group' do
         expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -g fuz --exec/
       end
     end
 
+    context 'for systemd' do
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:systemd,{}) }
+
+      it 'generates an unit file containing the group' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^Group=fuz$/
+      end
+    end
   end
 
   describe 'chdir' do
@@ -189,7 +255,7 @@ INIT
     end
 
     context 'for upstart' do
-      let(:init){ 'upstart' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{}) }
 
       it 'generates an init config containing the chdir' do
         expect(IO.read package.staging_path('/etc/init/foo.conf') ).to match /^chdir "\/fuz"$/
@@ -197,14 +263,20 @@ INIT
     end
 
     context 'for sysv' do
-      let(:init){ 'sysv' }
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:sysv,{}) }
 
       it 'generates an init script containing the chdir' do
         expect(IO.read package.staging_path('/etc/init.d/foo') ).to match /start-stop-daemon --start --quiet --pidfile \$PIDFILE --background -d \/fuz --exec/
       end
     end
 
-  end
+    context 'for systemd' do
+      let(:init){ FPM::Fry::Plugin::Init::System.new(:systemd,{}) }
 
+      it 'generates an unit file containing the chdir' do
+        expect(IO.read package.staging_path('/lib/systemd/system/foo.service') ).to match /^WorkingDirectory=\/fuz$/
+      end
+    end
+  end
 
 end

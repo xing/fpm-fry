@@ -8,7 +8,7 @@ describe FPM::Fry::DockerFile do
       def recipe
         @recipe ||= FPM::Fry::Recipe.new
         if block_given?
-          yield FPM::Fry::Recipe::Builder.new(variables,recipe)
+          yield FPM::Fry::Recipe::Builder.new(variables,recipe: recipe)
         end
         @recipe
       end
@@ -55,7 +55,8 @@ describe FPM::Fry::DockerFile do
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -81,7 +82,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -95,7 +97,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes arg blub foo
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
 SHELL
         end
@@ -106,7 +108,8 @@ SHELL
 
         variables(
           image: 'centos:6.5',
-          distribution: 'centos'
+          distribution: 'centos',
+          flavour: 'redhat'
         )
 
         recipe do |b|
@@ -120,7 +123,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN yum -y install arg blub foo
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
 SHELL
         end
@@ -131,7 +134,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -147,7 +151,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes D a b e\\=1.0.0
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
 SHELL
         end
@@ -158,7 +162,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         recipe do |b|
@@ -170,12 +175,75 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes a
-ADD .build.sh /tmp/build/
+COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
 SHELL
         end
       end
 
+      context 'with a source responding to #to' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        before(:each) do
+          allow(subject.recipe.source).to receive(:to).and_return 'src/foo'
+        end
+
+        it 'adjusts the paths' do
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build/src/foo
+COPY .build.sh /tmp/build/src/foo/
+CMD /tmp/build/src/foo/.build.sh
+SHELL
+        end
+
+      end
+
+      context 'with a dockerfile hook' do
+        include DockerFileParams
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        let(:probe){
+          probe = double(:probe)
+          expect(probe).to receive(:call){|recipe,df|
+            expect(recipe).to be_a FPM::Fry::Recipe
+            expect(df).to match source: Array, dependencies: Array, build: Array
+            df[:source] << "probe a"
+            df[:dependencies] << "probe b"
+            df[:build] << "probe c"
+          }
+          probe
+        }
+
+        recipe do |b|
+          b.depends 'a | b'
+        end
+
+        it 'calls the hook' do
+          subject.recipe.dockerfile_hooks << probe
+          expect(subject.dockerfile).to eq(<<SHELL)
+FROM <base>
+WORKDIR /tmp/build
+probe a
+RUN apt-get install --yes a
+probe b
+COPY .build.sh /tmp/build/
+CMD /tmp/build/.build.sh
+probe c
+SHELL
+        end
+      end
 
     end
 
@@ -186,7 +254,8 @@ SHELL
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         it 'works' do
@@ -210,29 +279,69 @@ SHELL
         include DockerFileParams
         let(:cache){
           c = double('cache')
-          allow(c).to receive(:file_map){ {'' => '' } }
+          allow(c).to receive(:file_map){ nil }
           c
         }
 
         variables(
           image: 'ubuntu:precise',
-          distribution: 'ubuntu'
+          distribution: 'ubuntu',
+          flavour: 'debian'
         )
 
         it "map the files" do
           expect(subject.dockerfile).to eq(<<DOCKERFILE)
 FROM ubuntu:precise
 RUN mkdir /tmp/build
-ADD . /tmp/build
+COPY . /tmp/build
 DOCKERFILE
+        end
+      end
+
+      context 'with a cache supporting prefix' do
+        include DockerFileParams
+        let(:cache){
+          c = double('cache')
+          allow(c).to receive(:prefix).and_return('a_prefix')
+          allow(c).to receive(:file_map){ {'a_prefix' => '' } }
+          allow(c).to receive(:logger).and_return(logger)
+          c
+        }
+
+        variables(
+          image: 'ubuntu:precise',
+          distribution: 'ubuntu',
+          flavour: 'debian'
+        )
+
+        it "map the files" do
+          allow(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          expect(subject.dockerfile).to eq(<<DOCKERFILE)
+FROM ubuntu:precise
+RUN mkdir /tmp/build
+COPY a_prefix /tmp/build
+DOCKERFILE
+        end
+
+        it "hints that file_map can be removed" do
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
+        end
+
+        it "hints that file_map can be removed even when the paths are not exactly the same" do
+          allow(cache).to receive(:file_map).and_return( './a_prefix' => '' )
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
+        end
+
+        it "hints that file_map can be removed even when the paths are not exactly the same" do
+          allow(cache).to receive(:file_map).and_return( 'a_prefix/' => '' )
+          expect(logger).to receive(:hint).with(/\AYou can remove the file_map:/)
+          subject.dockerfile
         end
       end
     end
 
   end
 
-=begin
-
-=end
 end
-

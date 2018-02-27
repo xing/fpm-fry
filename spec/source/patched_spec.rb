@@ -68,6 +68,20 @@ describe FPM::Fry::Source::Patched do
       end
     end
 
+    it "fails if patch fails" do
+      src = FPM::Fry::Source::Patched.new(FPM::Fry::Source::Null, patches: patches )
+      expect{
+        cache = src.build_cache(tmpdir)
+        cache.tar_io
+      }.to raise_error(FPM::Fry::Source::CacheFailed){|e|
+        expect(e.data).to include(
+          patch: %r!/spec/data/patch.diff\z!,
+          exitstatus: 1,
+          command: Array
+        )
+      }
+    end
+
     it "applies given patches with chdir" do
       allow(cache).to receive(:tar_io){
         sio = StringIO.new
@@ -96,6 +110,64 @@ describe FPM::Fry::Source::Patched do
       ensure
         io.close
       end
+    end
+
+    context "with a source supporting #prefix" do
+      before(:each) do
+        allow(cache).to receive(:tar_io){
+          sio = StringIO.new
+          tw = ::Gem::Package::TarWriter.new(sio)
+          tw.add_file('World',0755) do |io|
+            io.write("Hello\n")
+          end
+          tw.add_file('foo/World',0755) do |io|
+            io.write("Hello\n")
+          end
+          sio.rewind
+          sio
+        }
+        allow(cache).to receive(:prefix).and_return('foo')
+      end
+
+      it "uses the prefix as chdir" do
+        src = FPM::Fry::Source::Patched.new(source,
+                                                patches: [
+                                                  file: patches[0]
+                                                ] )
+        cache = src.build_cache(tmpdir)
+        io = cache.tar_io
+        begin
+          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
+          expect(files.size).to eq(4)
+          expect(files['./World']).to eq "Hello\n"
+          expect(files['./foo/World']).to eq "Olla\n"
+        ensure
+          io.close
+        end
+      end
+
+      it "tells the user to remove the chdir if it's not needed" do
+        src = FPM::Fry::Source::Patched.new(source,
+                                                patches: [
+                                                  file: patches[0], chdir: 'foo'
+                                                ] )
+        expect(logger).to receive(:hint).with(/\AYou can remove the chdir:/, documentation: /Source-patching#chdir\z/)
+        cache = src.build_cache(tmpdir)
+        cache.tar_io
+      end
+
+      it "tells the user to remove the chdir if it's not needed even when the cache is current" do
+        src = FPM::Fry::Source::Patched.new(source,
+                                                patches: [
+                                                  file: patches[0], chdir: 'foo'
+                                                ] )
+        expect(logger).to receive(:hint).with(/\AYou can remove the chdir:/, documentation: /Source-patching#chdir\z/)
+        cache = src.build_cache(tmpdir)
+        Dir.mkdir(cache.unpacked_tmpdir)
+        cache.tar_io
+      end
+
     end
 
     it "returns the correct cachekey" do
@@ -198,5 +270,29 @@ describe FPM::Fry::Source::Patched do
     it 'passes the patch file list' do
       expect(FPM::Fry::Source::Patched.decorate(patches: patches){source}.patches).to eq [{file:patches[0]}]
     end
+  end
+
+  describe '#prefix' do
+
+    let(:tmpdir){
+      Dir.mktmpdir('fpm-fry')
+    }
+
+    let(:source_cache){
+      double("source_cache")
+    }
+
+    let(:source){
+      s = double("source")
+      allow(s).to receive(:build_cache){ source_cache }
+      s
+    }
+
+    it 'forward prefix to inner cache' do
+      outer = FPM::Fry::Source::Patched.new(source)
+      expect(source_cache).to receive(:prefix).and_return("an/arbitrary/prefix")
+      expect(outer.build_cache(tmpdir).prefix).to eq "an/arbitrary/prefix"
+    end
+
   end
 end

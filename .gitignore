@@ -1,2 +1,8 @@
+.yardoc
+*.deb
+*.rpm
+*.gem
 coverage
 .rvmrc
+doc
+Gemfile.lock

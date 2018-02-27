@@ -1,4 +1,5 @@
 require 'fpm/fry/tar'
+require 'fpm/fry/exec'
 require 'digest'
 module FPM; module Fry ; module Source
   class Patched
@@ -7,6 +8,7 @@ module FPM; module Fry ; module Source
       extend Forwardable
 
       def_delegators :package, :logger, :file_map
+      def_delegators :inner, :prefix, :to
 
       attr :inner
 
@@ -17,47 +19,70 @@ module FPM; module Fry ; module Source
       end
 
       def update!
-        @updated ||= begin
-          if !File.directory?(unpacked_tmpdir)
-            workdir = unpacked_tmpdir + '.tmp'
+        return if @updated
+        if !File.directory?(unpacked_tmpdir)
+          workdir = unpacked_tmpdir + '.tmp'
+          begin
+            FileUtils.mkdir(workdir)
+          rescue Errno::EEXIST
+            FileUtils.rm_rf(workdir)
+            FileUtils.mkdir(workdir)
+          end
+          if inner.respond_to? :copy_to
+            inner.copy_to(workdir)
+          else
+            ex = Tar::Extractor.new(logger: logger)
+            tio = inner.tar_io
             begin
-              FileUtils.mkdir(workdir)
-            rescue Errno::EEXIST
-              FileUtils.rm_rf(workdir)
-              FileUtils.mkdir(workdir)
+              ex.extract(workdir, FPM::Fry::Tar::Reader.new(tio), chown: false)
+            ensure
+              tio.close
             end
-            if inner.respond_to? :copy_to
-              inner.copy_to(workdir)
-            else
-              ex = Tar::Extractor.new(logger: logger)
-              tio = inner.tar_io
-              begin
-                ex.extract(workdir, FPM::Fry::Tar::Reader.new(tio), chown: false)
-              ensure
-                tio.close
+          end
+          base = workdir
+          if inner.respond_to? :prefix
+            base = File.expand_path(inner.prefix, base)
+          end
+          package.patches.each do |patch|
+            cmd = ['patch','-p1','-i',patch[:file]]
+            chdir = base
+            if patch.key? :chdir
+              given_chdir = File.expand_path(patch[:chdir],workdir)
+              if given_chdir != chdir
+                chdir = given_chdir
+              else
+                logger.hint("You can remove the chdir: #{patch[:chdir].inspect} option for #{patch[:file]}. The given value is the default.", documentation: 'https://github.com/xing/fpm-fry/wiki/Source-patching#chdir' )
               end
             end
-            package.patches.each do |patch|
-              cmd = ['patch','-p1','-i',patch[:file]]
-              chdir = File.expand_path(patch.fetch(:chdir,'.'),workdir)
-              logger.debug("Running patch",cmd: cmd, dir: chdir )
-              system(*cmd, chdir: chdir, out: :close)
+            begin
+              Fry::Exec[*cmd, chdir: chdir, logger: logger]
+            rescue Exec::Failed => e
+              raise CacheFailed.new(e, patch: patch[:file])
             end
-            File.rename(workdir, unpacked_tmpdir)
           end
-          true
+          File.rename(workdir, unpacked_tmpdir)
+        else
+          #
+          base = unpacked_tmpdir
+          if inner.respond_to? :prefix
+            base = File.expand_path(inner.prefix, base)
+          end
+          package.patches.each do |patch|
+            if patch.key? :chdir
+              given_chdir = File.expand_path(patch[:chdir],unpacked_tmpdir)
+              if given_chdir == base
+                logger.hint("You can remove the chdir: #{patch[:chdir].inspect} option for #{patch[:file]}. The given value is the default.", documentation: 'https://github.com/xing/fpm-fry/wiki/Source-patching#chdir' )
+              end
+            end
+          end
         end
+        @updated = true
       end
       private :update!
 
       def tar_io
         update!
-        cmd = ['tar','-c','.']
-        logger.debug("Running tar",cmd: cmd, dir: unpacked_tmpdir)
-        # IO.popen( ..., chdir: ... ) doesn't work on older ruby
-        ::Dir.chdir(unpacked_tmpdir) do
-          return IO.popen(cmd)
-        end
+        return Exec::popen('tar','-c','.',chdir: unpacked_tmpdir, logger: logger)
       end
 
       def cachekey
@@ -76,11 +101,11 @@ module FPM; module Fry ; module Source
 
     end
 
-    attr :inner, :patches
+    attr :inner, :logger, :patches
 
     extend Forwardable
 
-    def_delegators :inner, :logger, :file_map
+    def_delegators :inner, :file_map
 
     def initialize( inner , options = {})
       @inner = inner
@@ -97,6 +122,11 @@ module FPM; module Fry ; module Source
           raise ArgumentError, "File doesn't exist: #{options[:file]}"
         end
         options
+      end
+      if @inner.respond_to? :logger
+        @logger = @inner.logger
+      else
+        @logger = Cabin::Channel.get
       end
     end
 
@@ -115,4 +145,3 @@ module FPM; module Fry ; module Source
   end
 
 end ; end ; end
-

@@ -1,7 +1,6 @@
 require 'fiber'
 require 'shellwords'
 require 'rubygems/package'
-require 'fpm/fry/os_db'
 require 'fpm/fry/source'
 require 'fpm/fry/joined_io'
 module FPM; module Fry
@@ -12,12 +11,13 @@ module FPM; module Fry
     class Source < Struct.new(:variables, :cache)
 
       def initialize(variables, cache = Source::Null::Cache)
-        variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        variables.freeze
+        variables = variables.dup.freeze
         super(variables, cache)
+        if cache.respond_to? :logger
+          @logger = cache.logger
+        else
+          @logger = Cabin::Channel.get
+        end
       end
 
       def dockerfile
@@ -26,8 +26,8 @@ module FPM; module Fry
 
         df << "RUN mkdir /tmp/build"
 
-        cache.file_map.each do |from, to|
-          df << "ADD #{map_from(from)} #{map_to(to)}"
+        file_map.each do |from, to|
+          df << "COPY #{map_from(from)} #{map_to(to)}"
         end
 
         df << ""
@@ -50,6 +50,33 @@ module FPM; module Fry
         #tar.close
         sio.rewind
         return sio
+      end
+
+    private
+
+      attr :logger
+
+      def file_map
+        prefix = ""
+        to = ""
+        if cache.respond_to? :prefix
+          prefix = cache.prefix
+        end
+        if cache.respond_to? :to
+          to = cache.to || ""
+        end
+        fm = cache.file_map
+        if fm.nil?
+          return { prefix => to }
+        end
+        if fm.size == 1
+          key, value = fm.first
+          key = key.gsub(%r!\A\./|/\z!,'')
+          if ["",".","./"].include?(value) && key == prefix
+            logger.hint("You can remove the file_map: #{fm.inspect} option on source. The given value is the default")
+          end
+        end
+        return fm
       end
 
       def map_to(dir)
@@ -76,27 +103,34 @@ module FPM; module Fry
       private :options
 
       def initialize(base, variables, recipe, options = {})
-        variables = variables.dup
-        if variables[:distribution] && !variables[:flavour] && OsDb[variables[:distribution]]
-          variables[:flavour] = OsDb[variables[:distribution]][:flavour]
-        end
-        variables.freeze
+        variables = variables.dup.freeze
+        raise Fry::WithData('unknown flavour', 'flavour' => variables[:flavour]) unless ['debian','redhat'].include? variables[:flavour]
         @options = options.dup.freeze
         super(base, variables, recipe)
       end
 
       def dockerfile
-        df = []
-        df << "FROM #{base}"
-        df << "WORKDIR /tmp/build"
+        df = {
+          source: [],
+          dependencies: [],
+          build: []
+        }
+        df[:source] << "FROM #{base}"
+        workdir = '/tmp/build'
+        # TODO: get this from cache, not from the source itself
+        if recipe.source.respond_to? :to
+          to = recipe.source.to || ""
+          workdir = File.expand_path(to, workdir)
+        end
+        df[:source] << "WORKDIR #{workdir}"
 
         # need to add external sources before running any command
         recipe.build_mounts.each do |source, target|
-          df << "ADD #{source} /tmp/build/#{target}"
+          df[:dependencies] << "COPY #{source} ./#{target}"
         end
 
-        recipe.apt_setup.each do |step|
-          df << "RUN #{step}"
+        recipe.before_dependencies_steps.each do |step|
+          df[:dependencies] << "RUN #{step.to_s}"
         end
 
         if build_dependencies.any?
@@ -106,22 +140,22 @@ module FPM; module Fry
             if options[:update]
               update = 'apt-get update && '
             end
-            df << "RUN #{update}apt-get install --yes #{Shellwords.join(build_dependencies)}"
+            df[:dependencies] << "RUN #{update}apt-get install --yes #{Shellwords.join(build_dependencies)}"
           when 'redhat'
-            df << "RUN yum -y install #{Shellwords.join(build_dependencies)}"
+            df[:dependencies] << "RUN yum -y install #{Shellwords.join(build_dependencies)}"
           else
             raise "Unknown flavour: #{variables[:flavour]}"
           end
         end
 
         recipe.before_build_steps.each do |step|
-          df << "RUN #{step.to_s}"
+          df[:build] << "RUN #{step.to_s}"
         end
 
-        df << "ADD .build.sh /tmp/build/"
-        df << "CMD /tmp/build/.build.sh"
-        df << ''
-        return df.join("\n")
+        df[:build] << "COPY .build.sh #{workdir}/"
+        df[:build] << "CMD #{workdir}/.build.sh"
+        recipe.apply_dockerfile_hooks(df)
+        return [*df[:source],*df[:dependencies],*df[:build],""].join("\n")
       end
 
       def build_sh

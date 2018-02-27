@@ -1,0 +1,19 @@
+[Unit]
+Description=<%= description %>
+
+[Service]
+Type=simple
+ExecStart=<%= Shellwords.shelljoin(command) %>
+Restart=on-failure
+<% if user %>User=<%= user %>
+<% end -%>
+<% if group %>Group=<%= group %>
+<% end -%>
+<% if chdir %>WorkingDirectory=<%= chdir %>
+<% end -%>
+<% limits.each do | name, (soft, hard) | -%>
+Limit<%= name.upcase %>=<%= soft %>:<%= hard %>
+<% end -%>
+
+[Install]
+WantedBy=multi-user.target

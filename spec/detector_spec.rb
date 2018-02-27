@@ -1,113 +1,281 @@
 require 'fpm/fry/detector'
+require 'fpm/fry/inspector'
+require 'fpm/fry/client'
 require 'rubygems/package/tar_header'
-describe FPM::Fry::Detector::Container do
+describe FPM::Fry::Detector do
 
-  let(:client){
-    cl = double(:client)
-    allow(cl).to receive(:read){ raise FPM::Fry::Client::FileNotFound }
-    cl
-  }
+  Detector = FPM::Fry::Detector
 
-  subject{
-    FPM::Fry::Detector::Container.new(client, 'doesntmatter')
-  }
+  context 'mocked' do
+    let(:inspector){
+      inspector = double('inspector')
+      allow(inspector).to receive(:exists?).with(String).and_return(false)
+      allow(inspector).to receive(:link_target).with(String).and_return(nil)
+      allow(inspector).to receive(:read_content).with(String).and_raise(FPM::Fry::Client::FileNotFound)
+      inspector
+    }
 
-  class TarEntryMock < StringIO
-    attr :header
+    subject{
+      Detector.detect(inspector)
+    }
 
-    def initialize(string, options = {})
-      super(string)
-      options = {name: "", size: 0, prefix: "", mode: 0777}.merge(options)
-      @header = Gem::Package::TarHeader.new(options)
+    context 'flavour' do
+
+      it 'is debian when apt-get is present' do
+        expect(inspector).to receive(:exists?).with('/usr/bin/apt-get').and_return true
+        expect(subject[:flavour]).to eq 'debian'
+      end
+
+      it 'is redhat when rpm is present' do
+        expect(inspector).to receive(:exists?).with('/bin/rpm').and_return true
+        expect(subject[:flavour]).to eq 'redhat'
+      end
+
+    end
+
+    context '/etc/lsb-release' do
+
+      it 'is parsed for distribution' do
+        expect(inspector).to receive(:read_content).with('/etc/lsb-release').and_return <<LSB
+DISTRIB_ID=foo
+Random trash
+LSB
+        expect(subject[:distribution]).to eq 'foo'
+      end
+
+      it 'is parsed for release' do
+        expect(inspector).to receive(:read_content).with('/etc/lsb-release').and_return <<LSB
+DISTRIB_RELEASE=1.2.34
+Random trash
+LSB
+        expect(subject[:release]).to eq '1.2.34'
+      end
+
+    end
+
+    context '/etc/debian_version' do
+
+      it 'is parsed for version' do
+        expect(inspector).to receive(:read_content).with('/etc/debian_version').and_return(<<LSB)
+6.0.5
+LSB
+        expect(subject[:release]).to eq '6.0.5'
+      end
+
+      it 'sets distribution to debian' do
+        expect(inspector).to receive(:read_content).with('/etc/debian_version').and_return(<<LSB)
+6.0.5
+LSB
+        expect(subject[:distribution]).to eq 'debian'
+      end
+
+    end
+
+    context '/etc/redhat-release' do
+
+      it 'is parsed for version' do
+        expect(inspector).to receive(:read_content).with('/etc/redhat-release').and_return(<<LSB)
+Foobar release 1.33.7
+LSB
+        expect(subject[:release]).to eq '1.33.7'
+      end
+
+      it 'is parsed for distribution' do
+        expect(inspector).to receive(:read_content).with('/etc/redhat-release').and_return(<<LSB)
+Foobar release 1.33.7
+LSB
+        expect(subject[:distribution]).to eq 'foobar'
+      end
+
     end
 
   end
 
-  it 'reads /etc/lsb-release' do
-    expect(client).to receive(:read).with(
-                        'doesntmatter','/etc/lsb-release'
-                      ).and_yield(TarEntryMock.new(<<LSB))
-DISTRIB_ID=foo
-Random trash
-DISTRIB_RELEASE=1234
-LSB
-    expect(subject.detect!).to be true
-    expect(subject.distribution).to eq('foo')
-    expect(subject.version).to eq('1234')
+  context 'with ubuntu:16.04' do
+
+    let(:result) do
+      result = nil
+      with_inspector('ubuntu:16.04') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds ubuntu' do
+      expect(result[:distribution]).to eq('ubuntu')
+    end
+
+    it 'finds release 16.04' do
+      expect(result[:release]).to eq('16.04')
+    end
+
+    it 'finds codename xenial' do
+      expect(result[:codename]).to eq('xenial')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
   end
 
-  it 'reads /etc/debian_version' do
-    expect(client).to receive(:read).with(
-                        'doesntmatter','/etc/debian_version'
-                      ).and_yield(TarEntryMock.new(<<LSB))
-6.0.5
-LSB
-    expect(subject.detect!).to be true
-    expect(subject.distribution).to eq('debian')
-    expect(subject.version).to eq('6.0.5')
+  context 'with ubuntu:14.04' do
+
+    let(:result) do
+      result = nil
+      with_inspector('ubuntu:14.04') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds ubuntu' do
+      expect(result[:distribution]).to eq('ubuntu')
+    end
+
+    it 'finds release 14.04' do
+      expect(result[:release]).to eq('14.04')
+    end
+
+    it 'finds codename trusty' do
+      expect(result[:codename]).to eq('trusty')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
   end
 
-  it 'reads /etc/redhat-release' do
-    expect(client).to receive(:read).with(
-                        'doesntmatter','/etc/redhat-release'
-                      ).and_yield(TarEntryMock.new(<<LSB))
-Foobar release 1.33.7
-LSB
-    expect(subject.detect!).to be true
-    expect(subject.distribution).to eq('foobar')
-    expect(subject.version).to eq('1.33.7')
+  context 'with ubuntu:12.04' do
+
+    let(:result) do
+      result = nil
+      with_inspector('ubuntu:12.04') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds ubuntu' do
+      expect(result[:distribution]).to eq('ubuntu')
+    end
+
+    it 'finds release 12.04' do
+      expect(result[:release]).to eq('12.04')
+    end
+
+    it 'finds codename precise' do
+      expect(result[:codename]).to eq('precise')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
   end
 
-  it 'reads linked /etc/redhat-release' do
-    expect(client).to receive(:read).with(
-                        'doesntmatter','/etc/redhat-release'
-                      ).and_yield(TarEntryMock.new('', typeflag: "2", linkname: "centos-release" ))
-    expect(client).to receive(:read).with(
-                        'doesntmatter','/etc/centos-release'
-                      ).and_yield(TarEntryMock.new(<<LSB))
-Foobar release 1.33.7
-LSB
-    expect(subject.detect!).to be true
-    expect(subject.distribution).to eq('foobar')
-    expect(subject.version).to eq('1.33.7')
+  context 'with debian:7' do
+
+    let(:result) do
+      result = nil
+      with_inspector('debian:7') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds debian' do
+      expect(result[:distribution]).to eq('debian')
+    end
+
+    it 'finds release 7.*' do
+      expect(result[:release]).to match /\A7\.\d+/
+    end
+
+    it 'finds codename wheezy' do
+      expect(result[:codename]).to eq('wheezy')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
+  end
+
+  context 'with debian:8' do
+
+    let(:result) do
+      result = nil
+      with_inspector('debian:8') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds debian' do
+      expect(result[:distribution]).to eq('debian')
+    end
+
+    it 'finds release 8.*' do
+      expect(result[:release]).to match /\A8\.\d+/
+    end
+
+    it 'finds codename jessie' do
+      expect(result[:codename]).to eq('jessie')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
+  end
+
+  context 'with centos:centos6' do
+
+    let(:result) do
+      result = nil
+      with_inspector('centos:centos6') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds centos' do
+      expect(result[:distribution]).to eq('centos')
+    end
+
+    it 'finds release 6.*' do
+      expect(result[:release]).to match /\A6\.\d+/
+    end
+
+    it 'finds flavour redhat' do
+      expect(result[:flavour]).to eq('redhat')
+    end
+
+  end
+
+  context 'with centos:centos7' do
+
+    let(:result) do
+      result = nil
+      with_inspector('centos:centos7') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds centos' do
+      expect(result[:distribution]).to eq('centos')
+    end
+
+    it 'finds release 7.*' do
+      expect(result[:release]).to match /\A7\.\d+/
+    end
+
+    it 'finds flavour redhat' do
+      expect(result[:flavour]).to eq('redhat')
+    end
+
   end
 end
-
-describe FPM::Fry::Detector::Image do
-
-  let(:client){
-    cl = double(:client)
-    allow(cl).to receive(:url){|*args| args.join('/') }
-    cl
-  }
-
-  let(:container_detector){
-    double(:container_detector)
-  }
-
-  let(:factory){
-    f = double(:factory)
-    allow(f).to receive(:new).and_return(container_detector)
-    f
-  }
-
-  subject{
-    FPM::Fry::Detector::Image.new(client, 'doesntmatter', factory)
-  }
-
-  it "creates an image an delegates to its factory" do
-    expect(client).to receive(:post).and_return(double(body: '{"Id":"deadbeef"}'))
-    expect(client).to receive(:delete).with(path: 'containers/deadbeef')
-    expect(container_detector).to receive(:detect!).and_return(true)
-    expect(container_detector).to receive(:distribution).and_return("foo")
-    expect(container_detector).to receive(:version).and_return("1.2.3")
-    expect( subject.detect! ).to be true
-  end
-
-  it "raises a pointful error message for non-existing images" do
-    expect(client).to receive(:post).and_raise(Excon::Errors::NotFound.new("Not found"))
-    expect{ subject.detect! }.to raise_error FPM::Fry::Detector::Image::ImageNotFound, /Image "doesntmatter" not found/
-  end
-
-end
-

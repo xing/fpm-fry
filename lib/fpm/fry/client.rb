@@ -1,15 +1,27 @@
+require 'cabin'
 require 'excon'
 require 'rubygems/package'
 require 'json'
 require 'fileutils'
 require 'forwardable'
 require 'fpm/fry/tar'
-
-module FPM; module Fry; end ; end
-
+require 'fpm/fry/with_data'
 class FPM::Fry::Client
 
+  # Raised when a file wasn't found inside a container
   class FileNotFound < StandardError
+    include FPM::Fry::WithData
+  end
+
+  # Raised when a container wasn't found.
+  class ContainerNotFound < StandardError
+    include FPM::Fry::WithData
+  end
+
+  # Raised when trying to read file that can't be read e.g. because it's a
+  # directory.
+  class NotAFile < StandardError
+    include FPM::Fry::WithData
   end
 
   extend Forwardable
@@ -41,6 +53,7 @@ class FPM::Fry::Client
     end
   end
 
+  # @return [String] docker server api version
   def server_version
     @server_version ||= begin
       res = agent.get(
@@ -51,6 +64,7 @@ class FPM::Fry::Client
     end
   end
 
+  # @return [String] docker cert path from environment
   def self.docker_cert_path
     ENV.fetch('DOCKER_CERT_PATH',File.join(Dir.home, '.docker'))
   end
@@ -85,14 +99,54 @@ class FPM::Fry::Client
               expects: [200,404,500]
             )
           end
-    if res.status == 500 || res.status == 404
-      raise FileNotFound, "File #{resource.inspect} not found: #{res.body}"
+    if [404,500].include? res.status
+      body_message = Hash[JSON.load(res.body).map{|k,v| ["docker.#{k}",v] }] rescue {'docker.message' => res.body}
+      body_message['docker.container'] = name
+      if body_message['docker.message'] =~ /\ANo such container:/
+        raise ContainerNotFound.new("container not found", body_message)
+      end
+      raise FileNotFound.new("file not found", {'path' => resource}.merge(body_message))
     end
     sio = StringIO.new(res.body)
     tar = FPM::Fry::Tar::Reader.new( sio )
     tar.each do |entry|
       yield entry
     end
+  end
+
+  # Gets the file contents while following symlinks
+  # @param [String] name the container name
+  # @param [String] resource the file name
+  # @return [String] content
+  # @raise [NotAFile] when the file has no readable content
+  # @raise [FileNotFound] when the file does not exist
+  # @api docker
+  def read_content(name, resource)
+    read(name, resource) do |file|
+      if file.header.typeflag == "2"
+        return read_content(name, File.absolute_path(file.header.linkname,File.dirname(resource)))
+      end
+      if file.header.typeflag != "0"
+        raise NotAFile.new("not a file", {'path' => resource})
+      end
+      return file.read
+    end
+  end
+
+  # Gets the target of a symlink
+  # @param [String] name the container name
+  # @param [String] resource the file name
+  # @return [String] target
+  # @return [nil] if resource is not a symlink
+  # @api docker
+  def link_target(name, resource)
+    read(name, resource) do |file|
+      if file.header.typeflag == "2"
+        return File.absolute_path(file.header.linkname,File.dirname(resource))
+      end
+      return nil
+    end
+    return nil
   end
 
   def copy(name, resource, map, options = {})
@@ -112,6 +166,27 @@ class FPM::Fry::Client
     res = agent.get(path: url('containers',name,'changes'))
     raise res.reason if res.status != 200
     return JSON.parse(res.body)
+  end
+
+  def pull(image)
+    agent.post(path: url('images','create'), query: {'fromImage' => image})
+  end
+
+  def create(image)
+    res = agent.post(
+      headers: { 'Content-Type' => 'application/json' },
+      path: url('containers','create'),
+      expects: [201],
+      body: JSON.generate('Image' => image)
+    )
+    return JSON.parse(res.body)['Id']
+  end
+
+  def destroy(container)
+    agent.delete(
+      path: url('containers',container),
+      expects: [204]
+    )
   end
 
   def agent

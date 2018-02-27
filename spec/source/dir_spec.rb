@@ -4,7 +4,7 @@ describe FPM::Fry::Source::Dir do
 
   let!(:source){
     s = Dir.mktmpdir("fpm-fry")
-    `cd #{s} ; echo "Hello" > "World"`
+    IO.write(File.join(s,'World'),"Hello\n")
     s
   }
 
@@ -71,6 +71,45 @@ describe FPM::Fry::Source::Dir do
       ensure
         io.close
       end
+    end
+  end
+
+  describe '#prefix' do
+
+    context 'with a simple directory' do
+      it 'returns a empty string' do
+        src = FPM::Fry::Source::Dir.new(source)
+        cache = src.build_cache(double('tmpdir'))
+        expect(cache.prefix).to eq ""
+      end
+    end
+
+    context 'with a more complex directory' do
+      let!(:source) do
+        tmpdir = Dir.mktmpdir("fpm-fry")
+        Dir.chdir(tmpdir) do
+          Dir.mkdir('foo')
+          Dir.mkdir('foo/bar')
+          Dir.mkdir('foo/bar/baz')
+          IO.write('foo/bar/fuz', 'bar')
+        end
+        tmpdir
+      end
+
+      it 'returns the prefix string' do
+        src = FPM::Fry::Source::Dir.new(source)
+        cache = src.build_cache(double('tmpdir'))
+        expect(cache.prefix).to eq "foo/bar"
+      end
+    end
+
+  end
+
+  describe '#to' do
+    it 'works' do
+      src = FPM::Fry::Source::Dir.new(source, to: 'foo/bar')
+      cache = src.build_cache(double('tmpdir'))
+      expect(cache.to).to eq 'foo/bar'
     end
   end
 

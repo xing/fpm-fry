@@ -35,6 +35,14 @@ class Cabin::NiceOutput
 
   def <<(event)
     data = event.clone
+    if data[:exception].respond_to? :data
+      ed = data[:exception].data
+      if ed.kind_of? Hash
+        data = ed.merge( data )
+      else
+        data[:exception_data] = ed.inspect
+      end
+    end
     data.delete(:line)
     data.delete(:file)
     level = data.delete(:level) || :normal
@@ -72,8 +80,23 @@ class Cabin::NiceOutput
     @io.flush
   end
 
+private
+
   def pp(hash)
-    hash.map{|k,v| '      '+k.to_s + ": " + v.inspect }.join("\n")
+    hash.map{|k,v| '      '+k.to_s + ": " + pp_value(v) }.join("\n")
+  end
+
+  def pp_value(value)
+    case(value)
+    when String
+      if value.include? "\n"
+        return "\n\t" + value.gsub("\n","\n\t")
+      else
+        return value
+      end
+    else
+      return value.inspect
+    end
   end
 
 end

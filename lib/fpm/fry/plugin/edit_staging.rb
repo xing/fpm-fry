@@ -4,7 +4,7 @@ require 'fileutils'
 # A plugin to edit the final build results.
 # @example Add a file
 #   plugin 'edit_staging' do
-#     add_file '/a_file'
+#     add_file '/a_file', 'some content'
 #   end
 module FPM::Fry::Plugin::EditStaging
 

@@ -1,10 +1,13 @@
 module FPM; module Fry
+  # Helper class that reads an IO in chunks.
+  #
+  # @api private
   class BlockEnumerator < Struct.new(:io, :blocksize)
     include Enumerable
 
-    # @param io [IO]
-    # @param blocksize [Numeric]
-    def initialize(_, blocksize = 128)
+    # @param [IO] io
+    # @param [Numeric] blocksize
+    def initialize(io, blocksize = 128)
       super
     end
 
