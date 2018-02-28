@@ -311,6 +311,8 @@ You can also package container changes directly.
 Authors
 ------------------
 
+Maxime Lagresle @maxlaverse
+Stefan Kaes @skaes
 Hannes Georg @hannesg42
 
 License
@@ -318,7 +320,7 @@ License
 
 The MIT License (MIT)
 
-Copyright (c) 2014 XING AG
+Copyright (c) 2018 XING AG
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

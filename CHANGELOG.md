@@ -1,5 +1,8 @@
-# 0.3.1 / t.b.d
-
+# 0.4.0 / 2018.02.28
+* [FIX] multiple chunks of JSON are sent by Docker for Mac
+* [ENHANCEMENT] stop using deprecated file copy API endpoint for API versions >= 1.20
+* [ENHANCEMENT] replace ENTRYPOINTs with CMDs
+* [FIX] deal with extended pax headers in tar archives
 * [FEATURE] add experimental apt plugin
 * [ENHANCEMENT] setting file_map parameter on source is now mostly superfluous
 * [FEATURE] source learned a new :to option to change the target to change the path where the source resides
