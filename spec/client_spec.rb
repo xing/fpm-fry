@@ -27,7 +27,7 @@ describe FPM::Fry::Client do
       }
 
       it 'is yielded' do
-        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
+        stub_request(:get, "http://dock.er/v1.9/containers/deadbeef/archive?path=foo").to_return(status: 200, body: body.string)
         expect{|yld|
           subject.read('deadbeef','foo', &yld)
         }.to yield_with_args(Gem::Package::TarReader::Entry)
@@ -36,13 +36,14 @@ describe FPM::Fry::Client do
 
     context 'missing file' do
       it 'raises' do
-        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 500, body:'not my day')
+        stub_request(:get, "http://dock.er/v1.9/containers/deadbeef/archive?path=foo").to_return(status: 404, body: "")
+
         expect{
           subject.read('deadbeef','foo'){}
         }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
           expect(e.data).to match(
             'path' => 'foo',
-            'docker.message' => 'not my day',
+            'docker.message' => '',
             'docker.container' => 'deadbeef'
           )
         end
@@ -55,7 +56,7 @@ describe FPM::Fry::Client do
           }.to raise_error(FPM::Fry::Client::FileNotFound) do |e|
             expect(e.data).to match(
               'path' => 'foo',
-              'docker.message'=> /\Alstat .*: no such file or directory\z/,
+              'docker.message'=> /Could not find the file foo in container \h{64}\z/,
               'docker.container' => /\A\h{64}\z/
             )
           end
@@ -111,7 +112,7 @@ describe FPM::Fry::Client do
       end
 
       it 'is copied' do
-        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
+        stub_request(:get, "http://dock.er/v1.9/containers/deadbeef/archive?path=foo").to_return(status: 200, body: body.string)
         subject.copy('deadbeef','foo', { 'foo' => tmpdir + '/foo' })
         expect( File.read(File.join(tmpdir,'foo')) ).to eq('bar')
       end
@@ -143,7 +144,7 @@ describe FPM::Fry::Client do
       end
 
       it 'is copied' do
-        stub_request(:get,'http://dock.er/v1.9/containers/deadbeef/archive?path=foo').to_return(status: 200, body: body.string)
+        stub_request(:get, "http://dock.er/v1.9/containers/deadbeef/archive?path=foo").to_return(status: 200, body: body.string)
         subject.copy('deadbeef','foo', {'foo' => tmpdir + '/foo' , 'foo/a' => tmpdir + '/foo/a'})
         expect( File.readlink(File.join(tmpdir,'foo/a')) ).to eq('b')
       end

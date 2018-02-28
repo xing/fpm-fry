@@ -1,5 +1,6 @@
 require 'fpm'
 require 'fpm/package'
+require 'fpm/fry/channel'
 
 require 'fpm/fry/client'
 

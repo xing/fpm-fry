@@ -2,6 +2,9 @@ require 'fpm/fry/source'
 require 'fpm/fry/exec'
 require 'fileutils'
 require 'digest'
+require 'cabin/channel'
+require 'fpm/fry/tar'
+
 module FPM; module Fry ; module Source
   class Dir
 

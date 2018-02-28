@@ -98,7 +98,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes arg blub foo
 COPY .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -124,7 +124,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN yum -y install arg blub foo
 COPY .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -152,7 +152,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes D a b e\\=1.0.0
 COPY .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -176,7 +176,7 @@ FROM <base>
 WORKDIR /tmp/build
 RUN apt-get install --yes a
 COPY .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 SHELL
         end
       end
@@ -199,7 +199,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build/src/foo
 COPY .build.sh /tmp/build/src/foo/
-ENTRYPOINT /tmp/build/src/foo/.build.sh
+CMD /tmp/build/src/foo/.build.sh
 SHELL
         end
 
@@ -239,7 +239,7 @@ probe a
 RUN apt-get install --yes a
 probe b
 COPY .build.sh /tmp/build/
-ENTRYPOINT /tmp/build/.build.sh
+CMD /tmp/build/.build.sh
 probe c
 SHELL
         end
@@ -260,7 +260,7 @@ SHELL
 
         it 'works' do
           io = subject.tar_io
-          entries = Gem::Package::TarReader.new(io).map{|e| e.header.name }
+          entries = FPM::Fry::Tar::Reader.new(io).map{|e| e.header.name }
           expect( entries ).to eq ['.build.sh','Dockerfile.fpm-fry']
         end
 

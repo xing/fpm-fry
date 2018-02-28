@@ -34,7 +34,7 @@ module FPM; module Fry ; module Source
             ex = Tar::Extractor.new(logger: logger)
             tio = inner.tar_io
             begin
-              ex.extract(workdir, ::Gem::Package::TarReader.new(tio), chown: false)
+              ex.extract(workdir, FPM::Fry::Tar::Reader.new(tio), chown: false)
             ensure
               tio.close
             end
@@ -62,7 +62,7 @@ module FPM; module Fry ; module Source
           end
           File.rename(workdir, unpacked_tmpdir)
         else
-          # 
+          #
           base = unpacked_tmpdir
           if inner.respond_to? :prefix
             base = File.expand_path(inner.prefix, base)
@@ -145,4 +145,3 @@ module FPM; module Fry ; module Source
   end
 
 end ; end ; end
-

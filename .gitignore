@@ -3,5 +3,6 @@
 *.rpm
 *.gem
 coverage
+.rvmrc
 doc
 Gemfile.lock

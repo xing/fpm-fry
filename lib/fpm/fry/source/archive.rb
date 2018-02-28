@@ -6,6 +6,8 @@ require 'zlib'
 require 'fpm/fry/source'
 require 'fpm/fry/exec'
 require 'cabin'
+require 'cabin/channel'
+
 module FPM; module Fry ; module Source
   # Used to build from an archive.
   #

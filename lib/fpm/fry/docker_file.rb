@@ -66,7 +66,7 @@ module FPM; module Fry
           to = cache.to || ""
         end
         fm = cache.file_map
-        if fm.nil? 
+        if fm.nil?
           return { prefix => to }
         end
         if fm.size == 1
@@ -153,7 +153,7 @@ module FPM; module Fry
         end
 
         df[:build] << "COPY .build.sh #{workdir}/"
-        df[:build] << "ENTRYPOINT #{workdir}/.build.sh"
+        df[:build] << "CMD #{workdir}/.build.sh"
         recipe.apply_dockerfile_hooks(df)
         return [*df[:source],*df[:dependencies],*df[:build],""].join("\n")
       end

@@ -18,7 +18,7 @@ class FPM::Fry::Client
     include FPM::Fry::WithData
   end
 
-  # Raised when trying to read file that can't be read e.g. because it's a 
+  # Raised when trying to read file that can't be read e.g. because it's a
   # directory.
   class NotAFile < StandardError
     include FPM::Fry::WithData
@@ -84,12 +84,21 @@ class FPM::Fry::Client
 
   def read(name, resource)
     return to_enum(:read, name, resource) unless block_given?
-    res = agent.get(
-      path: url('containers',name,'archive'),
-      query: {'path' => resource},
-      headers: { 'Content-Type' => 'application/json' },
-      expects: [200,404,500]
-    )
+    res = if (server_version['ApiVersion'] < "1.20")
+            agent.post(
+              path: url('containers', name, 'copy'),
+              headers: { 'Content-Type' => 'application/json' },
+              body: JSON.generate({'Resource' => resource}),
+              expects: [200,404,500]
+            )
+          else
+            agent.get(
+              path: url('containers', name, 'archive'),
+              headers: { 'Content-Type' => 'application/json' },
+              query: {:path => resource},
+              expects: [200,404,500]
+            )
+          end
     if [404,500].include? res.status
       body_message = Hash[JSON.load(res.body).map{|k,v| ["docker.#{k}",v] }] rescue {'docker.message' => res.body}
       body_message['docker.container'] = name
@@ -99,7 +108,7 @@ class FPM::Fry::Client
       raise FileNotFound.new("file not found", {'path' => resource}.merge(body_message))
     end
     sio = StringIO.new(res.body)
-    tar = ::Gem::Package::TarReader.new( sio )
+    tar = FPM::Fry::Tar::Reader.new( sio )
     tar.each do |entry|
       yield entry
     end

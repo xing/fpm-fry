@@ -45,7 +45,7 @@ describe FPM::Fry::Source::Archive do
       src = FPM::Fry::Source::Archive.new("http://example/fileA.tar")
       expect{
         src.build_cache(tmpdir)
-      }.to raise_error( FPM::Fry::Source::CacheFailed, "Too many redirects")
+      }.to raise_error( FPM::Fry::Source::CacheFailed)
     end
 
     it "reports missing files" do
@@ -150,7 +150,7 @@ describe FPM::Fry::Source::Archive do
         cache = src.build_cache(tmpdir)
         io = cache.tar_io
         begin
-          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
           files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
           expect(files.size).to eq(2)
           expect(files['./foo']).to eq "bar"
@@ -182,7 +182,7 @@ describe FPM::Fry::Source::Archive do
         cache = src.build_cache(tmpdir)
         io = cache.tar_io
         begin
-          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
           files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
           expect(files).to eq('plainfile.bin' => 'bar')
         ensure
@@ -230,7 +230,7 @@ describe FPM::Fry::Source::Archive do
         cache = src.build_cache(tmpdir)
         io = cache.tar_io
         begin
-          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
           files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
           expect(files).to eq 'foo' => 'bar'
         ensure

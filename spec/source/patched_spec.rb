@@ -45,7 +45,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(2)
         expect(files['./World']).to eq "Hello\n"
@@ -59,7 +59,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(2)
         expect(files['./World']).to eq "Olla\n"
@@ -102,7 +102,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(4)
         expect(files['./World']).to eq "Hello\n"
@@ -181,7 +181,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(2)
         expect(files['./World']).to eq "Olla\n"
@@ -193,7 +193,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(2)
         expect(files['./World']).to eq "Ciao\n"
@@ -205,7 +205,7 @@ describe FPM::Fry::Source::Patched do
       cache = src.build_cache(tmpdir)
       io = cache.tar_io
       begin
-        rd = Gem::Package::TarReader.new(IOFilter.new(io))
+        rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
         files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
         expect(files.size).to eq(2)
         expect(files['./World']).to eq "Olla\n"
@@ -240,7 +240,7 @@ describe FPM::Fry::Source::Patched do
         cache = src.build_cache(tmpdir)
         io = cache.tar_io
         begin
-          rd = Gem::Package::TarReader.new(IOFilter.new(io))
+          rd = FPM::Fry::Tar::Reader.new(IOFilter.new(io))
           files = Hash[ rd.each.map{|e| [e.header.name, e.read] } ]
           expect(files.size).to eq(2)
           expect(files['./World']).to eq "Olla\n"
