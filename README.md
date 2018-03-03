@@ -313,7 +313,7 @@ Authors
 
 - Maxime Lagresle [@maxlaverse](https://github.com/maxlaverse)
 - Stefan Kaes [@skaes](https://github.com/skaes)
-- Hannes Georg [@hannesg42](https://github.com/hannesg42)
+- Hannes Georg [@hannesg](https://github.com/hannesg)
 
 License
 -----------------
