@@ -311,9 +311,9 @@ You can also package container changes directly.
 Authors
 ------------------
 
-Maxime Lagresle @maxlaverse
-Stefan Kaes @skaes
-Hannes Georg @hannesg42
+- Maxime Lagresle [@maxlaverse](https://github.com/maxlaverse)
+- Stefan Kaes [@skaes](https://github.com/skaes)
+- Hannes Georg [@hannesg42](https://github.com/hannesg42)
 
 License
 -----------------
