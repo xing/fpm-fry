@@ -20,7 +20,7 @@ Installation
 
     $> gem install fpm-fry
 
-You also need a running a machine running docker >= 1.8. This does not need to be the same machine, fpm-fry can 
+You also need a running a machine running docker >= 1.8. This does not need to be the same machine, fpm-fry can
 use the docker remote api. See [the docker install guide](https://www.docker.io/gettingstarted/?#h_installation).
 
 Introduction
@@ -43,7 +43,7 @@ if flavour == 'redhat'
   build_depends 'zlib-devel'
   build_depends 'pcre-devel'
   build_depends 'xz-devel'
-  
+
   depends 'zlib'
   depends 'xz'
   depends 'zlib'
@@ -54,7 +54,7 @@ elsif flavour == 'debian'
   build_depends 'zlib1g-dev'
   build_depends 'liblzma-dev'
   build_depends 'make'
-  
+
   depends 'libc6'
   depends 'libpcre3'
   depends 'zlib1g'
@@ -69,7 +69,7 @@ Recipe files contains informations about the used sources, required software pac
 
 If you don't tell fpm-fry which recipe to use it will look for a file called `recipe.rb` in the current directory.
 
-Unlike fpm-cookery fpm-fry needs to know additionally which docker image it should use to build ( `ubuntu:precise` in this example ). 
+Unlike fpm-cookery fpm-fry needs to know additionally which docker image it should use to build ( `ubuntu:precise` in this example ).
 fpm-fry does not pull this image into the docker instance, you have to make sure that it's present and valid ( do `docker pull ubuntu:precise` before you try something ).
 
 To build your first package type:
@@ -270,10 +270,10 @@ package 'subpackage' do
 end
 ```
 
-Subpackages must contain at least one `files` option so the build process knows where a file belongs. All 
+Subpackages must contain at least one `files` option so the build process knows where a file belongs. All
 other files are implictly put in the main package.
 
-Subpackage can make use of plugins like `service`, too. They can furthermore depend on each other without 
+Subpackage can make use of plugins like `service`, too. They can furthermore depend on each other without
 disturbing the build process.
 
 

@@ -7,8 +7,12 @@ Gem::Specification.new do |gem|
 
   gem.description = 'deep-fried package builder'
 
-  gem.authors  = ['Hannes Georg']
-  gem.email    = 'hannes.georg@xing.com'
+  gem.authors  = [
+    'Maxime Lagresle',
+    'Stefan Kaes',
+    'Hannes Georg',
+  ]
+  gem.email    = 'maxime.lagresle@xing.com'
   gem.homepage = 'https://github.com/xing/fpm-fry'
 
   gem.license  = 'MIT'
@@ -28,5 +32,4 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'coveralls'
   gem.add_development_dependency 'simplecov'
-
 end
