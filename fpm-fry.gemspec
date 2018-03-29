@@ -10,6 +10,7 @@ Gem::Specification.new do |gem|
   gem.authors  = [
     'Maxime Lagresle',
     'Stefan Kaes',
+    'Sebastian Brandt',
     'Hannes Georg',
   ]
   gem.email    = 'maxime.lagresle@xing.com'

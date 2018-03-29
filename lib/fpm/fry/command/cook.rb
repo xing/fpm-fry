@@ -157,7 +157,7 @@ module FPM; module Fry
               next if file.header.name == 'lists/'
               logger.hint("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: 'https://github.com/xing/fpm-fry/wiki/The-update-parameter')
               break
-            end
+            end if inspector.exists?('/var/lib/apt/lists')
           end
           return true
         when 'always'
@@ -304,15 +304,15 @@ module FPM; module Fry
 
     def adjust_config_files( output )
       # FPM flags all files in /etc as config files but only for debian :/.
-      # Actually this behavior makes sense to me for all packages because it's 
-      # the thing I usually want. By setting this attribute at least the 
+      # Actually this behavior makes sense to me for all packages because it's
+      # the thing I usually want. By setting this attribute at least the
       # misleading warning goes away.
       output.attributes[:deb_no_default_config_files?] = true
       output.attributes[:deb_auto_config_files?] = false
 
       return if output.attributes[:fry_config_explicitly_used]
 
-      # Now that we have disabled this for debian we have to reenable if it for 
+      # Now that we have disabled this for debian we have to reenable if it for
       # all.
       etc = File.expand_path('etc', output.staging_path)
       if File.exists?( etc )
