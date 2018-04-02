@@ -153,11 +153,15 @@ module FPM; module Fry
         case(update)
         when 'auto'
           Inspector.for_image(client, image) do |inspector|
-            inspector.read('/var/lib/apt/lists') do |file|
-              next if file.header.name == 'lists/'
-              logger.hint("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: 'https://github.com/xing/fpm-fry/wiki/The-update-parameter')
-              break
-            end if inspector.exists?('/var/lib/apt/lists')
+            begin
+              inspector.read('/var/lib/apt/lists') do |file|
+                next if file.header.name == 'lists/'
+                logger.hint("/var/lib/apt/lists is not empty, you could try to speed up builds with --update=never", documentation: 'https://github.com/xing/fpm-fry/wiki/The-update-parameter')
+                break
+              end
+            rescue FPM::Fry::Client::FileNotFound
+              logger.hint("/var/lib/apt/lists does not exists, so we will autoupdate")
+            end
           end
           return true
         when 'always'

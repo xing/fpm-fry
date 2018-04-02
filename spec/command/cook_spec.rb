@@ -229,7 +229,6 @@ describe FPM::Fry::Command::Cook do
     end
 
     context 'debian auto with cache' do
-
       before(:each) do
         subject.image = 'ubuntu:precise'
         subject.builder = FPM::Fry::Recipe::Builder.new(flavour: 'debian')
@@ -273,7 +272,7 @@ describe FPM::Fry::Command::Cook do
       FPM::Package::Dir
     end
 
-    before(:each) do 
+    before(:each) do
       subject.builder = builder
       subject.output_class = output_class
     end
