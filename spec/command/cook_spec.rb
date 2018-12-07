@@ -12,7 +12,7 @@ describe FPM::Fry::Command::Cook do
   end
 
   let(:ui) do
-    FPM::Fry::UI.new(StringIO.new,StringIO.new,nil,tmpdir)
+    FPM::Fry::UI.new(out: StringIO.new, err: StringIO.new, logger: nil, tmpdir: tmpdir)
   end
 
   after(:each) do

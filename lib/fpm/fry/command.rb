@@ -13,6 +13,9 @@ module FPM; module Fry
     option '--debug', :flag, 'Turns on debugging'
     option '--[no-]tls', :flag, 'Turns on tls ( default is false for schema unix, tcp and http and true for https )'
     option '--[no-]tlsverify', :flag, 'Turns off tls peer verification', default:true, environment_variable: 'DOCKER_TLS_VERIFY'
+    option ["-t", "--tmpdir"], "PATH", 'Write tmp data to PATH', default: '/tmp/fpm-fry', attribute_name: :dir do |s|
+      String(s)
+    end
 
     subcommand 'fpm', 'Works like fpm but with docker support', FPM::Command
 
@@ -22,7 +25,7 @@ module FPM; module Fry
 
     def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
       super
-      @ui = ctx.fetch(:ui){ UI.new }
+      @ui = ctx.fetch(:ui){ UI.new(tmpdir: dir) }
       @client = ctx[:client]
     end
 
