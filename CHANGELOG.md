@@ -1,3 +1,6 @@
+# 0.4.2 / 2018.12.11
+* [ENHANCEMENT] added option to set the tmpdir path for source files
+
 # 0.4.0 / 2018.02.28
 * [FIX] multiple chunks of JSON are sent by Docker for Mac
 * [ENHANCEMENT] stop using deprecated file copy API endpoint for API versions >= 1.20
