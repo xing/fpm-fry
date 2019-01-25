@@ -11,7 +11,6 @@ describe FPM::Fry::Plugin::Init do
       allow(inspector).to receive(:exists?).with(String).and_return(false)
       allow(inspector).to receive(:link_target).with(String).and_return(nil)
       allow(inspector).to receive(:exists?).with("/etc/init.d").and_return(true)
-      allow(inspector).to receive(:exists?).with("/lib/systemd/systemd").and_return(true)
       inspector
     }
 
@@ -33,12 +32,11 @@ describe FPM::Fry::Plugin::Init do
       builder.plugin('init')
       expect(builder.init).to be_a FPM::Fry::Plugin::Init::System
     end
-
   end
 
   context 'init detection (real)' do
     context 'with ubuntu:18.04' do
-      it 'finds systemd' do
+      skip 'finds systemd' do
         with_inspector('ubuntu:18.04') do |insp|
           builder = FPM::Fry::Recipe::Builder.new({},inspector: insp)
           builder.extend(FPM::Fry::Plugin::Init)
