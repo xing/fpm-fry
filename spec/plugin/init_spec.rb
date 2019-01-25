@@ -11,6 +11,7 @@ describe FPM::Fry::Plugin::Init do
       allow(inspector).to receive(:exists?).with(String).and_return(false)
       allow(inspector).to receive(:link_target).with(String).and_return(nil)
       allow(inspector).to receive(:exists?).with("/etc/init.d").and_return(true)
+      allow(inspector).to receive(:exists?).with("/lib/systemd/systemd").and_return(true)
       inspector
     }
 
