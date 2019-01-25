@@ -40,7 +40,7 @@ module FPM::Fry::Plugin::Init
 
 private
   def self.detect(inspector)
-    if inspector.link_target('/sbin/init') == '/lib/systemd/systemd'
+    if inspector.exists?('/lib/systemd/systemd')
       return System.new(:systemd, {})
     end
     if inspector.exists?('/etc/init')
