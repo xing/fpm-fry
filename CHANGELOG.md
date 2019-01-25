@@ -1,3 +1,7 @@
+# 0.4.3 / 2018.12.11
+* [ENHANCEMENT] Use systemd if installed. There's no /sbin/init in Ubuntu 18.04.
+* [TESTS] Added spec tests for Ubuntu 18.04
+
 # 0.4.2 / 2018.12.11
 * [ENHANCEMENT] added option to set the tmpdir path for source files
 

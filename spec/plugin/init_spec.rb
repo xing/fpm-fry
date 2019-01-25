@@ -36,6 +36,15 @@ describe FPM::Fry::Plugin::Init do
   end
 
   context 'init detection (real)' do
+    context 'with ubuntu:18.04' do
+      it 'finds systemd' do
+        with_inspector('ubuntu:18.04') do |insp|
+          builder = FPM::Fry::Recipe::Builder.new({},inspector: insp)
+          builder.extend(FPM::Fry::Plugin::Init)
+          expect(builder.init).to be_systemd
+        end
+      end
+    end
 
     context 'with ubuntu:16.04' do
       it 'finds systemd' do

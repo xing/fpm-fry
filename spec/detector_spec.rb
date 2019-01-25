@@ -91,6 +91,34 @@ LSB
 
   end
 
+  context 'with ubuntu:18.04' do
+
+    let(:result) do
+      result = nil
+      with_inspector('ubuntu:18.04') do |inspector|
+        result = Detector.detect(inspector)
+      end
+      result
+    end
+
+    it 'finds ubuntu' do
+      expect(result[:distribution]).to eq('ubuntu')
+    end
+
+    it 'finds release 18.04' do
+      expect(result[:release]).to eq('18.04')
+    end
+
+    it 'finds codename bionic' do
+      expect(result[:codename]).to eq('bionic')
+    end
+
+    it 'finds flavour debian' do
+      expect(result[:flavour]).to eq('debian')
+    end
+
+  end
+
   context 'with ubuntu:16.04' do
 
     let(:result) do
