@@ -24,7 +24,7 @@ Gem::Specification.new do |gem|
   # ensure the gem is built out of versioned files
   gem.files = Dir['lib/**/*'] & `git ls-files -z`.split("\0")
 
-  gem.add_dependency 'excon', '~> 0.30'
+  gem.add_dependency 'excon', '~> 0.71.0'
   gem.add_dependency 'fpm', '~> 1.0'
   gem.add_dependency 'json', '~> 1.8'
 
