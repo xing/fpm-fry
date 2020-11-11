@@ -315,6 +315,7 @@ Authors
 - Stefan Kaes [@skaes](https://github.com/skaes)
 - Sebastian Brandt [@sebbrandt87](https://github.com/sebbrandt87)
 - Hannes Georg [@hannesg](https://github.com/hannesg)
+- Julian Tabel [@JTabel](https://github.com/JTabel)
 
 License
 -----------------

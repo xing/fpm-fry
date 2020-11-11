@@ -1,6 +1,6 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-fry'
-  gem.version = '0.4.4'
+  gem.version = '0.4.5'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Fry"
@@ -12,6 +12,7 @@ Gem::Specification.new do |gem|
     'Stefan Kaes',
     'Sebastian Brandt',
     'Hannes Georg',
+    'Julian Tabel'
   ]
   gem.email    = 'maxime.lagresle@xing.com'
   gem.homepage = 'https://github.com/xing/fpm-fry'
