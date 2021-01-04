@@ -78,7 +78,7 @@ describe 'FPM::Fry::Plugin::ScriptHelper' do
 
       context 'on debian' do
         it 'renders an after_remove script' do
-          expect(package.scripts[:after_remove]).to match /remove[)]\s*do-foo/
+          expect(package.scripts[:after_remove]).to match /remove|purge[)]\s*do-foo/
         end
       end
 
