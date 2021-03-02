@@ -44,7 +44,7 @@ module FPM; module Fry ; module Source
             base = File.expand_path(inner.prefix, base)
           end
           package.patches.each do |patch|
-            cmd = ['patch','-p1','-i',patch[:file]]
+            cmd = ['patch','-N','-p1','-i',patch[:file]]
             chdir = base
             if patch.key? :chdir
               given_chdir = File.expand_path(patch[:chdir],workdir)
