@@ -1,6 +1,6 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-fry'
-  gem.version = '0.4.8'
+  gem.version = '0.5.0'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Fry"
@@ -12,9 +12,10 @@ Gem::Specification.new do |gem|
     'Stefan Kaes',
     'Sebastian Brandt',
     'Hannes Georg',
-    'Julian Tabel'
+    'Julian Tabel',
+    'Dennis Konert'
   ]
-  gem.email    = 'maxime.lagresle@xing.com'
+  gem.email    = 'dennis.konert@new-work.se'
   gem.homepage = 'https://github.com/xing/fpm-fry'
 
   gem.license  = 'MIT'
@@ -26,7 +27,7 @@ Gem::Specification.new do |gem|
   gem.files = Dir['lib/**/*'] & `git ls-files -z`.split("\0")
 
   gem.add_dependency 'excon', '~> 0.71.0'
-  gem.add_dependency 'fpm', '~> 1.0'
+  gem.add_dependency 'fpm', '~> 1.13'
 
   gem.add_development_dependency 'rake', '~> 12.0'
   gem.add_development_dependency 'rspec', '~> 3.0', '>= 3.0.0'
