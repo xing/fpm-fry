@@ -269,7 +269,7 @@ module FPM; module Fry
     end
 
     def input_package(container)
-      input = FPM::Package::Docker.new(logger: logger, client: client)
+      input = FPM::Package::Docker.new(logger: logger, client: client, keep_modified_files: builder.keep_modified_files)
       builder.recipe.apply_input(input)
       begin
         input.input(container)
