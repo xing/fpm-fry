@@ -10,11 +10,9 @@ module FPM::Fry::Plugin ; module Service
 
     def render(file)
       _erbout = ""
-      erb = ERB.new(
-        IO.read(File.join(File.dirname(__FILE__),'..','templates',file)),
-        0, "-"
-      )
-      eval(erb.src,nil,File.join(File.dirname(__FILE__),'..','templates',file))
+      path = File.join(File.dirname(__FILE__),'..','templates',file)
+      erb = ERB.new(IO.read(path), trim_mode: "-")
+      eval erb.src, nil, path
       return _erbout
     end
 
