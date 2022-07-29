@@ -169,6 +169,14 @@ describe FPM::Fry::Command::Cook do
     end
 
     context 'trivial case' do
+      let(:packed_response) do
+        [2,6,"stderr",1,6,"stdout"].pack("I<I>Z6I<I>Z6")
+      end
+
+      let(:chunked_response) do
+        parts = [[2,6,"stderr"],[1,6,"stdout"]].map{ |a| a.pack("I<I>Z6") }
+        (parts+[""]).map{ |e| format("%x\r\n%s\r\n", e.bytesize, e) }.join
+      end
 
       before(:each) do
         subject.image = 'fpm-fry:x'
@@ -183,16 +191,25 @@ describe FPM::Fry::Command::Cook do
           with(:body => "{}",
                :headers => {'Content-Type'=>'application/json'}).
           to_return(:status => 204)
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1").
-          to_return(:status => 200, :body => [2,6,"stderr",1,6,"stdout"].pack("I<I>Z6I<I>Z6"))
         stub_request(:post, "http://unix/v1.9/containers/caafffee/wait").
           to_return(:status => 200, :body => '{"StatusCode":0}')
         stub_request(:delete, "http://unix/v1.9/containers/caafffee").
           to_return(:status => 204)
       end
-      it 'yields the id' do
+
+      it 'yields the id when docker does not use transfer encoding chunked' do
+        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
+          to_return(:status => 200, :body => packed_response)
         expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')
       end
+
+      it 'yields the id when docker uses transfer encoding chunked' do
+        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
+          to_return(:status => 200, :headers => {'Transfer-Encoding'=>'chunked'},
+                    :body => chunked_response)
+        expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')
+      end
+
     end
   end
 

@@ -197,7 +197,7 @@ module FPM; module Fry
         )
 
         client.post(
-          path: client.url('containers',container,'attach?stderr=1&stdout=1&stream=1'),
+          path: client.url('containers',container,'attach?stderr=1&stdout=1&stream=1&logs=1'),
           body: '',
           expects: [200],
           middlewares: [
