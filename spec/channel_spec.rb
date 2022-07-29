@@ -14,7 +14,7 @@ describe FPM::Fry::Channel do
   context 'with exceptions' do
     it 'allows logging exceptions' do
       ex = Exception.new("foo")
-      expect(subscriber).to receive(:<<).with(level: :error, message: "foo", exception: ex, backtrace: nil)
+      expect(subscriber).to receive(:<<).with({level: :error, message: "foo", exception: ex, backtrace: nil})
       subject.error(ex)
     end
 
@@ -23,7 +23,7 @@ describe FPM::Fry::Channel do
       def ex.data
         {blub: "bla"}
       end
-      expect(subscriber).to receive(:<<).with(level: :error, message: "foo", exception: ex, backtrace: nil, blub: "bla")
+      expect(subscriber).to receive(:<<).with({level: :error, message: "foo", exception: ex, backtrace: nil, blub: "bla"})
       subject.error(ex)
     end
 
@@ -32,14 +32,14 @@ describe FPM::Fry::Channel do
       def ex.data
         {blub: "bla", message: "bar", level: :warning}
       end
-      expect(subscriber).to receive(:<<).with(level: :error, message: "foo", exception: ex, backtrace: nil, blub: "bla")
+      expect(subscriber).to receive(:<<).with({level: :error, message: "foo", exception: ex, backtrace: nil, blub: "bla"})
       subject.error(ex)
     end
   end
 
   context 'with a Hash' do
     it 'dups the hash' do
-      expect(subscriber).to receive(:<<).with(level: :info,blub: "blub"){|data|
+      expect(subscriber).to receive(:<<).with({level: :info, blub: "blub"}){|data|
         data[:foo] = 'bar'
       }
       hsh = {blub: 'blub'}
@@ -50,7 +50,7 @@ describe FPM::Fry::Channel do
 
   context '#hint' do
     it 'uses the hint level' do
-      expect(subscriber).to receive(:<<).with(level: :hint, message: "bar")
+      expect(subscriber).to receive(:<<).with({level: :hint, message: "bar"})
       subject.hint("bar")
     end
 

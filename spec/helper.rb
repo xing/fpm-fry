@@ -1,12 +1,15 @@
 require 'simplecov'
-require 'coveralls'
 require 'excon'
 
+
 SimpleCov.start do
-  formatter SimpleCov::Formatter::MultiFormatter.new([
-    SimpleCov::Formatter::HTMLFormatter,
-    Coveralls::SimpleCov::Formatter
-  ])
+  if ENV['COVERALLS']
+    require 'coveralls'
+    formatter SimpleCov::Formatter::MultiFormatter.new([
+      SimpleCov::Formatter::HTMLFormatter,
+      Coveralls::SimpleCov::Formatter
+    ])
+  end
   add_filter "/spec"
   maximum_coverage_drop 5
 end
