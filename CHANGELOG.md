@@ -1,3 +1,7 @@
+# 0.5.1 / 2022.07.29
+* [CHANGE] Use GitHub Actions
+* [FIX] Handle chunked transfer encoding responses from docker daemon
+
 # 0.4.3 / 2018.12.11
 * [ENHANCEMENT] Use systemd if installed. There's no /sbin/init in Ubuntu 18.04.
 * [TESTS] Added spec tests for Ubuntu 18.04
