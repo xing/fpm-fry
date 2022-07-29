@@ -1,6 +1,6 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-fry'
-  gem.version = '0.5.0'
+  gem.version = '0.5.1'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Fry"
