@@ -16,38 +16,56 @@ module FPM; module Fry
         if datum[:response]
           # probably mocked
           if datum[:response][:body]
-            @parser.parse(StringIO.new(datum[:response][:body]))
+            headers = datum[:response][:headers]
+            fake_socket = StringIO.new(datum[:response][:body])
+            parse_response_data(fake_socket, headers)
           end
-          return @stack.response_call(datum)
         else
-          socket = datum[:connection].send(:socket)
-          begin
-            line = socket.readline
-            match = /^HTTP\/\d+\.\d+\s(\d{3})\s/.match(line)
-          end while !match
-          status = match[1].to_i
+          socket, headers = extract_socket_and_headers(datum)
+          parse_response_data(socket, headers)
+        end
+        @stack.response_call(datum)
+      end
 
-          datum[:response] = {
-            :body          => '',
-            :headers       => Excon::Headers.new,
-            :status        => status,
-            :remote_ip     => socket.respond_to?(:remote_ip) && socket.remote_ip,
-          }
-          Excon::Response.parse_headers(socket, datum)
+      private
 
+      def extract_socket_and_headers(datum)
+        socket = datum[:connection].send(:socket)
+        begin
+          line = socket.readline
+          match = /^HTTP\/\d+\.\d+\s(\d{3})\s/.match(line)
+        end while !match
+        status = match[1].to_i
+
+        headers = Excon::Headers.new
+        datum[:response] = {
+          :body          => '',
+          :headers       => headers,
+          :status        => status,
+          :remote_ip     => socket.respond_to?(:remote_ip) && socket.remote_ip,
+        }
+        Excon::Response.parse_headers(socket, datum)
+
+        [socket, headers]
+      end
+
+      def parse_response_data(socket, headers)
+        if headers["Transfer-Encoding"] == "chunked"
+          @parser.parse_chunked(socket)
+        else
           @parser.parse(socket)
-          return @stack.response_call(datum)
         end
       end
 
     end
 
-    attr :out, :err
+    attr :out, :err, :streams
 
     def initialize(out, err)
       @out, @err = out, err
       @state = :null
       @left = 0
+      @streams = { 1 => out, 2 => err }
     end
 
     def new(stack)
@@ -55,8 +73,6 @@ module FPM; module Fry
     end
 
     def parse(socket)
-      left  = 0
-      streams = {1 => out, 2 => err}
       loop do
         type = read_exactly(socket,4){|part|
           if part.bytesize == 0
@@ -92,6 +108,17 @@ module FPM; module Fry
         left = len - buf.bytesize
       end
       return buf
+    end
+
+    def parse_chunked(socket)
+      loop do
+        line = socket.readline
+        chunk_size = line.chomp.to_i(16)
+        break if chunk_size.zero?
+        chunk = socket.read(chunk_size)
+        parse(StringIO.new(chunk))
+        line = socket.readline
+      end
     end
 
   end
