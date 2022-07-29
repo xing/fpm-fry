@@ -183,7 +183,7 @@ describe FPM::Fry::Command::Cook do
           with(:body => "{}",
                :headers => {'Content-Type'=>'application/json'}).
           to_return(:status => 204)
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1").
+        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
           to_return(:status => 200, :body => [2,6,"stderr",1,6,"stdout"].pack("I<I>Z6I<I>Z6"))
         stub_request(:post, "http://unix/v1.9/containers/caafffee/wait").
           to_return(:status => 200, :body => '{"StatusCode":0}')
