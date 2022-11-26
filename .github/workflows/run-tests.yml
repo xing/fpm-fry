@@ -19,7 +19,7 @@ jobs:
       FPM_FRY_DOCKER: yes
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
         with:
