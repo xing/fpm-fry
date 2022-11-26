@@ -93,14 +93,16 @@ module FPM; module Fry
     end
 
     def image_id
-      @image_id ||= begin
-        res = client.get(
-          expects: [200],
-          path: client.url("images/#{image}/json")
-        )
-        body = JSON.parse(res.body)
-        body.fetch('id'){ body.fetch('Id') }
-      end
+      @image_id ||=
+        begin
+          url = client.url("images/#{image}/json")
+          res = client.get(expects: [200], path: url)
+          body = JSON.parse(res.body)
+          body.fetch('id'){ body.fetch('Id') }
+        rescue Excon::Error
+          logger.error "could not fetch image json for #{image}, url: #{url}"
+          raise
+        end
     end
     attr_writer :image_id
 
@@ -108,20 +110,32 @@ module FPM; module Fry
       @build_image ||= begin
         sum = Digest::SHA256.hexdigest( image_id + "\0" + cache.cachekey )
         cachetag = "fpm-fry:#{sum[0..30]}"
-        res = client.get(
-          expects: [200,404],
-          path: client.url("images/#{cachetag}/json")
-        )
+        res = begin
+                url = client.url("images/#{cachetag}/json")
+                client.get(
+                  expects: [200,404],
+                  path: url
+                )
+              rescue Excon::Error
+                logger.error "could not fetch image json for #{image}, url: #{url}"
+                raise
+              end
         if res.status == 404
           df = DockerFile::Source.new(builder.variables.merge(image: image_id),cache)
-          client.post(
-            headers: {
-              'Content-Type'=>'application/tar'
-            },
-            expects: [200],
-            path: client.url("build?rm=1&dockerfile=#{DockerFile::NAME}&t=#{cachetag}"),
-            request_block: BlockEnumerator.new(df.tar_io)
-          )
+          begin
+            url = client.url("build?rm=1&dockerfile=#{DockerFile::NAME}&t=#{cachetag}")
+            client.post(
+              headers: {
+                'Content-Type'=>'application/tar'
+              },
+              expects: [200],
+              path: url,
+              request_block: BlockEnumerator.new(df.tar_io)
+            )
+          rescue Excon::Error
+            logger.error "could not build #{image}, url: #{url}"
+            raise
+          end
         else
           # Hack to trigger hints/warnings even when the cache is valid.
           DockerFile::Source.new(builder.variables.merge(image: image_id),cache).send(:file_map)
@@ -129,15 +143,21 @@ module FPM; module Fry
 
         df = DockerFile::Build.new(cachetag, builder.variables.dup,builder.recipe, update: update?)
         parser = BuildOutputParser.new(out)
-        res = client.post(
-          headers: {
-            'Content-Type'=>'application/tar'
-          },
-          expects: [200],
-          path: client.url("build?rm=1&dockerfile=#{DockerFile::NAME}"),
-          request_block: BlockEnumerator.new(df.tar_io),
-          response_block: parser
-        )
+        begin
+          url = client.url("build?rm=1&dockerfile=#{DockerFile::NAME}")
+          res = client.post(
+            headers: {
+              'Content-Type'=>'application/tar'
+            },
+            expects: [200],
+            path: url,
+            request_block: BlockEnumerator.new(df.tar_io),
+            response_block: parser
+          )
+        rescue Excon::Error
+          logger.error "could not build #{image}, url: #{url}"
+          raise
+        end
         if parser.images.none?
           raise "Didn't find a build image in the stream. This usually means that the build script failed."
         end
@@ -175,49 +195,72 @@ module FPM; module Fry
     end
 
     def build!
-      res = client.post(
-         headers: {
-          'Content-Type' => 'application/json'
-         },
-         path: client.url('containers','create'),
-         expects: [201],
-         body: JSON.generate({"Image" => build_image})
-      )
-
-      body = JSON.parse(res.body)
+      body = begin
+              url = client.url('containers','create')
+              res = client.post(
+                headers: {
+                  'Content-Type' => 'application/json'
+                },
+                path: url,
+                expects: [201],
+                body: JSON.generate({"Image" => build_image})
+              )
+              JSON.parse(res.body)
+            rescue Excon::Error
+              logger.error "could not create #{build_image}, url: #{url}"
+              raise
+            end
       container = body['Id']
       begin
-        client.post(
-          headers: {
-            'Content-Type' => 'application/json'
-          },
-          path: client.url('containers',container,'start'),
-          expects: [204],
-          body: JSON.generate({})
-        )
-
-        client.post(
-          path: client.url('containers',container,'attach?stderr=1&stdout=1&stream=1&logs=1'),
-          body: '',
-          expects: [200],
-          middlewares: [
-            StreamParser.new(out,err),
-            Excon::Middleware::Expects,
-            Excon::Middleware::Instrumentor,
-            Excon::Middleware::Mock
-          ]
-        )
-
-        res = client.post(
-          path: client.url('containers',container,'wait'),
-          expects: [200],
-          body: ''
-        )
-        json = JSON.parse(res.body)
-        if json["StatusCode"] != 0
-          raise Fry::WithData("Build failed", exit_code: json["StatusCode"])
+        begin
+          url = client.url('containers',container,'start')
+          client.post(
+            headers: {
+              'Content-Type' => 'application/json'
+            },
+            path: url,
+            expects: [204],
+            body: JSON.generate({})
+          )
+        rescue Excon::Error
+          logger.error "could not start container #{container}, url: #{url}"
+          raise
         end
-        return yield container
+
+        begin
+          url = client.url('containers',container,'attach?stderr=1&stdout=1&stream=1&logs=1')
+          client.post(
+            path: url,
+            body: '',
+            expects: [200],
+            middlewares: [
+              StreamParser.new(out,err),
+              Excon::Middleware::Expects,
+              Excon::Middleware::Instrumentor,
+              Excon::Middleware::Mock
+            ]
+          )
+        rescue Excon::Error
+          logger.error "could not attach to container #{container}, url: #{url}"
+          raise
+        end
+
+        begin
+          res = client.post(
+            path: client.url('containers',container,'wait'),
+            expects: [200],
+            body: ''
+          )
+          json = JSON.parse(res.body)
+          if json["StatusCode"] != 0
+            raise Fry::WithData("Build failed", exit_code: json["StatusCode"])
+          end
+        rescue Excon::Error
+          logger.error "could not wait successfully for container #{container}, url: #{url}"
+          raise
+        end
+
+        yield container
       ensure
         unless keep?
           client.destroy(container)
@@ -267,7 +310,7 @@ module FPM; module Fry
       dir_map = []
       out_map = {}
 
-      package_map = builder.recipe.packages.map do | package |
+      builder.recipe.packages.each do | package |
         output = output_class.new
         output.instance_variable_set(:@logger,logger)
         package.files.each do | pattern |
