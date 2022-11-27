@@ -1,3 +1,9 @@
+# 0.6.0 / 2022.11.27
+* [ENHANCEMENT] Support including files from the base image into the
+  final package.
+* [FIX] Provide better log output when the build step fails.
+* [CHANGE] Run complete test suite on GitHub.
+
 # 0.5.1 / 2022.07.29
 * [CHANGE] Use GitHub Actions
 * [FIX] Handle chunked transfer encoding responses from docker daemon
