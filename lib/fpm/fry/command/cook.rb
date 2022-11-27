@@ -4,6 +4,7 @@ module FPM; module Fry
 
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
+    option '--verbose', :fag, 'Verbose output', default: false
 
     UPDATE_VALUES = ['auto','never','always']
     option '--update',"<#{UPDATE_VALUES.join('|')}>", 'Update image before installing packages ( only apt currently )',attribute_name: 'update', default: 'auto' do |value|
@@ -269,7 +270,12 @@ module FPM; module Fry
     end
 
     def input_package(container)
-      input = FPM::Package::Docker.new(logger: logger, client: client, keep_modified_files: builder.keep_modified_files)
+      input = FPM::Package::Docker.new(
+        logger: logger,
+        client: client,
+        keep_modified_files: builder.keep_modified_files,
+        verbose: verbose
+      )
       builder.recipe.apply_input(input)
       begin
         input.input(container)
