@@ -19,12 +19,14 @@ jobs:
       FPM_FRY_DOCKER: yes
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
       - name: Install gems
         run: bundle install
+      - name: Prepare test environment
+        run: bundle exec rake test:setup
       - name: Run tests
-        run: bundle exec rake
+        run: bundle exec rake test:all

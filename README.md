@@ -178,7 +178,35 @@ Scripts running inside `before_install` modify the base image instead of the pac
 add "images/code/install-code.sh", ".install-code.sh"
 ```
 
-Mounts are added before any other build command runs in the build container.
+Mounts are added before any other build command runs in the build
+container.
+
+### Including files from base images
+
+By default, only newly created files are added to the resulting
+package, which is usually what you want. But sometimes you also want
+to include files from a base docker image. This situation arises when
+you want to both build a docker image and an installable package and
+you don't want to build everything twice. This can be achieved by
+first building the docker image and basing your package build on that
+image, touching all the files you want to include as your only build
+step and adding `keep_modified_files!` to your recipe.
+
+Assuming all your files are under some common prefix, this snippet does
+the trick:
+
+```ruby
+keep_modified_files!
+
+prefix = "/opt/package"
+
+files "#{prefix}/bin/*"
+files "#{prefix}/include/*"
+files "#{prefix}/lib/*"
+files "#{prefix}/share/*"
+
+run "/bin/bash", "-c", "find #{prefix} | xargs touch -h"
+```
 
 
 ### Target info

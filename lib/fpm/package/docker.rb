@@ -7,23 +7,20 @@ require 'fpm/fry/client'
 # An {FPM::Package} that loads files from a docker container diff.
 class FPM::Package::Docker < FPM::Package
 
+  attr_reader :logger, :client, :keep_modified_files
+
   # @param [Hash] options
   # @option options [Cabin::Channel] :logger Logger
   # @option options [FPM::Fry::Client] :client Docker client
   def initialize( options = {} )
     super()
-    if options[:logger]
-      @logger = options[:logger]
-    end
-    if options[:client]
-      @client = options[:client]
-    end
-    if @logger.nil?
-      @logger = Cabin::Channel.get
-    end
+    @logger = options[:logger] || Cabin::Channel.get
+    @client = options[:client] || FPM::Fry::Client.new(logger: @logger)
+    @keep_modified_files = options[:keep_modified_files]
+    @verbose = options[:verbose]
   end
 
-  # Loads all files from a docker container with the given name to the staging 
+  # Loads all files from a docker container with the given name to the staging
   # path.
   #
   # @param [String] name docker container name
@@ -31,44 +28,47 @@ class FPM::Package::Docker < FPM::Package
     split( name, '**' => staging_path)
   end
 
-  # Loads all files from a docker container into multiple paths defined by map 
+  # Loads all files from a docker container into multiple paths defined by map
   # param.
   #
   # @param [String] name docker container name
-  # @param [Hash<String,String>] map 
+  # @param [Hash<String,String>] map
   def split( name, map )
     changes = changes(name)
-    changes.remove_modified_leaves! do | kind, ml |
+    changes.remove_modified_leaves!(changes_to_remove) do | kind, ml |
       if kind == DELETED
-        @logger.warn("Found a deleted file. You can only create new files in a package",name: ml)
-      else
-        @logger.warn("Found a modified file. You can only create new files in a package",name: ml)
+        logger.warn("Found a deleted file. You can't delete files as part of a package.", name: ml)
+      elsif !keep_modified_files
+        logger.warn("Found a modified file. You can't modify files in a package.", name: ml)
       end
     end
     fmap = {}
     changes.leaves.each do | change |
       map.each do | match, to |
         if File.fnmatch?(match, change)
-          fmap[ change ] = File.join(to, change)
+          fmap[change] = File.join(to, change)
           break
         end
       end
     end
     directories = changes.smallest_superset
     directories.each do |chg|
-      client.copy(name, chg, fmap ,chown: false)
+      client.copy(name, chg, fmap, chown: false)
     end
     return nil
   end
 
-private
-
-  def client
-    @client ||= FPM::Fry::Client.new(logger: @logger)
-  end
+  private
 
   def changes(name)
-    fs = Node.read(client.changes(name))
+    client_changes = client.changes(name)
+    if @verbose
+      names = {MODIFIED => "MOD", CREATED => "ADD", DELETED => "DEL"}
+      client_changes.each do |change|
+        puts [names[change["Kind"]], change["Path"]].join(" ")
+      end
+    end
+    fs = Node.read(client_changes)
     fs.reject!(&method(:ignore?))
     return fs
   end
@@ -95,6 +95,10 @@ private
   CREATED = 1
   DELETED = 2
 
+  def changes_to_remove
+    @keep_modified_files ? [DELETED] : [DELETED, MODIFIED]
+  end
+
   # @api private
   class Node < Struct.new(:children, :kind)
 
@@ -110,7 +114,7 @@ private
       children.none?
     end
 
-    def leaves( prefix = '/', &block )
+    def leaves(prefix = '/', &block)
       return to_enum(:leaves, prefix) unless block
       if leaf?
         yield prefix, false
@@ -126,7 +130,7 @@ private
       children.any?{|_,c| c.leaf? }
     end
 
-    def modified_leaves( prefix = '/', &block )
+    def modified_leaves(prefix = '/', &block)
       return to_enum(:modified_leaves, prefix) unless block
       if leaf?
         if kind != CREATED
@@ -139,11 +143,11 @@ private
       end
     end
 
-    def remove_modified_leaves!( prefix = '/', &block )
+    def remove_modified_leaves!(changes_to_remove, prefix = '/', &block)
       to_remove = {}
       children.each do |name, cld|
-        removed_children = cld.remove_modified_leaves!(File.join(prefix,name), &block)
-        if cld.leaf? and cld.kind != CREATED
+        removed_children = cld.remove_modified_leaves!(changes_to_remove, File.join(prefix,name), &block)
+        if cld.leaf? && changes_to_remove.include?(cld.kind)
           to_remove[name] = [cld.kind, removed_children]
         end
       end
@@ -159,7 +163,7 @@ private
       return false
     end
 
-    def smallest_superset( prefix = '/', &block )
+    def smallest_superset(prefix = '/', &block)
       return to_enum(:smallest_superset, prefix) unless block
       if leaf?
         return
@@ -172,8 +176,8 @@ private
       end
     end
 
-    def reject!( prefix = '/',&block )
-      children.reject! do |name, cld| 
+    def reject!(prefix = '/', &block)
+      children.reject! do |name, cld|
         p = File.join(prefix,name)
         if yield p
           true

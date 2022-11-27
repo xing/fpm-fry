@@ -55,13 +55,17 @@ class FPM::Fry::Client
 
   # @return [String] docker server api version
   def server_version
-    @server_version ||= begin
-      res = agent.get(
-        expects: [200],
-        path: '/version'
-      )
-      JSON.parse(res.body)
-    end
+    @server_version ||=
+      begin
+        res = agent.get(
+          expects: [200],
+          path: '/version'
+        )
+        JSON.parse(res.body)
+      rescue Excon::Error => e
+        @logger.error("could not read server version: url: /version, errorr #{e}")
+        raise
+      end
   end
 
   # @return [String] docker cert path from environment
@@ -77,27 +81,34 @@ class FPM::Fry::Client
     tls.any?
   end
 
-
   def url(*path)
-    ['', "v"+server_version['ApiVersion'],*path].join('/')
+    ['', "v"+server_version['ApiVersion'], *path.compact].join('/')
   end
 
   def read(name, resource)
     return to_enum(:read, name, resource) unless block_given?
-    res = if (server_version['ApiVersion'] < "1.20")
-            agent.post(
-              path: url('containers', name, 'copy'),
-              headers: { 'Content-Type' => 'application/json' },
-              body: JSON.generate({'Resource' => resource}),
-              expects: [200,404,500]
-            )
-          else
-            agent.get(
-              path: url('containers', name, 'archive'),
-              headers: { 'Content-Type' => 'application/json' },
-              query: {:path => resource},
-              expects: [200,404,500]
-            )
+    url = nil
+    res = begin
+            if (server_version['ApiVersion'] < "1.20")
+              url = self.url('containers', name, 'copy')
+              agent.post(
+                path: url,
+                headers: { 'Content-Type' => 'application/json' },
+                body: JSON.generate({'Resource' => resource}),
+                expects: [200,404,500]
+              )
+            else
+              url = self.url('containers', name, 'archive')
+              agent.get(
+                path: url,
+                headers: { 'Content-Type' => 'application/json' },
+                query: {:path => resource},
+                expects: [200,404,500]
+              )
+            end
+          rescue Excon::Error => e
+            @logger.error("unexpected response when reading resource: url: #{url}, error: #{e}")
+            raise
           end
     if [404,500].include? res.status
       body_message = Hash[JSON.load(res.body).map{|k,v| ["docker.#{k}",v] }] rescue {'docker.message' => res.body}
@@ -163,9 +174,12 @@ class FPM::Fry::Client
   end
 
   def changes(name)
-    res = agent.get(path: url('containers',name,'changes'))
-    raise res.reason if res.status != 200
+    url = url('containers',name,'changes')
+    res = agent.get(path: url, expects: [200, 204])
     return JSON.parse(res.body)
+  rescue Excon::Error => e
+    @logger.error("could not retrieve changes for: #{name}, url: #{url}, error: #{e}")
+    raise
   end
 
   def pull(image)
@@ -173,20 +187,28 @@ class FPM::Fry::Client
   end
 
   def create(image)
+    url = url('containers','create')
     res = agent.post(
       headers: { 'Content-Type' => 'application/json' },
-      path: url('containers','create'),
-      expects: [201],
+      path: url,
       body: JSON.generate('Image' => image)
     )
     return JSON.parse(res.body)['Id']
+  rescue Excon::Error => e
+    @logger.error("could not create image: #{image}, url: #{url}, error: #{e}")
+    raise
   end
 
   def destroy(container)
+    return unless container
+    url = self.url('containers', container)
     agent.delete(
-      path: url('containers',container),
+      path: url,
       expects: [204]
     )
+  rescue Excon::Error => e
+    @logger.error("could not destroy container: #{container}, url: #{url}, error: #{e}")
+    raise
   end
 
   def agent

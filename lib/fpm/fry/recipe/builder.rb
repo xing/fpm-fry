@@ -302,6 +302,12 @@ module FPM::Fry
         PackageBuilder.new(variables, pr, logger: logger, inspector: inspector).instance_eval(&block)
       end
 
+      attr_reader :keep_modified_files
+
+      def keep_modified_files!
+        @keep_modified_files = true
+      end
+
     protected
 
       def source_types
