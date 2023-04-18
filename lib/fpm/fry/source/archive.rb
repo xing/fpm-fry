@@ -21,6 +21,7 @@ module FPM; module Fry ; module Source
   #
   #   - 40 characters = sha1
   #   - 64 characters = sha256
+  #   - 128 characters = sha512
   # 
   # Let's be honest: all other checksum algorithms aren't or shouldn't be in use anyway.
   class Archive
@@ -315,6 +316,8 @@ module FPM; module Fry ; module Source
       case(checksum)
       when nil
         return Digest::SHA256
+      when /\A(sha512:)?[0-9a-f]{128}\z/ then
+        return Digest::sha512
       when /\A(sha256:)?[0-9a-f]{64}\z/ then
         return Digest::SHA256
       when /\A(sha1:)?[0-9a-f]{40}\z/ then
