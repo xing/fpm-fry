@@ -317,7 +317,7 @@ module FPM; module Fry ; module Source
       when nil
         return Digest::SHA256
       when /\A(sha512:)?[0-9a-f]{128}\z/ then
-        return Digest::sha512
+        return Digest::SHA512
       when /\A(sha256:)?[0-9a-f]{64}\z/ then
         return Digest::SHA256
       when /\A(sha1:)?[0-9a-f]{40}\z/ then
