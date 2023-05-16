@@ -44,7 +44,7 @@ class FPM::Fry::Client
         ssl_verify_peer: options.fetch(:tlsverify){ false }
       }
       [:client_cert, :client_key, :ssl_ca_file].each do |k|
-        if !File.exists?(@tls[k])
+        if !File.exist?(@tls[k])
           raise ArgumentError.new("#{k} #{@tls[k]} doesn't exist. Did you set DOCKER_CERT_PATH correctly?")
         end
       end

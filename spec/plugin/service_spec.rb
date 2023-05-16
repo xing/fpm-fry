@@ -56,7 +56,7 @@ describe FPM::Fry::Plugin::Service do
       it_behaves_like 'adds script to restart services'
 
       it 'generates an init.d script' do
-        expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
+        expect(File.exist? package.staging_path('/etc/init.d/foo') ).to be true
       end
 
       it 'adds the init script as config' do
@@ -73,7 +73,7 @@ describe FPM::Fry::Plugin::Service do
         let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{sysvcompat: '/lib/init/upstart-job'}) }
 
         skip 'generates an init.d script' do
-          expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be true
+          expect(File.exist? package.staging_path('/etc/init.d/foo') ).to be true
         end
 
         it 'generates an init.d link to the upstart compat script' do
@@ -86,12 +86,12 @@ describe FPM::Fry::Plugin::Service do
         let(:init){ FPM::Fry::Plugin::Init::System.new(:upstart,{sysvcompat: false}) }
 
         it 'doesn\'t generate an init.d script' do
-          expect(File.exists? package.staging_path('/etc/init.d/foo') ).to be false
+          expect(File.exist? package.staging_path('/etc/init.d/foo') ).to be false
         end
       end
 
       it 'generates an init config' do
-        expect(File.exists? package.staging_path('/etc/init/foo.conf') ).to be true
+        expect(File.exist? package.staging_path('/etc/init/foo.conf') ).to be true
       end
 
       it 'generates the correct init config' do

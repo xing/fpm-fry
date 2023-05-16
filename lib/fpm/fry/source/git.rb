@@ -72,7 +72,7 @@ module FPM; module Fry ; module Source
 
       def update
         begin
-          if !File.exists? repodir
+          if !File.exist? repodir
             Exec::exec(package.git, "--git-dir=#{repodir}",'init', '--bare', description: "initializing git repository", logger: logger)
           end
           Exec::exec(package.git, "--git-dir=#{repodir}",'fetch','--depth=1', url.to_s, rev, description: 'fetching from remote', logger: logger)

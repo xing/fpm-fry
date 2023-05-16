@@ -118,7 +118,7 @@ module FPM; module Fry ; module Source
           raise ArgumentError, "Expected a Hash or a String, got #{file.inspect}"
         end
         options[:file] = File.expand_path(options[:file])
-        if !File.exists?(options[:file])
+        if !File.exist?(options[:file])
           raise ArgumentError, "File doesn't exist: #{options[:file]}"
         end
         options

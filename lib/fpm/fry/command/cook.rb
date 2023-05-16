@@ -80,7 +80,7 @@ module FPM; module Fry
     end
 
     def lint_recipe_file!
-      File.exists?(recipe) || raise(Recipe::NotFound)
+      File.exist?(recipe) || raise(Recipe::NotFound)
     end
 
     def lint_recipe!
@@ -368,7 +368,7 @@ module FPM; module Fry
       # Now that we have disabled this for debian we have to reenable if it for
       # all.
       etc = File.expand_path('etc', output.staging_path)
-      if File.exists?( etc )
+      if File.exist?( etc )
         # Config plugin wasn't used. Add everything under /etc
         prefix_length = output.staging_path.size + 1
         added = []
