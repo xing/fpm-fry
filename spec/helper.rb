@@ -111,17 +111,12 @@ RSpec.configure do |config|
   end
 end
 
-class IOFilter < Struct.new(:io)
-  def pos
-    0
-  end
-
-  def read(*args)
-    return io.read(*args)
-  end
-
-  def eof?
-    io.eof?
+class IOFilter < StringIO
+  def initialize(io)
+    super()
+    binmode
+    write(io.read)
+    rewind
   end
 end
 
