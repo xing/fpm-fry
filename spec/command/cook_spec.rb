@@ -96,9 +96,9 @@ describe FPM::Fry::Command::Cook do
       before(:each) do
         subject.image = 'foo:bar'
 
-        stub_request(:get, "http://unix/version").
+        stub_request(:get, "http://unix///version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:get, "http://unix/v1.9/images/foo:bar/json").
+        stub_request(:get, "http://unix///v1.9/images/foo:bar/json").
                      to_return(:status => 200, :body => "{\"id\":\"deadbeef\"}")
       end
       it 'returns the id' do
@@ -122,11 +122,11 @@ describe FPM::Fry::Command::Cook do
         subject.update = 'never'
         subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
-        stub_request(:get, "http://unix/version").
+        stub_request(:get, "http://unix///version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
+        stub_request(:get, "http://unix///v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 200, :body => "")
-        stub_request(:post, "http://unix/v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
+        stub_request(:post, "http://unix///v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built deadbeef"}', :headers => {})
       end
@@ -145,14 +145,14 @@ describe FPM::Fry::Command::Cook do
         subject.update = 'never'
         subject.cache = FPM::Fry::Source::Null::Cache
         subject.builder = builder
-        stub_request(:get, "http://unix/version").
+        stub_request(:get, "http://unix///version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:get, "http://unix/v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
+        stub_request(:get, "http://unix///v1.9/images/fpm-fry:5cb0db32efafac12020670506c62c39/json").
                     to_return(:status => 404)
-        stub_request(:post, "http://unix/v1.9/build?rm=1&dockerfile=Dockerfile.fpm-fry&t=fpm-fry:5cb0db32efafac12020670506c62c39").
+        stub_request(:post, "http://unix///v1.9/build?rm=1&dockerfile=Dockerfile.fpm-fry&t=fpm-fry:5cb0db32efafac12020670506c62c39").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built xxxxxxxx"}', :headers => {})
-        stub_request(:post, "http://unix/v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
+        stub_request(:post, "http://unix///v1.9/build?dockerfile=Dockerfile.fpm-fry&rm=1").
                     with(:headers => {'Content-Type'=>'application/tar'}).
                     to_return(:status => 200, :body => '{"stream":"Successfully built deadbeef"}', :headers => {})
       end
@@ -181,30 +181,30 @@ describe FPM::Fry::Command::Cook do
       before(:each) do
         subject.image = 'fpm-fry:x'
         subject.build_image = 'fpm-fry:x'
-        stub_request(:get, "http://unix/version").
+        stub_request(:get, "http://unix///version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
-        stub_request(:post, "http://unix/v1.9/containers/create").
+        stub_request(:post, "http://unix///v1.9/containers/create").
           with(:body => "{\"Image\":\"fpm-fry:x\"}",
                :headers => {'Content-Type'=>'application/json'}).
           to_return(:status => 201, :body => '{"Id":"caafffee"}')
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/start").
+        stub_request(:post, "http://unix///v1.9/containers/caafffee/start").
           with(:body => "{}",
                :headers => {'Content-Type'=>'application/json'}).
           to_return(:status => 204)
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/wait").
+        stub_request(:post, "http://unix///v1.9/containers/caafffee/wait").
           to_return(:status => 200, :body => '{"StatusCode":0}')
-        stub_request(:delete, "http://unix/v1.9/containers/caafffee").
+        stub_request(:delete, "http://unix///v1.9/containers/caafffee").
           to_return(:status => 204)
       end
 
       it 'yields the id when docker does not use transfer encoding chunked' do
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
+        stub_request(:post, "http://unix///v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
           to_return(:status => 200, :body => packed_response)
         expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')
       end
 
       it 'yields the id when docker uses transfer encoding chunked' do
-        stub_request(:post, "http://unix/v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
+        stub_request(:post, "http://unix///v1.9/containers/caafffee/attach?stderr=1&stdout=1&stream=1&logs=1").
           to_return(:status => 200, :headers => {'Transfer-Encoding'=>'chunked'},
                     :body => chunked_response)
         expect{|yld| subject.build!(&yld) }.to yield_with_args('caafffee')

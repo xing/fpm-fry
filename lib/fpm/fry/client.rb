@@ -228,6 +228,8 @@ class FPM::Fry::Client
     when 'unix'
       uri = "unix:///"
       options[:socket] = address
+      options[:host] = ""
+      options[:hostname] = ""
     when 'tcp'
       if tls.any?
         return agent_for("https://#{address}", tls)
