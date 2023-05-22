@@ -1,3 +1,10 @@
+# 0.6.3 / 2023.05.22
+* [FIX] Fixed test failures for Ruby 3.1.4 and 3.2.x.
+* [ENHANCEMENT] Support Ruby 3.2.2.
+
+# 0.6.2 / 2023.04.18
+* [ENHANCEMENT] Allow sha512 checksums.
+
 # 0.6.0 / 2022.11.27
 * [ENHANCEMENT] Support including files from the base image into the
   final package.
