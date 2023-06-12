@@ -80,7 +80,7 @@ describe FPM::Fry::Plugin::Init do
 
     context 'with debian:squeeze' do
       it 'finds sysv' do
-        with_inspector('debian:squeeze') do |insp|
+        with_inspector('debian:9') do |insp|
           builder = FPM::Fry::Recipe::Builder.new({},inspector: insp)
           builder.extend(FPM::Fry::Plugin::Init)
           expect(builder.init).to be_sysv
