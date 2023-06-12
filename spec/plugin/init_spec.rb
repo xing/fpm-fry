@@ -78,18 +78,6 @@ describe FPM::Fry::Plugin::Init do
       end
     end
 
-    context 'with centos:centos6' do
-      # Broken on master
-      skip 'finds upstart' do
-        with_inspector('centos:centos6') do |insp|
-          builder = FPM::Fry::Recipe::Builder.new({},inspector: insp)
-          builder.extend(FPM::Fry::Plugin::Init)
-          expect(builder.init).to be_upstart
-          expect(builder.init).not_to be_with :sysvcompat
-        end
-      end
-    end
-
     context 'with debian:squeeze' do
       it 'finds sysv' do
         with_inspector('debian:squeeze') do |insp|

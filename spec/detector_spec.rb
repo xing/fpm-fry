@@ -259,30 +259,6 @@ LSB
 
   end
 
-  context 'with centos:centos6' do
-
-    let(:result) do
-      result = nil
-      with_inspector('centos:centos6') do |inspector|
-        result = Detector.detect(inspector)
-      end
-      result
-    end
-
-    it 'finds centos' do
-      expect(result[:distribution]).to eq('centos')
-    end
-
-    it 'finds release 6.*' do
-      expect(result[:release]).to match /\A6\.\d+/
-    end
-
-    it 'finds flavour redhat' do
-      expect(result[:flavour]).to eq('redhat')
-    end
-
-  end
-
   context 'with centos:centos7' do
 
     let(:result) do
