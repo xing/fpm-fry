@@ -12,7 +12,7 @@ module FPM; module Fry
 
     option '--debug', :flag, 'Turns on debugging'
     option '--[no-]tls', :flag, 'Turns on tls ( default is false for schema unix, tcp and http and true for https )'
-    option '--[no-]tlsverify', :flag, 'Turns off tls peer verification', default:true, environment_variable: 'DOCKER_TLS_VERIFY'
+    option '--[no-]tlsverify', :flag, 'Turns off tls peer verification', default: true, environment_variable: 'DOCKER_TLS_VERIFY'
     option ["-t", "--tmpdir"], "PATH", 'Write tmp data to PATH', default: '/tmp/fpm-fry', attribute_name: :dir do |s|
       String(s)
     end
