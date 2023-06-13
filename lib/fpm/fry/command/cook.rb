@@ -5,9 +5,10 @@ module FPM; module Fry
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
     option '--verbose', :fag, 'Verbose output', default: false
+    option '--platform', 'PLATFORM', default: nil
 
     UPDATE_VALUES = ['auto','never','always']
-    option '--update',"<#{UPDATE_VALUES.join('|')}>", 'Update image before installing packages ( only apt currently )',attribute_name: 'update', default: 'auto' do |value|
+    option '--update',"<#{UPDATE_VALUES.join('|')}>", 'Update image before installing packages ( only apt currently )', attribute_name: 'update', default: 'auto' do |value|
       if !UPDATE_VALUES.include? value
         raise "Unknown value for --update: #{value.inspect}\nPossible values are #{UPDATE_VALUES.join(', ')}"
       else
@@ -124,11 +125,14 @@ module FPM; module Fry
         if res.status == 404
           df = DockerFile::Source.new(builder.variables.merge(image: image_id),cache)
           begin
-            url = client.url("build?rm=1&dockerfile=#{DockerFile::NAME}&t=#{cachetag}")
+            url = client.url("build")
+            query = { rm: 1, dockerfile: DockerFile::NAME, t: cachetag }
+            query[:platform] = platform if platform
             client.post(
               headers: {
                 'Content-Type'=>'application/tar'
               },
+              query: query,
               expects: [200],
               path: url,
               request_block: BlockEnumerator.new(df.tar_io)
@@ -145,11 +149,14 @@ module FPM; module Fry
         df = DockerFile::Build.new(cachetag, builder.variables.dup,builder.recipe, update: update?)
         parser = BuildOutputParser.new(out)
         begin
-          url = client.url("build?rm=1&dockerfile=#{DockerFile::NAME}")
+          url = client.url("build")
+          query = { rm: 1, dockerfile: DockerFile::NAME}
+          query[:platform] = platform if platform
           res = client.post(
             headers: {
               'Content-Type'=>'application/tar'
             },
+            query: query,
             expects: [200],
             path: url,
             request_block: BlockEnumerator.new(df.tar_io),
@@ -198,14 +205,16 @@ module FPM; module Fry
     def build!
       body = begin
               url = client.url('containers','create')
-              res = client.post(
+              args = {
                 headers: {
                   'Content-Type' => 'application/json'
                 },
                 path: url,
                 expects: [201],
                 body: JSON.generate({"Image" => build_image})
-              )
+              }
+              args[:query] = { platform: platform } if platform
+              res = client.post(args)
               JSON.parse(res.body)
             rescue Excon::Error
               logger.error "could not create #{build_image}, url: #{url}"
@@ -274,7 +283,7 @@ module FPM; module Fry
         logger: logger,
         client: client,
         keep_modified_files: builder.keep_modified_files,
-        verbose: verbose
+        verbose: verbose,
       )
       builder.recipe.apply_input(input)
       begin
@@ -331,6 +340,7 @@ module FPM; module Fry
 
       out_map.each do |output, package|
         package.apply_output(output)
+        adjust_package_architecture(output)
         adjust_package_settings(output)
         adjust_config_files(output)
       end
@@ -346,6 +356,11 @@ module FPM; module Fry
         output.cleanup_build
       end
 
+    end
+
+    def adjust_package_architecture(output)
+      # strip prefix and only use the architecture part
+      output.architecture = platform.split("/").last if platform
     end
 
     def adjust_package_settings( output )

@@ -181,11 +181,13 @@ describe FPM::Fry::Command::Cook do
       before(:each) do
         subject.image = 'fpm-fry:x'
         subject.build_image = 'fpm-fry:x'
+        subject.platform = "amd64"
         stub_request(:get, "http://unix///version").
           to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
         stub_request(:post, "http://unix///v1.9/containers/create").
           with(:body => "{\"Image\":\"fpm-fry:x\"}",
-               :headers => {'Content-Type'=>'application/json'}).
+               :headers => {'Content-Type'=>'application/json'},
+               :query => {platform: subject.platform}).
           to_return(:status => 201, :body => '{"Id":"caafffee"}')
         stub_request(:post, "http://unix///v1.9/containers/caafffee/start").
           with(:body => "{}",

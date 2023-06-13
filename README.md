@@ -312,6 +312,24 @@ fpm-fry like docker respects the `DOCKER_HOST` environment variable. So if you h
 
 You don't even need to have the docker command on your local machine. fpm-fry does all the interaction with docker on it's own.
 
+
+Building for a specific target architecture
+-------------------------------------------
+
+Using the `--platform P` argument of `fpm-fry`, it is possible to build packages for
+different target architectures, provided the docker installation on the host supports
+it. Please note that one needs to provide the correct base image for the target platform
+using docker syntax.
+
+```
+# Build amd64 package
+fpm-fry cook --platform amd64 amd64/ubuntu:jammy recipe.rb
+
+# Build arm64 package
+fpm-fry cook --platform arm64 arm64v8/ubuntu:jammy recipe.rb
+```
+
+
 Bonus
 -------------------------
 
