@@ -1,3 +1,6 @@
+# 0.7.0 / 2023.06.13
+* [ENHANCEMENT] Support cross platform package builds.
+
 # 0.6.3 / 2023.05.22
 * [FIX] Fixed test failures for Ruby 3.1.4 and 3.2.x.
 * [ENHANCEMENT] Support Ruby 3.2.2.
