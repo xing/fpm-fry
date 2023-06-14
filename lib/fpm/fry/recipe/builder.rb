@@ -55,6 +55,10 @@ module FPM::Fry
         variables[:codename]
       end
 
+      def architecture
+        variables[:architecture]
+      end
+
       def iteration(value = Not)
         get_or_set('@iteration',value)
       end

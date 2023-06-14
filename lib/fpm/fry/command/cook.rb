@@ -58,6 +58,7 @@ module FPM; module Fry
         b = nil
         Inspector.for_image(client, image) do |inspector|
           variables = Detector.detect(inspector)
+          variables[:architecture] = platform
           logger.debug("Loading recipe",variables: variables, recipe: recipe)
           b = Recipe::Builder.new(variables, logger: ui.logger, inspector: inspector)
           b.load_file( recipe )
