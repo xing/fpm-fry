@@ -292,7 +292,7 @@ module FPM; module Fry
         logger: logger,
         client: client,
         keep_modified_files: builder.keep_modified_files,
-        verbose: verbose,
+        verbose: verbose?,
       )
       builder.recipe.apply_input(input)
       begin
