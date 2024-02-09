@@ -65,16 +65,20 @@ run './build.sh'
 run 'make', 'install'
 ```
 
-Recipe files contains informations about the used sources, required software packages and build steps.
+Recipe files contains information about used sources, required software packages and build
+steps.
 
-If you don't tell fpm-fry which recipe to use it will look for a file called `recipe.rb` in the current directory.
+If you don't tell fpm-fry which recipe to use it will look for a file called `recipe.rb`
+in the current directory.
 
-Unlike fpm-cookery fpm-fry needs to know additionally which docker image it should use to build ( `ubuntu:precise` in this example ).
-fpm-fry does not pull this image into the docker instance, you have to make sure that it's present and valid ( do `docker pull ubuntu:precise` before you try something ).
+Unlike fpm-cookery fpm-fry needs to know additionally which docker image it should use to
+build ( `ubuntu:precise` in the example below).  fpm-fry does not automatically pull this
+image into the docker instance, but you can use the `--pull` option trigger the necessary
+pull command. Or you can pull it manually ( `docker pull ubuntu:precise` in our example ).
 
 To build your first package type:
 
-    $> fpm-fry cook ubuntu:precise recipe.rb
+    $> fpm-fry cook --pull ubuntu:precise recipe.rb
 
 
 Recipe syntax
@@ -323,10 +327,10 @@ using docker syntax.
 
 ```
 # Build amd64 package
-fpm-fry cook --platform amd64 amd64/ubuntu:jammy recipe.rb
+fpm-fry cook --pull --platform amd64 amd64/ubuntu:jammy recipe.rb
 
 # Build arm64 package
-fpm-fry cook --platform arm64 arm64v8/ubuntu:jammy recipe.rb
+fpm-fry cook --pull --platform arm64 arm64v8/ubuntu:jammy recipe.rb
 ```
 
 
@@ -368,7 +372,7 @@ License
 
 The MIT License (MIT)
 
-Copyright (c) 2018 XING AG
+Copyright (c) 2018-2024 XING AG
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

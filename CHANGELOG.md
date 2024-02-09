@@ -1,3 +1,12 @@
+# 0.7.2 / 2024.02.09
+* support --pull flag on cook to automatically pull the base image
+* avoid "implicit conversion of nil into String errors" when base image is missing
+* use ARG instead of ENV to silence apt commands
+* updated ruby versions used by Github actions
+
+# 0.7.1 / 2023.06.14
+* export target platform to recipes as architecture method.
+
 # 0.7.0 / 2023.06.13
 * [ENHANCEMENT] Support cross platform package builds.
 
