@@ -18,6 +18,10 @@ class FPM::Fry::Client
     include FPM::Fry::WithData
   end
 
+  class ContainerCreationFailed < StandardError
+    include FPM::Fry::WithData
+  end
+
   # Raised when trying to read file that can't be read e.g. because it's a
   # directory.
   class NotAFile < StandardError
@@ -212,11 +216,19 @@ class FPM::Fry::Client
     res = agent.post(
       headers: { 'Content-Type' => 'application/json' },
       path: url,
-      body: JSON.generate('Image' => image)
+      body: JSON.generate('Image' => image),
     )
-    return JSON.parse(res.body)['Id']
+    data = JSON.parse(res.body)
+    if res.status != 201
+      @logger.error(data["message"])
+      if res.status == 404
+        @logger.info("execute docker pull #{image} first or specify --pull argument for fpm-fry")
+      end
+      raise ContainerCreationFailed.new("could not create container from #{image}", message: data["message"])
+    end
+    data['Id']
   rescue Excon::Error => e
-    @logger.error("could not create image: #{image}, url: #{url}, error: #{e}")
+    @logger.error("could not create container from #{image}, url: #{url}, error: #{e}")
     raise
   end
 
