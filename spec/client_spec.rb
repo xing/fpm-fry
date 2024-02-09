@@ -14,6 +14,18 @@ describe FPM::Fry::Client do
       to_return(:status => 200, :body =>'{"ApiVersion":"1.9"}', :headers => {})
   end
 
+  describe '#pull' do
+    it 'pulls an existing image' do
+      client = real_docker
+      client.delete("ubuntu:jammy")
+      res = nil
+      expect{
+        res = client.pull("ubuntu:jammy")
+      }.to output(/Status: Downloaded newer image for ubuntu:jammy/).to_stdout
+      expect(res.status).to eq(200)
+    end
+  end
+
   describe '#read' do
     context 'existing file' do
       let(:body){

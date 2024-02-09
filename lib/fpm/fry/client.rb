@@ -183,7 +183,28 @@ class FPM::Fry::Client
   end
 
   def pull(image)
-    agent.post(path: url('images','create'), query: {'fromImage' => image})
+    last_status = ""
+    streamer = lambda do |chunk, remaining_bytes, total_bytes|
+      chunk.each_line do |line|
+        begin
+          msg = JSON.parse(line)
+          status, progress, id = *msg.values_at("status", "progress", "id")
+          id += ": " if id
+          status += " " if progress
+          move_up_one_line = $stdout.tty? && status =~ /Downloading|Extracting/ && last_status =~ /Downloading|Extracting/
+          last_status = status
+          cursor_move = move_up_one_line ? "\e[1A" : ""
+          puts [cursor_move, id, status, progress].join("")
+        rescue JSON::ParserError => e
+          $stderr.puts "Could not parse JSON response from docker: #{e}"
+        end
+      end
+    end
+    agent.post(path: url('images','create'), query: {'fromImage' => image}, :response_block => streamer)
+  end
+
+  def delete(image)
+    agent.delete(path: url('images',image), expects: [200, 404])
   end
 
   def create(image)

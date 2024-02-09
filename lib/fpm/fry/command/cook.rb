@@ -4,8 +4,9 @@ module FPM; module Fry
 
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
-    option '--verbose', :fag, 'Verbose output', default: false
+    option '--verbose', :flag, 'Verbose output', default: false
     option '--platform', 'PLATFORM', default: nil
+    option '--pull', :flag, 'Pull base image', default: false
 
     UPDATE_VALUES = ['auto','never','always']
     option '--update',"<#{UPDATE_VALUES.join('|')}>", 'Update image before installing packages ( only apt currently )', attribute_name: 'update', default: 'auto' do |value|
@@ -201,6 +202,13 @@ module FPM; module Fry
       else
         return false
       end
+    end
+
+    def pull_base_image!
+      client.pull(image)
+    rescue Excon::Error
+      logger.error "could not pull base image #{image}"
+      raise
     end
 
     def build!
@@ -407,6 +415,8 @@ module FPM; module Fry
   public
 
     def execute
+      pull_base_image! if pull?
+
       # force some eager loading
       lint_recipe_file!
       builder
