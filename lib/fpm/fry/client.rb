@@ -22,6 +22,10 @@ class FPM::Fry::Client
     include FPM::Fry::WithData
   end
 
+  class ContainerDeletionFailed < StandardError
+    include FPM::Fry::WithData
+  end
+
   # Raised when trying to read file that can't be read e.g. because it's a
   # directory.
   class NotAFile < StandardError
@@ -111,7 +115,7 @@ class FPM::Fry::Client
               )
             end
           rescue Excon::Error => e
-            @logger.error("unexpected response when reading resource: url: #{url}, error: #{e}")
+            logger.error("unexpected response when reading resource: url: #{url}, error: #{e}")
             raise
           end
     if [404,500].include? res.status
@@ -165,14 +169,14 @@ class FPM::Fry::Client
   end
 
   def copy(name, resource, map, options = {})
-    ex = FPM::Fry::Tar::Extractor.new(logger: @logger)
+    ex = FPM::Fry::Tar::Extractor.new(logger: logger)
     base = File.dirname(resource)
     read(name, resource) do | entry |
       file = File.join(base, entry.full_name).chomp('/')
       file = file.sub(%r"\A\./",'')
       to = map[file]
       next unless to
-      @logger.debug("Copy",name: file, to: to)
+      logger.debug("Copy",name: file, to: to)
       ex.extract_entry(to, entry, options)
     end
   end
@@ -182,7 +186,7 @@ class FPM::Fry::Client
     res = agent.get(path: url, expects: [200, 204])
     return JSON.parse(res.body)
   rescue Excon::Error => e
-    @logger.error("could not retrieve changes for: #{name}, url: #{url}, error: #{e}")
+    logger.error("could not retrieve changes for: #{name}, url: #{url}, error: #{e}")
     raise
   end
 
@@ -220,27 +224,35 @@ class FPM::Fry::Client
     )
     data = JSON.parse(res.body)
     if res.status != 201
-      @logger.error(data["message"])
+      logger.error(data["message"])
       if res.status == 404
-        @logger.info("execute docker pull #{image} first or specify --pull argument for fpm-fry")
+        logger.info("execute docker pull #{image} first or specify --pull argument for fpm-fry")
       end
       raise ContainerCreationFailed.new("could not create container from #{image}", message: data["message"])
     end
     data['Id']
   rescue Excon::Error => e
-    @logger.error("could not create container from #{image}, url: #{url}, error: #{e}")
+    logger.error("could not create container from #{image}, url: #{url}, error: #{e}")
     raise
   end
 
   def destroy(container)
     return unless container
+
     url = self.url('containers', container)
-    agent.delete(
+    res = agent.delete(
       path: url,
-      expects: [204]
+      expects: [204, 409]
     )
+    return unless res.status == 409
+    data = JSON.parse(res.body) rescue ({"message" => "could not parse response body: '#{res.body}'"})
+    if data["message"] =~ /removal of container .* is already in progress/
+      logger.info(data["message"])
+    else
+      raise ContainerDeletionFailed.new("could not destroy container #{container}", data)
+    end
   rescue Excon::Error => e
-    @logger.error("could not destroy container: #{container}, url: #{url}, error: #{e}")
+    logger.error("could not destroy container: #{container}, url: #{url}, error: #{e}")
     raise
   end
 

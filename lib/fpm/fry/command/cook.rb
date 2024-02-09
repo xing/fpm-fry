@@ -2,6 +2,10 @@ require 'fpm/fry/command'
 module FPM; module Fry
   class Command::Cook < Command
 
+    class BuildFailed < StandardError
+      include FPM::Fry::WithData
+    end
+
     option '--keep', :flag, 'Keep the container after build'
     option '--overwrite', :flag, 'Overwrite package', default: true
     option '--verbose', :flag, 'Verbose output', default: false
@@ -212,79 +216,81 @@ module FPM; module Fry
     end
 
     def build!
-      body = begin
-              url = client.url('containers','create')
-              args = {
-                headers: {
-                  'Content-Type' => 'application/json'
-                },
-                path: url,
-                expects: [201],
-                body: JSON.generate({"Image" => build_image})
-              }
-              args[:query] = { platform: platform } if platform
-              res = client.post(args)
-              JSON.parse(res.body)
-            rescue Excon::Error
-              logger.error "could not create #{build_image}, url: #{url}"
-              raise
-            end
-      container = body['Id']
-      begin
-        begin
-          url = client.url('containers',container,'start')
-          client.post(
-            headers: {
-              'Content-Type' => 'application/json'
-            },
-            path: url,
-            expects: [204],
-            body: JSON.generate({})
-          )
-        rescue Excon::Error
-          logger.error "could not start container #{container}, url: #{url}"
-          raise
-        end
-
-        begin
-          url = client.url('containers',container,'attach?stderr=1&stdout=1&stream=1&logs=1')
-          client.post(
-            path: url,
-            body: '',
-            expects: [200],
-            middlewares: [
-              StreamParser.new(out,err),
-              Excon::Middleware::Expects,
-              Excon::Middleware::Instrumentor,
-              Excon::Middleware::Mock
-            ]
-          )
-        rescue Excon::Error
-          logger.error "could not attach to container #{container}, url: #{url}"
-          raise
-        end
-
-        begin
-          res = client.post(
-            path: client.url('containers',container,'wait'),
-            expects: [200],
-            body: ''
-          )
-          json = JSON.parse(res.body)
-          if json["StatusCode"] != 0
-            raise Fry::WithData("Build failed", exit_code: json["StatusCode"])
-          end
-        rescue Excon::Error
-          logger.error "could not wait successfully for container #{container}, url: #{url}"
-          raise
-        end
-
-        yield container
-      ensure
-        unless keep?
-          client.destroy(container)
-        end
+      container = create_build_container
+      start_build_container(container)
+      attach_to_build_container_and_stream_logs(container)
+      wait_for_build_container_to_shut_down(container)
+      yield container
+    ensure
+      unless keep?
+        client.destroy(container) if container
       end
+    end
+
+    def create_build_container
+      url = client.url('containers','create')
+      args = {
+        headers: {
+          'Content-Type' => 'application/json'
+        },
+        path: url,
+        expects: [201],
+        body: JSON.generate({"Image" => build_image})
+      }
+      args[:query] = { platform: platform } if platform
+      res = client.post(args)
+      JSON.parse(res.body)['Id']
+    rescue Excon::Error
+      logger.error "could not create #{build_image}, url: #{url}"
+      raise
+    end
+
+    def start_build_container(container)
+      url = client.url('containers',container,'start')
+      client.post(
+        headers: {
+          'Content-Type' => 'application/json'
+        },
+        path: url,
+        expects: [204],
+        body: JSON.generate({})
+      )
+    rescue Excon::Error
+      logger.error "could not start container #{container}, url: #{url}"
+      raise
+    end
+
+    def attach_to_build_container_and_stream_logs(container)
+      url = client.url('containers',container,'attach?stderr=1&stdout=1&stream=1&logs=1')
+      client.post(
+        path: url,
+        body: '',
+        expects: [200],
+        middlewares: [
+          StreamParser.new(out,err),
+          Excon::Middleware::Expects,
+          Excon::Middleware::Instrumentor,
+          Excon::Middleware::Mock
+        ]
+      )
+    rescue Excon::Error
+      logger.error "could not attach to container #{container}, url: #{url}"
+      raise
+    end
+
+    def wait_for_build_container_to_shut_down(container)
+      res = client.post(
+        path: client.url('containers',container,'wait'),
+        expects: [200],
+        body: ''
+      )
+      json = JSON.parse(res.body)
+      if json["StatusCode"] != 0
+        raise BuildFailed.new("Build script failed with non zero exit code", json)
+      end
+    rescue Excon::Error
+      logger.error "could not wait successfully for container #{container}, url: #{url}"
+      raise
     end
 
     def input_package(container)
