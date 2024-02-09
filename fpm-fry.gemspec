@@ -1,6 +1,6 @@
 Gem::Specification.new do |gem|
   gem.name    = 'fpm-fry'
-  gem.version = '0.7.2'
+  gem.version = '0.7.2.1'
   gem.date    = Time.now.strftime("%Y-%m-%d")
 
   gem.summary = "FPM Fry"
@@ -28,10 +28,4 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'excon', '~> 0.71'
   gem.add_dependency 'fpm', '~> 1.13'
-
-  gem.add_development_dependency 'rake', '~> 12.0'
-  gem.add_development_dependency 'rspec', '~> 3.0', '>= 3.0.0'
-  gem.add_development_dependency 'webmock', '~> 3.0'
-  gem.add_development_dependency 'coveralls', '>= 0.8.23'
-  gem.add_development_dependency 'simplecov', '>= 0'
 end
