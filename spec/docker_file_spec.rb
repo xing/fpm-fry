@@ -96,7 +96,7 @@ SHELL
           expect(subject.dockerfile).to eq(<<SHELL)
 FROM <base>
 WORKDIR /tmp/build
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get install --yes arg blub foo
 COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
@@ -151,7 +151,7 @@ SHELL
           expect(subject.dockerfile).to eq(<<SHELL)
 FROM <base>
 WORKDIR /tmp/build
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get install --yes D a b e\\=1.0.0
 COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
@@ -176,7 +176,7 @@ SHELL
           expect(subject.dockerfile).to eq(<<SHELL)
 FROM <base>
 WORKDIR /tmp/build
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get install --yes a
 COPY .build.sh /tmp/build/
 CMD /tmp/build/.build.sh
@@ -239,7 +239,7 @@ SHELL
 FROM <base>
 WORKDIR /tmp/build
 probe a
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get install --yes a
 probe b
 COPY .build.sh /tmp/build/
