@@ -1,3 +1,6 @@
+# 0.7.3 / 2024.03.06
+* [CHANGE] improved logging on failed container deletion
+
 # 0.7.2.1 / 2024.02.09
 * [FIX] fixed rather old typo which got accidentally revealed by previous commits
 
