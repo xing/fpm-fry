@@ -209,7 +209,7 @@ module FPM; module Fry
     end
 
     def pull_base_image!
-      client.pull(image)
+      client.pull(image, platform: platform)
     rescue Excon::Error
       logger.error "could not pull base image #{image}"
       raise
