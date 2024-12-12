@@ -1,3 +1,7 @@
+# 0.8.0 / 2024.12.12
+* [FIX] auto pulling of base images was broken with newer docker versions
+* [FIX] support fpm 1.16.0 allowing clamp >= 1.1.0
+
 # 0.7.3 / 2024.03.06
 * [CHANGE] improved logging on failed container deletion
 
