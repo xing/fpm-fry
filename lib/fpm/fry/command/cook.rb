@@ -24,7 +24,7 @@ module FPM; module Fry
     parameter 'image', 'Docker image to build from'
     parameter '[recipe]', 'Recipe file to cook', default: 'recipe.rb'
 
-    def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
+    def initialize(invocation_path, ctx = {})
       @tls = nil
       require 'digest'
       require 'fileutils'
