@@ -190,7 +190,7 @@ class FPM::Fry::Client
     raise
   end
 
-  def pull(image)
+  def pull(image, platform: nil)
     last_status = ""
     streamer = lambda do |chunk, remaining_bytes, total_bytes|
       chunk.each_line do |line|
@@ -208,7 +208,9 @@ class FPM::Fry::Client
         end
       end
     end
-    agent.post(path: url('images','create'), query: {'fromImage' => image}, :response_block => streamer)
+    query = {'fromImage' => image}
+    query['platform'] = platform if platform
+    agent.post(path: url('images','create'), query: query, :response_block => streamer)
   end
 
   def delete(image)
