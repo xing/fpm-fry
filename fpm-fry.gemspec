@@ -27,5 +27,6 @@ Gem::Specification.new do |gem|
   gem.files = Dir['lib/**/*'] & `git ls-files -z`.split("\0")
 
   gem.add_dependency 'excon', '~> 0.71'
-  gem.add_dependency 'fpm', '~> 1.13'
+  gem.add_dependency 'fpm', '~> 1.16'
+  gem.add_dependency 'clamp', '> 1.1.0'
 end

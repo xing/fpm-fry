@@ -23,7 +23,7 @@ module FPM; module Fry
     extend Forwardable
     def_delegators :ui, :out, :err, :logger, :tmpdir
 
-    def initialize(invocation_path, ctx = {}, parent_attribute_values = {})
+    def initialize(invocation_path, ctx = {})
       super
       @ui = ctx.fetch(:ui){ UI.new(tmpdir: dir) }
       @client = ctx[:client]
