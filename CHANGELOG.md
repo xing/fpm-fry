@@ -1,50 +1,69 @@
-# 0.8.0 / 2024.12.12
+# Changelog
+
+## 0.9.0 / 2025.08.08
+
+* [ENHANCEMENT] don’t install recommended packages when building debian packages
+
+## 0.8.0 / 2024.12.12
+
 * [FIX] auto pulling of base images was broken with newer docker versions
 * [FIX] support fpm 1.16.0 allowing clamp >= 1.1.0
 
-# 0.7.3 / 2024.03.06
+## 0.7.3 / 2024.03.06
+
 * [CHANGE] improved logging on failed container deletion
 
-# 0.7.2.1 / 2024.02.09
+## 0.7.2.1 / 2024.02.09
+
 * [FIX] fixed rather old typo which got accidentally revealed by previous commits
 
-# 0.7.2 / 2024.02.09
+## 0.7.2 / 2024.02.09
+
 * [FEATURE] support --pull flag on cook to automatically pull the base image
 * [FIX] avoid "implicit conversion of nil into String errors" when base image is missing
 * [CHANGE] use ARG instead of ENV to silence apt commands
 * [CHANGE] updated ruby versions used by Github actions
 
-# 0.7.1 / 2023.06.14
+## 0.7.1 / 2023.06.14
+
 * [ENHANCEMENT] export target platform to recipes as architecture method.
 
-# 0.7.0 / 2023.06.13
+## 0.7.0 / 2023.06.13
+
 * [ENHANCEMENT] Support cross platform package builds.
 
-# 0.6.3 / 2023.05.22
+## 0.6.3 / 2023.05.22
+
 * [FIX] Fixed test failures for Ruby 3.1.4 and 3.2.x.
 * [ENHANCEMENT] Support Ruby 3.2.2.
 
-# 0.6.2 / 2023.04.18
+## 0.6.2 / 2023.04.18
+
 * [ENHANCEMENT] Allow sha512 checksums.
 
-# 0.6.0 / 2022.11.27
+## 0.6.0 / 2022.11.27
+
 * [ENHANCEMENT] Support including files from the base image into the
   final package.
 * [FIX] Provide better log output when the build step fails.
 * [CHANGE] Run complete test suite on GitHub.
 
-# 0.5.1 / 2022.07.29
+## 0.5.1 / 2022.07.29
+
 * [CHANGE] Use GitHub Actions
 * [FIX] Handle chunked transfer encoding responses from docker daemon
 
-# 0.4.3 / 2018.12.11
+## 0.4.3 / 2018.12.11
+
 * [ENHANCEMENT] Use systemd if installed. There's no /sbin/init in Ubuntu 18.04.
 * [TESTS] Added spec tests for Ubuntu 18.04
 
-# 0.4.2 / 2018.12.11
+## 0.4.2 / 2018.12.11
+
 * [ENHANCEMENT] added option to set the tmpdir path for source files
 
-# 0.4.0 / 2018.02.28
+## 0.4.0 / 2018.02.28
+
 * [FIX] multiple chunks of JSON are sent by Docker for Mac
 * [ENHANCEMENT] stop using deprecated file copy API endpoint for API versions >= 1.20
 * [ENHANCEMENT] replace ENTRYPOINTs with CMDs
@@ -55,9 +74,9 @@
 * [FEATURE] new plugin: `env`
 * [FEATURE] new plugin: `systemd`
 
-# 0.3.0 / 2016.10.16
+## 0.3.0 / 2016.10.16
 
-* [CHANGE] also recognize urls starting with https://git. as git
+* [CHANGE] also recognize urls starting with <https://git>. as git
 * [CHANGE] also recognize urls with scheme git+... as git
 * [ENHANCEMENT] tests can now run against a real docker host, improving test depth
 * [ENHANCEMENT] removed OsDb. This file contained some hardcoded Os versions which was not future proof. It was a workaround to get started more quickly.
@@ -66,14 +85,14 @@
 * [IMPROVEMENT] removed hardcoded init system list, try to guess the init system from the provided container
 * [CHANGE] init plugin has a different syntax
 
-# 0.2.2 / 2016.09.05
+## 0.2.2 / 2016.09.05
 
 * [CHANGE] docker minimum version is now 1.8
 * [FIX] script_helper plugin: after_remove_entirely broken
 * [FEATURE] .tar.bz2 can now be used as source
 * [FEATURE] initial systemd support
 
-# 0.2.1 / 2016.04.18
+## 0.2.1 / 2016.04.18
 
 * [FEATURE] Source can now be a plain binary file. The file will be simply fetched and placed in the container verbatim.
 * [FIX] Handle dependencies with alternatives during build install
