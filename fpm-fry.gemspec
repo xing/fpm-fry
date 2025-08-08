@@ -16,7 +16,7 @@ Gem::Specification.new do |gem|
     'Dennis Konert',
     'Bruno Escherl'
   ]
-  gem.email    = 'dennis.konert@new-work.se'
+  gem.email    = 'eber.herrera@xing.com'
   gem.homepage = 'https://github.com/xing/fpm-fry'
 
   gem.license  = 'MIT'
